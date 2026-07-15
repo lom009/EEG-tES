@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.tools/
+.pnpm-store/
+.codex/
+.DS_Store
+*.log
+
+# Local archives and visual QA artifacts
+deploy/
+prototypes/
+snapshots/
