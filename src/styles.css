@@ -59,6 +59,28 @@ button { font: inherit; }
   height: 24px;
 }
 
+.brand-home {
+  display: inline-grid;
+  place-items: center;
+  min-width: 158px;
+  min-height: 48px;
+  margin-left: -12px;
+  padding: 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.brand-home:hover {
+  background: rgba(41, 68, 190, 0.04);
+}
+
+.brand-home:focus-visible {
+  outline: 3px solid rgba(86, 95, 224, 0.28);
+  outline-offset: 0;
+}
+
 .avatar {
   position: relative;
   width: 32px;

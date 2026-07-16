@@ -199,10 +199,18 @@ function makeDemoPassedAssignments(assignments) {
   ]));
 }
 
-function AppHeader({ mode = "user", nextLabel = "下一步：耐受测试", canGoNext = false, onNext, demoAllPassed = false, onDemoAllPassedChange }) {
+function BrandHomeButton({ onHome }) {
+  return (
+    <button className="brand-home" type="button" onClick={onHome} aria-label="返回首页" title="返回首页">
+      <img className="brand-mark" src="/assets/eeg-tes-logo.svg" alt="EEG+tES" />
+    </button>
+  );
+}
+
+function AppHeader({ mode = "user", nextLabel = "下一步：耐受测试", canGoNext = false, onNext, onHome, demoAllPassed = false, onDemoAllPassedChange }) {
   return (
     <header className="topbar">
-      <img className="brand-mark" src="/assets/eeg-tes-logo.svg" alt="EEG+tES" />
+      <BrandHomeButton onHome={onHome} />
       {mode === "plain" ? null : mode === "setup" ? (
         <button className="setup-next" type="button" onClick={onNext}>
           <img src="/assets/next-arrow.svg" alt="" />
@@ -321,7 +329,7 @@ function HomeScreen({ onNewExperiment, onExperimentHistory }) {
   );
 }
 
-function ExperimentSetup({ subjectId, setSubjectId, note, setNote, importedFile, setImportedFile, initialTab, onNext }) {
+function ExperimentSetup({ subjectId, setSubjectId, note, setNote, importedFile, setImportedFile, initialTab, onNext, onHome }) {
   const [showError, setShowError] = useState(false);
   const [activeTab, setActiveTab] = useState(initialTab);
 
@@ -340,6 +348,7 @@ function ExperimentSetup({ subjectId, setSubjectId, note, setNote, importedFile,
         mode={activeTab === "history" ? "plain" : "setup"}
         nextLabel="下一步：电极配置"
         onNext={continueToElectrodes}
+        onHome={onHome}
       />
       <section className="setup-workspace">
         <div className="setup-card">
@@ -419,7 +428,7 @@ function ExperimentSetup({ subjectId, setSubjectId, note, setNote, importedFile,
   );
 }
 
-function ExperimentRun({ onBack }) {
+function ExperimentRun({ onBack, onHome }) {
   const [runMode, setRunMode] = useState("manual");
   const [phase, setPhase] = useState("standby");
   const [isExportPanelOpen, setIsExportPanelOpen] = useState(false);
@@ -609,7 +618,7 @@ function ExperimentRun({ onBack }) {
   return (
     <main className="app-shell experiment-shell">
       <header className="experiment-topbar">
-        <img className="brand-mark" src="/assets/eeg-tes-logo.svg" alt="EEG+tES" />
+        <BrandHomeButton onHome={onHome} />
         <div className="experiment-mode-switch" role="tablist" aria-label="实验控制模式">
           <button type="button" className={runMode === "manual" ? "is-active" : ""} onClick={() => changeRunMode("manual")}>手动模式</button>
           <button type="button" className={runMode === "auto" ? "is-active" : ""} onClick={() => changeRunMode("auto")}>自动模式</button>
@@ -1034,12 +1043,13 @@ export function App() {
         setImportedFile={setImportedFile}
         initialTab={setupInitialTab}
         onNext={startNewExperiment}
+        onHome={() => setScreen("home")}
       />
     );
   }
 
   if (screen === "experiment") {
-    return <ExperimentRun onBack={() => setScreen("electrodes")} />;
+    return <ExperimentRun onBack={() => setScreen("electrodes")} onHome={() => setScreen("home")} />;
   }
 
   return (
@@ -1049,6 +1059,7 @@ export function App() {
         nextLabel={canEnterExperiment ? "下一步：进行实验" : "下一步：耐受测试"}
         canGoNext={canEnterExperiment}
         onNext={() => setScreen("experiment")}
+        onHome={() => setScreen("home")}
         demoAllPassed={demoAllPassed}
         onDemoAllPassedChange={setDemoAllPassed}
       />

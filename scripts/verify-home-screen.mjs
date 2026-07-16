@@ -13,7 +13,12 @@ assert.match(source, /onNewExperiment/, "home should expose the new-experiment e
 assert.match(source, /onExperimentHistory/, "home should expose the experiment-history entry");
 assert.match(source, /\["home", "setup", "electrodes", "experiment"\]/, "home should be a routable application screen");
 assert.match(source, /requestedScreen[\s\S]*?\? requestedScreen : "home"/, "home should be the default application screen");
+assert.match(source, /function BrandHomeButton\(/, "inner screens should share a brand home control");
+assert.match(source, /className="brand-home"[\s\S]*?aria-label="返回首页"/, "brand home control should expose an accessible home action");
+assert.match(source, /<BrandHomeButton onHome=\{onHome\} \/>/, "shared and experiment headers should render the home control");
+assert.match(source, /onHome=\{\(\) => setScreen\("home"\)\}/, "inner screens should route the brand control back home");
 assert.match(styles, /\.home-shell\s*\{/, "home should have dedicated responsive styling");
+assert.match(styles, /\.brand-home\s*\{[\s\S]*?min-width:\s*158px;[\s\S]*?min-height:\s*48px;/, "brand home control should provide a larger click target");
 
 for (const asset of [
   "home-new-experiment.png",
