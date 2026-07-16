@@ -104,4 +104,16 @@ for (const label of labels) {
   assert.equal(getSelectedTagsForRole(headPoints, assignments, "stimulation").length, labels.length);
 }
 
+{
+  const assignments = seedMeasured("acquisition");
+  assert.equal(getPointVisualState(assignments.P4), "excellent");
+  assert.equal(
+    getPointVisualState(assignments.P4, { hasError: true }),
+    "error",
+    "a transient point error must override its measured color without mutating the impedance result",
+  );
+  assert.equal(assignments.P4.tone, "excellent");
+  assert.equal(assignments.P4.measured, true);
+}
+
 console.log(`point-state verification passed for ${labels.length} points`);

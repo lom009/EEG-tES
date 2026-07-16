@@ -549,26 +549,27 @@ button { font: inherit; }
   background:#e9ebff;
   box-shadow:0 4px 2px rgba(104,95,183,.25);
 }
-.electrode-point.has-distance-error {
+.electrode-point.point-error {
   color:#ff0004;
   border-color:#ff0004;
   background:linear-gradient(180deg,#ebebfd 0%,#f7f7ff 88.233%);
-  box-shadow:0 4px 2px rgba(183,95,97,.25);
+  box-shadow:0 7px 8px rgba(233,25,25,.22);
 }
 .electrode-point i { width:2px; height:2px; flex:0 0 2px; border-radius:50%; background:currentColor; }
 .electrode-point small { font:700 16px/1 "DIN Alternate","Arial Narrow",Arial,sans-serif; }
 
 .distance-warning {
   position:absolute;
-  z-index:5;
-  left:591px;
-  top:502px;
-  width:267px;
+  z-index:6;
+  left:508px;
+  top:236px;
+  width:max-content;
   height:23px;
   color:#e91919;
   font-size:12px;
   line-height:17px;
   white-space:nowrap;
+  transform:translateX(-50%);
 }
 .distance-warning > div {
   position:absolute;
@@ -2846,6 +2847,18 @@ button:focus-visible { outline: 3px solid rgba(86, 95, 224, 0.28); outline-offse
   background:#fff;
 }
 
+.sequence-row.is-paused {
+  border-color:#e91919;
+  border-style:dashed;
+  background:#fff;
+}
+
+.sequence-row.is-stopped {
+  border-color:#e91919;
+  border-style:dashed;
+  background:#fff;
+}
+
 .sequence-stage {
   display:flex;
   align-items:center;
@@ -2980,7 +2993,8 @@ button:focus-visible { outline: 3px solid rgba(86, 95, 224, 0.28); outline-offse
   font-weight:700;
 }
 
-.sequence-start {
+.sequence-start,
+.sequence-resume {
   justify-self:end;
   width:90px;
   height:32px;
@@ -2996,7 +3010,13 @@ button:focus-visible { outline: 3px solid rgba(86, 95, 224, 0.28); outline-offse
   cursor:pointer;
 }
 
-.sequence-start img {
+.sequence-resume {
+  justify-self:end;
+  background:#e91919;
+}
+
+.sequence-start img,
+.sequence-resume img {
   width:24px;
   height:24px;
   flex:0 0 24px;
@@ -3056,6 +3076,15 @@ button:focus-visible { outline: 3px solid rgba(86, 95, 224, 0.28); outline-offse
   flex-basis:14px;
 }
 
+.sequence-row.is-stopped .sequence-status {
+  color:#e91919;
+}
+
+.sequence-row.is-stopped .sequence-stop-icon {
+  flex:0 0 14px;
+  color:#e91919;
+}
+
 .run-panel-actions {
   display:flex;
   gap:12px;
@@ -3064,6 +3093,7 @@ button:focus-visible { outline: 3px solid rgba(86, 95, 224, 0.28); outline-offse
 
 .emergency-stop-button,
 .auto-start-button,
+.auto-restart-button,
 .export-data-button,
 .restart-experiment-button {
   height:32px;
@@ -3088,14 +3118,20 @@ button:focus-visible { outline: 3px solid rgba(86, 95, 224, 0.28); outline-offse
   cursor:not-allowed;
 }
 
-.auto-start-button {
+.auto-start-button,
+.auto-restart-button {
   flex:1 1 auto;
   gap:4px;
   padding:6px 8px 6px 12px;
   background:#38a169;
 }
 
-.auto-start-button img {
+.auto-restart-button {
+  background:#38a169;
+}
+
+.auto-start-button img,
+.auto-restart-button img {
   width:24px;
   height:24px;
   flex:0 0 24px;

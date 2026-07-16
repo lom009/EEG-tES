@@ -5,12 +5,14 @@ import {
   MAX_CYCLE_COUNT,
   MIN_DURATION_MS,
   MIN_CYCLE_COUNT,
+  canPauseExperimentPhase,
   canEditPhaseDuration,
   clampDurationMs,
   formatDurationForInput,
   formatDurationLabel,
   formatElapsedTime,
   getPhaseDelayMs,
+  getRemainingPhaseMs,
   getAutoRecoveryTransition,
   getRunStateAfterModeSwitch,
   normalizeDurationInput,
@@ -89,6 +91,19 @@ assert.equal(canEditPhaseDuration("stimulation", "standby", "manual"), true, "st
 assert.equal(canEditPhaseDuration("stimulation", "stimReady", "manual"), true, "manual stimulation should remain editable before its start action");
 assert.equal(canEditPhaseDuration("stimulation", "stimReady", "auto"), false, "automatic mode should not expose a transient editable stimulation state");
 assert.equal(canEditPhaseDuration("stimulation", "stimulation", "manual"), false, "stimulation should lock once it starts");
+assert.equal(canEditPhaseDuration("acquisition", "stopped", "auto"), true, "automatic stopped state should allow fresh-run duration edits");
+assert.equal(canEditPhaseDuration("stimulation", "stopped", "auto"), true, "automatic stopped state should allow fresh-run stimulation edits");
+
+for (const phase of ["acquisition", "blanking", "stimulation", "recovery"]) {
+  assert.equal(canPauseExperimentPhase("manual", phase), true, `manual ${phase} should be pausable`);
+}
+for (const phase of ["standby", "stimReady", "finished", "stopped"]) {
+  assert.equal(canPauseExperimentPhase("manual", phase), false, `manual ${phase} should not be pausable`);
+}
+assert.equal(canPauseExperimentPhase("auto", "stimulation"), false, "automatic mode keeps its existing emergency-stop behavior");
+assert.equal(getRemainingPhaseMs(1000, 200, 450), 750, "pausing should retain only the unelapsed phase duration");
+assert.equal(getRemainingPhaseMs(1000, 200, 1400), 0, "remaining duration should never be negative");
+assert.equal(getRemainingPhaseMs(1000, 500, 300), 1000, "clock skew should not extend a phase beyond its configured duration");
 
 const configuredDurations = { acquisition: 2500, stimulation: 4200 };
 assert.equal(getPhaseDelayMs("acquisition", configuredDurations), 2500, "acquisition should use configured duration");
@@ -120,6 +135,9 @@ assert.match(appSource, /value=\{cycleCountDraft\}/, "cycle count should render 
 assert.match(appSource, /stepCycleCount\(1\)/, "cycle control should expose an increment action");
 assert.match(appSource, /stepCycleCount\(-1\)/, "cycle control should expose a decrement action");
 assert.match(appSource, /getAutoRecoveryTransition\(completedCycles, cycleCount\)/, "automatic recovery should honor the configured cycle count");
+assert.match(appSource, /isPhasePaused/, "manual emergency stop should preserve a resumable paused phase");
+assert.match(appSource, />继续\s*<img/, "the paused phase row should expose the Figma resume action");
+assert.match(styleSource, /\.sequence-row\.is-paused\s*\{[\s\S]*?border[^;]*#e91919/, "the paused row should use the red Figma outline");
 assert.match(styleSource, /\.cycle-input-shell\s*\{[\s\S]*?width:74px;[\s\S]*?height:32px;/, "cycle input should match the 74 by 32 Figma control");
 
 console.log("experiment timing verification passed");

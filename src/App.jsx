@@ -1,16 +1,20 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { CircleAlert, CircleArrowRight, Minus, Plus, RotateCcw, Settings, Square, Wifi, X } from "lucide-react";
+import { CircleAlert, CircleArrowRight, CircleStop, Minus, Plus, RotateCcw, Settings, Square, Wifi, X } from "lucide-react";
 import {
   MAX_DURATION_MS,
   MAX_CYCLE_COUNT,
   MIN_DURATION_MS,
   MIN_CYCLE_COUNT,
+  canPauseExperimentPhase,
   canEditPhaseDuration,
   formatDurationForInput,
   formatDurationLabel,
   formatElapsedTime,
+  getAutoRestartState,
   getAutoRecoveryTransition,
+  getAutoStoppedStageStatus,
   getPhaseDelayMs,
+  getRemainingPhaseMs,
   getRunStateAfterModeSwitch,
   normalizeCycleCount,
   normalizeDurationInput,
@@ -90,7 +94,7 @@ const experimentPhases = {
   stimulation: { label: "刺激中", panelLabel: "刺激中", activeIndex: 2, ring: 72 },
   recovery: { label: "恢复进行中", panelLabel: "恢复中", activeIndex: 3, ring: 90 },
   finished: { label: "已完成", panelLabel: "已完成", activeIndex: 4, ring: 100 },
-  stopped: { label: "已急停", panelLabel: "已急停", activeIndex: -1, ring: 0 },
+  stopped: { label: "待机中", panelLabel: "待机中", activeIndex: -1, ring: 0 },
 };
 
 const phaseOrder = ["acquisition", "blanking", "stimReady", "stimulation", "recovery", "finished"];
@@ -438,27 +442,39 @@ function ExperimentRun({ onBack, onHome }) {
   const [openUnitMenu, setOpenUnitMenu] = useState(null);
   const [elapsedMs, setElapsedMs] = useState(0);
   const [runStartedAt, setRunStartedAt] = useState(null);
+  const [isPhasePaused, setIsPhasePaused] = useState(false);
+  const [phaseRemainingMs, setPhaseRemainingMs] = useState(null);
   const [cycleCount, setCycleCount] = useState(1);
   const [cycleCountDraft, setCycleCountDraft] = useState("1");
   const [completedCycles, setCompletedCycles] = useState(0);
+  const [stoppedPhase, setStoppedPhase] = useState(null);
   const durationControlRefs = useRef({});
+  const phaseStartedAtRef = useRef(null);
+  const elapsedBeforeRunRef = useRef(0);
   const currentPhase = experimentPhases[phase] || experimentPhases.standby;
   const elapsed = formatElapsedTime(elapsedMs);
   const isFinished = phase === "finished";
   const isStopped = phase === "stopped";
-  const isRunningIndicator = ["acquisition", "blanking", "stimulation", "recovery"].includes(phase);
+  const isActiveRuntimePhase = ["acquisition", "blanking", "stimulation", "recovery"].includes(phase);
+  const isRunningIndicator = isActiveRuntimePhase && !isPhasePaused;
   const isAutoMode = runMode === "auto";
   const canAutoStart = isAutoMode && phase === "standby";
-  const canEditCycleCount = isAutoMode && phase === "standby";
-  const canEmergencyStop = phase !== "standby";
+  const canEditCycleCount = isAutoMode && (phase === "standby" || phase === "stopped");
+  const canEmergencyStop = !isPhasePaused && (
+    isAutoMode ? isActiveRuntimePhase : canPauseExperimentPhase(runMode, phase)
+  );
 
   useEffect(() => {
+    if (isPhasePaused) return undefined;
     const autoAdvance = phaseAutoAdvance[phase];
     if (phase === "stimReady" && !isAutoMode) return undefined;
     if (!autoAdvance) return undefined;
-    const delay = getPhaseDelayMs(phase, phaseDurationMs);
+    const delay = phaseRemainingMs ?? getPhaseDelayMs(phase, phaseDurationMs);
     if (delay === null) return undefined;
+    phaseStartedAtRef.current = Date.now();
     const timer = window.setTimeout(() => {
+      setPhaseRemainingMs(null);
+      phaseStartedAtRef.current = null;
       if (phase === "recovery" && isAutoMode) {
         const transition = getAutoRecoveryTransition(completedCycles, cycleCount);
         setCompletedCycles(transition.completedCycles);
@@ -468,17 +484,19 @@ function ExperimentRun({ onBack, onHome }) {
       setPhase(autoAdvance.next);
     }, delay);
     return () => window.clearTimeout(timer);
-  }, [phase, isAutoMode, phaseDurationMs, completedCycles, cycleCount]);
+  }, [phase, isAutoMode, isPhasePaused, phaseRemainingMs, phaseDurationMs, completedCycles, cycleCount]);
 
   useEffect(() => {
     if (!runStartedAt) return undefined;
     if (isFinished || isStopped) {
-      setElapsedMs(Date.now() - runStartedAt);
+      const frozenElapsedMs = elapsedBeforeRunRef.current + Date.now() - runStartedAt;
+      elapsedBeforeRunRef.current = frozenElapsedMs;
+      setElapsedMs(frozenElapsedMs);
       setRunStartedAt(null);
       return undefined;
     }
 
-    const updateElapsed = () => setElapsedMs(Date.now() - runStartedAt);
+    const updateElapsed = () => setElapsedMs(elapsedBeforeRunRef.current + Date.now() - runStartedAt);
     updateElapsed();
     const timer = window.setInterval(updateElapsed, 250);
     return () => window.clearInterval(timer);
@@ -512,22 +530,83 @@ function ExperimentRun({ onBack, onHome }) {
   function advancePhase() {
     if (phase === "standby") {
       const now = Date.now();
+      elapsedBeforeRunRef.current = 0;
       setElapsedMs(0);
       setRunStartedAt(now);
       setCompletedCycles(0);
+      setStoppedPhase(null);
       setOpenUnitMenu(null);
+      setIsPhasePaused(false);
+      setPhaseRemainingMs(null);
+      phaseStartedAtRef.current = null;
       setPhase("acquisition");
       return;
     }
     const index = phaseOrder.indexOf(phase);
+    setIsPhasePaused(false);
+    setPhaseRemainingMs(null);
+    phaseStartedAtRef.current = null;
     setPhase(index >= 0 && index < phaseOrder.length - 1 ? phaseOrder[index + 1] : "finished");
+  }
+
+  function pauseCurrentPhase() {
+    if (!canPauseExperimentPhase(runMode, phase) || isPhasePaused) return;
+    const now = Date.now();
+    const activeDurationMs = phaseRemainingMs ?? getPhaseDelayMs(phase, phaseDurationMs);
+    setPhaseRemainingMs(getRemainingPhaseMs(activeDurationMs, phaseStartedAtRef.current ?? now, now));
+    phaseStartedAtRef.current = null;
+
+    const frozenElapsedMs = elapsedBeforeRunRef.current + (runStartedAt ? now - runStartedAt : 0);
+    elapsedBeforeRunRef.current = frozenElapsedMs;
+    setElapsedMs(frozenElapsedMs);
+    setRunStartedAt(null);
+    setIsPhasePaused(true);
+  }
+
+  function resumeCurrentPhase() {
+    if (!isPhasePaused) return;
+    setRunStartedAt(Date.now());
+    setIsPhasePaused(false);
+  }
+
+  function handleEmergencyStop() {
+    if (!canEmergencyStop) return;
+    if (!isAutoMode) {
+      pauseCurrentPhase();
+      return;
+    }
+    setStoppedPhase(phase);
+    setPhaseRemainingMs(null);
+    phaseStartedAtRef.current = null;
+    setPhase("stopped");
+  }
+
+  function restartAutoExperiment() {
+    if (!isAutoMode || !isStopped) return;
+    const nextRuntime = getAutoRestartState(Date.now());
+    elapsedBeforeRunRef.current = 0;
+    setElapsedMs(nextRuntime.elapsedMs);
+    setRunStartedAt(nextRuntime.runStartedAt);
+    setCompletedCycles(nextRuntime.completedCycles);
+    setIsExportPanelOpen(nextRuntime.isExportPanelOpen);
+    setOpenUnitMenu(null);
+    setIsPhasePaused(false);
+    setPhaseRemainingMs(null);
+    phaseStartedAtRef.current = null;
+    setStoppedPhase(null);
+    setPhase(nextRuntime.phase);
   }
 
   function resetExperiment() {
     setIsExportPanelOpen(false);
+    elapsedBeforeRunRef.current = 0;
     setElapsedMs(0);
     setRunStartedAt(null);
+    setIsPhasePaused(false);
+    setPhaseRemainingMs(null);
+    phaseStartedAtRef.current = null;
     setCompletedCycles(0);
+    setStoppedPhase(null);
     setOpenUnitMenu(null);
     setPhase("standby");
   }
@@ -543,12 +622,17 @@ function ExperimentRun({ onBack, onHome }) {
     if (nextRuntime.phase === phase && nextMode === runMode) return;
 
     setRunMode(nextMode);
+    elapsedBeforeRunRef.current = 0;
     setPhase(nextRuntime.phase);
     setElapsedMs(nextRuntime.elapsedMs);
     setRunStartedAt(nextRuntime.runStartedAt);
     setCompletedCycles(nextRuntime.completedCycles);
+    setStoppedPhase(null);
     setIsExportPanelOpen(nextRuntime.isExportPanelOpen);
     setOpenUnitMenu(null);
+    setIsPhasePaused(false);
+    setPhaseRemainingMs(null);
+    phaseStartedAtRef.current = null;
   }
 
   function updateDurationDraft(stageId, value) {
@@ -609,6 +693,7 @@ function ExperimentRun({ onBack, onHome }) {
   }
 
   function stageStatus(index) {
+    if (isStopped && isAutoMode) return getAutoStoppedStageStatus(stoppedPhase, index);
     if (isStopped) return "已中断";
     if (isFinished) return "已完成";
     if (currentPhase.activeIndex === index) return "进行中";
@@ -666,7 +751,7 @@ function ExperimentRun({ onBack, onHome }) {
           </div>
         </section>
 
-        <aside className={`run-panel is-${isExportPanelOpen ? "export" : phase} ${isAutoMode ? "is-auto-mode" : ""}`} aria-label={isExportPanelOpen ? "导出数据" : "运行监控"}>
+        <aside className={`run-panel is-${isExportPanelOpen ? "export" : phase} ${isAutoMode ? "is-auto-mode" : ""} ${isPhasePaused ? "is-paused" : ""}`} aria-label={isExportPanelOpen ? "导出数据" : "运行监控"}>
           {isExportPanelOpen ? (
             <>
               <h2 className="export-panel-title">导出数据</h2>
@@ -710,7 +795,7 @@ function ExperimentRun({ onBack, onHome }) {
                     <p><img src="/assets/icon-run-current.svg" alt="" aria-hidden="true" /><span>刺激电流：</span><strong>1.50 mA</strong></p>
                     <p><img src="/assets/icon-run-impedance.svg" alt="" aria-hidden="true" /><span>阻抗状态：</span><strong>3.9 kΩ 平均</strong></p>
                     <p><img src="/assets/icon-run-duration.svg" alt="" aria-hidden="true" /><span>运行时长：</span><strong>{elapsed}</strong></p>
-                    <p><img src="/assets/icon-run-alert.svg" alt="" aria-hidden="true" /><span>异常事件：</span><strong>{isStopped ? "急停触发" : "无"}</strong></p>
+                    <p><img src="/assets/icon-run-alert.svg" alt="" aria-hidden="true" /><span>异常事件：</span><strong>无</strong></p>
                   </div>
                   <div className={`run-ring ${isRunningIndicator ? "is-running-indicator" : ""}`} data-phase={phase} aria-label={currentPhase.panelLabel}>
                     <img className="run-ring-layer run-ring-inner" src="/assets/run-status-inner.svg" alt="" aria-hidden="true" />
@@ -736,18 +821,19 @@ function ExperimentRun({ onBack, onHome }) {
               <section className="run-sequence-card">
                 <h2>时序控制</h2>
                 <div className="sequence-table">
-                  <div className="sequence-head"><span>阶段</span><span>时长</span><span>{!isAutoMode && (phase === "standby" || phase === "stimReady") ? "操作" : "状态"}</span></div>
+                  <div className="sequence-head"><span>阶段</span><span>时长</span><span>{!isAutoMode && (phase === "standby" || phase === "stimReady" || isPhasePaused) ? "操作" : "状态"}</span></div>
                   {timelineStages.map((stage, index) => {
                     const status = stageStatus(index);
                     const canStart = !isAutoMode && ((phase === "standby" && index === 0) || (phase === "stimReady" && index === 2));
-                    const isRunning = currentPhase.activeIndex === index && !["standby", "stimReady", "finished", "stopped"].includes(phase);
+                    const isPausedStage = isPhasePaused && currentPhase.activeIndex === index;
+                    const isRunning = !isPhasePaused && currentPhase.activeIndex === index && !["standby", "stimReady", "finished", "stopped"].includes(phase);
                     const isConfigurable = stage.unitSelectable;
                     const canEditDuration = isConfigurable && canEditPhaseDuration(stage.id, phase, runMode);
                     const isLocked = isConfigurable && !canEditDuration;
                     const displayedDuration = isConfigurable ? durationDrafts[stage.id] : stage.duration;
                     const displayedUnit = isConfigurable ? phaseUnits[stage.id] : stage.unit;
                     return (
-                      <div className={`sequence-row ${isRunning ? "is-running" : ""} ${status === "已完成" ? "is-done" : ""}`} key={stage.id}>
+                      <div className={`sequence-row ${isRunning ? "is-running" : ""} ${isPausedStage ? "is-paused" : ""} ${status === "已完成" ? "is-done" : ""} ${status === "已停止" ? "is-stopped" : ""}`} key={stage.id}>
                         <div className="sequence-stage"><b className={index === 0 ? "is-wide" : ""}>{index + 1}</b><strong>{stage.label}</strong></div>
                         <div
                           className={`sequence-duration ${isConfigurable ? "is-selectable" : "is-disabled"} ${isLocked ? "is-locked" : ""}`}
@@ -804,7 +890,9 @@ function ExperimentRun({ onBack, onHome }) {
                             </div>
                           )}
                         </div>
-                        {canStart ? (
+                        {isPausedStage ? (
+                          <button className="sequence-resume" type="button" onClick={resumeCurrentPhase}>继续 <img src="/assets/icon-sequence-play-fill.svg" alt="" aria-hidden="true" /></button>
+                        ) : canStart ? (
                           <button className="sequence-start" type="button" onClick={advancePhase}>开始 <img src="/assets/icon-sequence-play-fill.svg" alt="" aria-hidden="true" /></button>
                         ) : (
                           <span className={`sequence-status status-${status}`}>
@@ -816,6 +904,11 @@ function ExperimentRun({ onBack, onHome }) {
                             ) : status === "已完成" ? (
                               <>
                                 <img className="sequence-done-icon" src="/assets/icon-sequence-done-fill.svg" alt="" aria-hidden="true" />
+                                <span>{status}</span>
+                              </>
+                            ) : status === "已停止" ? (
+                              <>
+                                <CircleStop className="sequence-stop-icon" size={14} aria-hidden="true" />
                                 <span>{status}</span>
                               </>
                             ) : (
@@ -869,11 +962,16 @@ function ExperimentRun({ onBack, onHome }) {
               <div className="run-panel-actions">
                 {isFinished ? (
                   <button className="export-data-button" type="button" onClick={() => setIsExportPanelOpen(true)}><img src="/assets/icon-finish-experiment-check-fill.svg" alt="" aria-hidden="true" />结束实验</button>
+                ) : isStopped && isAutoMode ? (
+                  <>
+                    <button className="emergency-stop-button" type="button" disabled><Square size={16} fill="currentColor" />紧急停止刺激</button>
+                    <button className="auto-restart-button" type="button" onClick={restartAutoExperiment}>重新开始 <img src="/assets/icon-sequence-play-fill.svg" alt="" aria-hidden="true" /></button>
+                  </>
                 ) : isStopped ? (
                   <button className="restart-experiment-button" type="button" onClick={resetExperiment}><RotateCcw size={18} />重新进入待机</button>
                 ) : (
                   <>
-                    <button className="emergency-stop-button" type="button" disabled={!canEmergencyStop} onClick={() => setPhase("stopped")}><Square size={16} fill="currentColor" />紧急停止刺激</button>
+                    <button className="emergency-stop-button" type="button" disabled={!canEmergencyStop} onClick={handleEmergencyStop}><Square size={16} fill="currentColor" />紧急停止刺激</button>
                     {canAutoStart && (
                       <button className="auto-start-button" type="button" onClick={advancePhase}>
                         <span>开始</span>
@@ -1094,11 +1192,11 @@ export function App() {
             const isRoleMuted = assignment
               && (assignment.role === "acquisition" ? !showAcquisition : !showStimulation);
             const showPolarity = assignment?.role === "stimulation";
-            const effectiveState = getPointVisualState(assignment);
             const hasDistanceError = distanceConflict && label === "P4";
+            const effectiveState = getPointVisualState(assignment, { hasError: hasDistanceError });
             return (
               <button
-                className={`electrode-point point-${effectiveState} ${isRoleMuted ? "is-role-muted" : ""} ${hasDistanceError ? "has-distance-error" : ""}`}
+                className={`electrode-point point-${effectiveState} ${isRoleMuted ? "is-role-muted" : ""}`}
                 style={{ left: x, top: y }}
                 type="button"
                 key={label}
@@ -1118,14 +1216,14 @@ export function App() {
               </button>
             );
           })}
-        </div>
 
-        {distanceConflict && (
-          <div className="distance-warning" role="alert">
-            <img className="distance-caret" src="/assets/tooltip-caret.svg" alt="" />
-            <div><img src="/assets/warning.svg" alt="" />刺激点 <strong>PZ•{effectivePointAssignments.Pz.polarity}</strong> 与 采集点<strong>P4</strong> 距离过近，请调整</div>
-          </div>
-        )}
+          {distanceConflict && (
+            <div className="distance-warning" role="alert">
+              <img className="distance-caret" src="/assets/tooltip-caret.svg" alt="" />
+              <div><img src="/assets/warning.svg" alt="" />刺激点 <strong>PZ·{effectivePointAssignments.Pz.polarity}</strong> 与采集点 <strong>P4</strong> 距离过近，请调整</div>
+            </div>
+          )}
+        </div>
 
         <section className={`impedance-legend ${role === "stimulation" ? "is-stimulation" : ""}`} aria-label="阻抗图例">
           <h3>阻抗图例</h3>

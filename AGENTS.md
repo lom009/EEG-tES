@@ -31,6 +31,7 @@
 ## Durable GitHub synchronization rule
 
 - The canonical remote repository is `https://github.com/lom009/EEG-tES.git` on branch `main`.
-- After an implementation request is complete and its relevant tests/build pass, commit the in-scope changes and push them to `origin/main` unless the user explicitly says not to publish that change.
+- Keep implementation changes local after their relevant tests/build pass. Do not commit or push automatically.
+- Only commit and push the accumulated in-scope changes to `origin/main` after the user explicitly asks to “同步 GitHub” or otherwise clearly requests publishing.
 - Never commit local dependencies, build output, tool downloads, temporary archives, screenshots, or secrets.
-- A successful push is the trigger for Render to redeploy the public demo automatically.
+- A successful user-requested push is the trigger for Render to redeploy the public demo automatically.

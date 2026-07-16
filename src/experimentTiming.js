@@ -48,6 +48,31 @@ export function getAutoRecoveryTransition(completedCycles, cycleCount) {
   };
 }
 
+const AUTO_STAGE_INDEX = {
+  acquisition: 0,
+  blanking: 1,
+  stimulation: 2,
+  recovery: 3,
+};
+
+export function getAutoStoppedStageStatus(stoppedPhase, stageIndex) {
+  const stoppedIndex = AUTO_STAGE_INDEX[stoppedPhase];
+  if (!Number.isInteger(stoppedIndex)) return '待执行';
+  if (stageIndex < stoppedIndex) return '已完成';
+  if (stageIndex === stoppedIndex) return '已停止';
+  return '待执行';
+}
+
+export function getAutoRestartState(now) {
+  return {
+    phase: 'acquisition',
+    elapsedMs: 0,
+    runStartedAt: now,
+    completedCycles: 0,
+    isExportPanelOpen: false,
+  };
+}
+
 export function getRunStateAfterModeSwitch(currentMode, nextMode, currentRuntime) {
   if (currentMode === nextMode) return currentRuntime;
   return {
@@ -76,9 +101,21 @@ export function getPhaseDelayMs(phase, configuredDurations) {
   return PROTOTYPE_PHASE_DELAYS[phase] ?? null;
 }
 
+const PAUSABLE_MANUAL_PHASES = new Set(['acquisition', 'blanking', 'stimulation', 'recovery']);
+
+export function canPauseExperimentPhase(runMode, phase) {
+  return runMode === 'manual' && PAUSABLE_MANUAL_PHASES.has(phase);
+}
+
+export function getRemainingPhaseMs(durationMs, phaseStartedAt, now) {
+  const elapsedInPhase = Math.max(0, now - phaseStartedAt);
+  return Math.max(0, Math.min(durationMs, durationMs - elapsedInPhase));
+}
+
 export function canEditPhaseDuration(stageId, phase, runMode) {
   if (!['acquisition', 'stimulation'].includes(stageId)) return false;
   if (phase === 'standby') return true;
+  if (phase === 'stopped' && runMode === 'auto') return true;
   return stageId === 'stimulation' && phase === 'stimReady' && runMode === 'manual';
 }
 

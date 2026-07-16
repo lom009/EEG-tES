@@ -361,6 +361,20 @@ The current 2240 × 926 annotation evidence confirms the earlier responsive fixe
 - Connected the value to automatic execution: recovery restarts acquisition while cycles remain, and the experiment reaches `finished` only after the configured number of full cycles.
 - Cycle editing is available only while automatic mode is on standby and locks after the run starts.
 
+### Iteration 41
+
+- Compared the annotated P4 conflict state with the supplied point-error reference.
+- Root cause: the rendered button still exposed its measured `excellent` state and only received a secondary distance-error class, so the visible override, accessible state and stored impedance state described different things.
+- Added an explicit transient `error` render state. It overrides the point's visible/accessible state while preserving the underlying measured impedance result for later restoration.
+- Moved the warning into the canonical head stage and anchored it directly below P4; updated the point border/text/shadow and the warning caret/pill to the supplied red-on-dark treatment.
+- Automated verification: all point-state, new-experiment, automatic-mode, timing, home-screen and local-asset checks pass; the Vite production build passes.
+- Visual recheck is blocked: the in-app browser control runtime fails during connection with `Cannot redefine property: process`. No post-fix browser screenshot comparison is claimed.
+
+### Iteration 42
+
+- Corrected the warning background after reading Figma node `83:8029` directly: the container fill is `rgba(233,25,25,0.1)`, text/icon color is `#e91919`, the caret uses the same 10% red fill, and the component has no drop shadow.
+- Preserved the explicit point `error` state and the warning's corrected anchor beneath P4.
+
 ## Required fidelity surfaces
 
 - Fonts and typography: source font fallbacks, weights, suffix typography, modal title, step labels, summary values and channel row hierarchy are implemented and browser-rendered without wrapping.
@@ -377,6 +391,6 @@ The current 2240 × 926 annotation evidence confirms the earlier responsive fixe
 
 ## Remaining blocker
 
-None for the current scoped prototype states. No actionable P0/P1/P2 mismatch remains in the reviewed evidence.
+The latest point-error state still needs one post-fix in-app-browser screenshot comparison; browser control is currently blocked during connection.
 
-final result: passed
+final result: blocked

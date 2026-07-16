@@ -41,7 +41,8 @@ export function hasMeasuredForRole(assignments, role) {
   return Object.values(assignments).some((assignment) => assignment.role === role && assignment.measured);
 }
 
-export function getPointVisualState(assignment) {
+export function getPointVisualState(assignment, { hasError = false } = {}) {
+  if (hasError) return "error";
   if (!assignment) return "default";
   if (assignment.measured) return assignment.tone;
   if (assignment.role === "stimulation") return `stim-${assignment.polarity.toLowerCase()}`;
