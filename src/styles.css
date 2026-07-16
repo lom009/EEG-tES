@@ -3083,6 +3083,11 @@ button:focus-visible { outline: 3px solid rgba(86, 95, 224, 0.28); outline-offse
   background:#e91919;
 }
 
+.emergency-stop-button:disabled {
+  background:#acb7c8;
+  cursor:not-allowed;
+}
+
 .auto-start-button {
   flex:1 1 auto;
   gap:4px;

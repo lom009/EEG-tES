@@ -450,6 +450,7 @@ function ExperimentRun({ onBack, onHome }) {
   const isAutoMode = runMode === "auto";
   const canAutoStart = isAutoMode && phase === "standby";
   const canEditCycleCount = isAutoMode && phase === "standby";
+  const canEmergencyStop = phase !== "standby";
 
   useEffect(() => {
     const autoAdvance = phaseAutoAdvance[phase];
@@ -872,7 +873,7 @@ function ExperimentRun({ onBack, onHome }) {
                   <button className="restart-experiment-button" type="button" onClick={resetExperiment}><RotateCcw size={18} />重新进入待机</button>
                 ) : (
                   <>
-                    <button className="emergency-stop-button" type="button" onClick={() => setPhase("stopped")}><Square size={16} fill="currentColor" />紧急停止刺激</button>
+                    <button className="emergency-stop-button" type="button" disabled={!canEmergencyStop} onClick={() => setPhase("stopped")}><Square size={16} fill="currentColor" />紧急停止刺激</button>
                     {canAutoStart && (
                       <button className="auto-start-button" type="button" onClick={advancePhase}>
                         <span>开始</span>
