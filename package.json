@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
-    "build": "vite build",
+    "build": "vite build && node scripts/create-static-routes.mjs",
     "preview": "vite preview --host 127.0.0.1",
     "test": "node scripts/verify-point-state.mjs && node scripts/verify-new-experiment-state.mjs && node scripts/verify-auto-mode.mjs && node scripts/verify-experiment-timing.mjs && node scripts/verify-home-screen.mjs && node scripts/verify-local-assets.mjs && node scripts/verify-control-panel-layout.mjs",
     "test:point-state": "node scripts/verify-point-state.mjs",
