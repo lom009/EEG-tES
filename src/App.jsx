@@ -993,10 +993,24 @@ function ExperimentRun({ onBack, onHome }) {
 export function App() {
   const [screen, setScreen] = useState(() => {
     const requestedScreen = new URLSearchParams(window.location.search).get("screen");
-    return ["home", "setup", "electrodes", "experiment"].includes(requestedScreen) ? requestedScreen : "home";
+    if (["home", "setup", "electrodes", "experiment"].includes(requestedScreen)) return requestedScreen;
+
+    const requestedPath = window.location.pathname.replace(/\/+$/, "") || "/";
+    const pathScreen = {
+      "/": "home",
+      "/home": "home",
+      "/setup": "setup",
+      "/history": "setup",
+      "/electrodes": "electrodes",
+      "/experiment": "experiment",
+    }[requestedPath];
+
+    return pathScreen || "home";
   });
   const [setupInitialTab, setSetupInitialTab] = useState(() => (
-    new URLSearchParams(window.location.search).get("tab") === "history" ? "history" : "new"
+    new URLSearchParams(window.location.search).get("tab") === "history" || window.location.pathname === "/history"
+      ? "history"
+      : "new"
   ));
   const [subjectId, setSubjectId] = useState("");
   const [note, setNote] = useState("");

@@ -12,7 +12,9 @@ assert.match(source, /muted[\s\S]*?loop[\s\S]*?autoPlay[\s\S]*?playsInline/, "ho
 assert.match(source, /onNewExperiment/, "home should expose the new-experiment entry");
 assert.match(source, /onExperimentHistory/, "home should expose the experiment-history entry");
 assert.match(source, /\["home", "setup", "electrodes", "experiment"\]/, "home should be a routable application screen");
-assert.match(source, /requestedScreen[\s\S]*?\? requestedScreen : "home"/, "home should be the default application screen");
+assert.match(source, /const pathScreen = \{[\s\S]*?"\/experiment": "experiment"/, "direct Render paths should map to application screens");
+assert.match(source, /return pathScreen \|\| "home"/, "home should remain the default application screen");
+assert.equal(readFileSync(new URL("../public/_redirects", import.meta.url), "utf8").trim(), "/* /index.html 200", "Render should rewrite direct paths to the SPA entry");
 assert.match(source, /function BrandHomeButton\(/, "inner screens should share a brand home control");
 assert.match(source, /className="brand-home"[\s\S]*?aria-label="返回首页"/, "brand home control should expose an accessible home action");
 assert.match(source, /<BrandHomeButton onHome=\{onHome\} \/>/, "shared and experiment headers should render the home control");
