@@ -15,6 +15,8 @@ assert.match(source, /\["home", "setup", "electrodes", "experiment"\]/, "home sh
 assert.match(source, /const pathScreen = \{[\s\S]*?"\/experiment": "experiment"/, "direct Render paths should map to application screens");
 assert.match(source, /return pathScreen \|\| "home"/, "home should remain the default application screen");
 assert.equal(readFileSync(new URL("../public/_redirects", import.meta.url), "utf8").trim(), "/* /index.html 200", "Render should rewrite direct paths to the SPA entry");
+const packageJson = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
+assert.match(packageJson.scripts.build, /create-static-routes\.mjs/, "production builds should create physical direct-route entries");
 assert.match(source, /function BrandHomeButton\(/, "inner screens should share a brand home control");
 assert.match(source, /className="brand-home"[\s\S]*?aria-label="返回首页"/, "brand home control should expose an accessible home action");
 assert.match(source, /<BrandHomeButton onHome=\{onHome\} \/>/, "shared and experiment headers should render the home control");
