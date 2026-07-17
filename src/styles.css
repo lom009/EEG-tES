@@ -645,7 +645,7 @@ button { font: inherit; }
   border-radius: 16px;
   background: #fff;
   box-shadow: 0 4px 6px rgba(104, 133, 179, 0.2);
-  overflow: auto;
+  overflow: hidden;
 }
 
 .control-panel.is-stimulation {
@@ -691,7 +691,7 @@ button { font: inherit; }
   accent-color:#38a169;
 }
 
-.role-section { display: flex; flex-direction: column; gap: 16px; }
+.role-section { flex:0 0 auto; display: flex; flex-direction: column; gap: 16px; }
 .role-heading { order:2; display:flex; align-items:center; justify-content:flex-start; gap:8px; }
 .role-section h2 { margin: 0; color: #000; font-size: 18px; line-height: 20px; font-weight: 600; white-space:nowrap; }
 
@@ -1473,7 +1473,7 @@ button { font: inherit; }
   cursor:pointer;
 }
 
-.impedance-section { display: flex; flex:1; min-height:0; flex-direction: column; gap: 16px; }
+.impedance-section { display: flex; flex:1; min-height:0; flex-direction: column; gap: 16px; overflow:hidden; }
 .section-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .section-heading h3 { margin: 0; color: #000; font-size: 18px; line-height: 20px; font-weight: 600; }
 
@@ -1514,7 +1514,25 @@ button { font: inherit; }
 }
 .warning-pill b { width:13px; height:13px; display:grid; place-items:center; border:1px solid currentColor; border-radius:50%; font:700 10px/1 Arial; }
 
-.impedance-list { flex:1; min-height:0; display: flex; flex-direction: column; gap: 12px; }
+.impedance-list {
+  flex:1;
+  min-height:0;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  padding:0 4px 4px 0;
+  overflow-x:hidden;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  scrollbar-gutter:stable;
+  scrollbar-width:thin;
+  scrollbar-color:rgba(107,125,153,.38) transparent;
+}
+
+.impedance-list::-webkit-scrollbar { width:6px; }
+.impedance-list::-webkit-scrollbar-thumb { border-radius:999px; background:rgba(107,125,153,.34); }
+.impedance-list::-webkit-scrollbar-track { background:transparent; }
+.impedance-list:focus-visible { outline:2px solid rgba(86,95,224,.32); outline-offset:2px; }
 
 .empty-impedance {
   flex:1;

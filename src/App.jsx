@@ -1522,7 +1522,12 @@ export function App() {
                   </button>
                 )}
               </div>
-              <div className="impedance-list">
+              <div
+                className="impedance-list"
+                role="region"
+                aria-label={`${role === "stimulation" ? "刺激" : "采集"}阻抗结果`}
+                tabIndex={rows.length ? 0 : undefined}
+              >
                 {rows.map((row) => (
                   <div className="impedance-row" key={`${row.channel}-${row.tone}`}>
                     <div className="channel-name">
