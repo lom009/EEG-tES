@@ -1,0 +1,52 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "疗程后分析 Agent：从数据准入到医生复核",
+    "locale": "zh-CN",
+    "output": "eeg-agent-analysis.workflow.html",
+    "quality_profile": "showcase"
+  },
+  "lanes": [
+    { "id": "gate", "label": "疗程系统与证据闸门" },
+    { "id": "analysis", "label": "行为与 EEG 分析" },
+    { "id": "output", "label": "趋势、报告与解释" }
+  ],
+  "phases": [
+    { "id": "intake", "label": "收齐记录并验证数据", "fromCol": 0, "toCol": 1 },
+    { "id": "assessment", "label": "形成可用的单次证据", "fromCol": 2, "toCol": 3, "variant": "security" },
+    { "id": "interpretation", "label": "纵向解释与人工确认", "fromCol": 4, "toCol": 5, "variant": "emphasis" }
+  ],
+  "groups": [
+    { "id": "evidence_gates", "label": "任何一关失败：停止相应结论或降级", "lane": "gate", "fromCol": 1, "toCol": 3, "variant": "security" },
+    { "id": "single_session", "label": "单次疗程分析", "lane": "analysis", "fromCol": 2, "toCol": 4, "variant": "dashed" },
+    { "id": "clinical_output", "label": "可追溯的辅助证据", "lane": "output", "fromCol": 4, "toCol": 5, "variant": "emphasis" }
+  ],
+  "mainPath": ["session", "complete", "qc", "behavior", "comparable", "eeg_change", "trend", "report", "review"],
+  "nodes": [
+    { "id": "session", "lane": "gate", "col": 0, "type": "external", "label": "统一疗程数据", "sublabel": "平板、刺激、Pre/Post EEG、量表", "tag": "同一 Session ID", "width": 150 },
+    { "id": "complete", "lane": "gate", "col": 1, "type": "security", "label": "疗程完整性检查", "sublabel": "环节、时间、协议、设备版本", "tag": "缺失→部分分析或停止", "width": 150 },
+    { "id": "qc", "lane": "gate", "col": 2, "type": "security", "label": "数据质控", "sublabel": "坏通道、掉线、伪迹、有效时长", "tag": "不合格→补采或禁用", "width": 150 },
+    { "id": "behavior", "lane": "analysis", "col": 2, "type": "frontend", "label": "行为变化分析", "sublabel": "正确率、独立答对、提示、反应时", "tag": "主要功能证据", "width": 150 },
+    { "id": "comparable", "lane": "gate", "col": 3, "type": "security", "label": "EEG 可比性判断", "sublabel": "协议、共同通道、状态与质量", "tag": "低可比→降低可信度", "width": 150 },
+    { "id": "eeg_change", "lane": "analysis", "col": 4, "type": "backend", "label": "EEG 前后变化", "sublabel": "预设脑区、频带、连接或 ERP 指标", "tag": "辅助生理证据", "width": 150 },
+    { "id": "trend", "lane": "output", "col": 4, "type": "database", "label": "多次趋势与证据融合", "sublabel": "区分持续趋势、偶然波动与证据冲突", "width": 160 },
+    { "id": "report", "lane": "output", "col": 5, "type": "cloud", "label": "辅助报告草稿", "sublabel": "结论、依据、可信度、限制与建议", "tag": "Agent 生成", "width": 150 },
+    { "id": "review", "lane": "gate", "col": 5, "type": "external", "label": "医生复核并锁定", "sublabel": "接受、修改、退回或补充临床观察", "tag": "最终临床责任", "width": 150 }
+  ],
+  "edges": [
+    { "id": "session_complete", "from": "session", "to": "complete", "variant": "emphasis", "role": "main" },
+    { "id": "complete_qc", "from": "complete", "to": "qc", "label": "必要记录齐全", "variant": "security", "role": "main" },
+    { "id": "qc_behavior", "from": "qc", "to": "behavior", "label": "训练数据可用", "variant": "emphasis", "role": "main" },
+    { "id": "behavior_comparable", "from": "behavior", "to": "comparable", "label": "先形成行为主证据", "variant": "emphasis", "role": "main" },
+    { "id": "comparable_eeg", "from": "comparable", "to": "eeg_change", "label": "允许前后比较", "variant": "security", "role": "main" },
+    { "id": "eeg_trend", "from": "eeg_change", "to": "trend", "label": "单次可信变化", "variant": "security", "role": "main" },
+    { "id": "trend_report", "from": "trend", "to": "report", "label": "训练为主，EEG 为辅", "variant": "emphasis", "role": "main" },
+    { "id": "report_review", "from": "report", "to": "review", "label": "提交复核", "variant": "emphasis", "role": "main" }
+  ],
+  "cards": [
+    { "dot": "rose", "title": "三个证据闸门", "items": ["先检查疗程完整，再检查数据可用，最后判断 EEG 前后可比", "闸门失败不是硬算结果，而是停止、降级或建议补采"] },
+    { "dot": "emerald", "title": "证据优先级", "items": ["临床评估和平板训练结果是主要疗效证据", "刺激日志证明执行情况；EEG只提供辅助生理证据"] },
+    { "dot": "cyan", "title": "Agent 与医生边界", "items": ["确定性工具计算指标，Agent选择工具、融合证据并解释限制", "医生接受、修改或退回报告，并承担最终临床判断"] }
+  ]
+}

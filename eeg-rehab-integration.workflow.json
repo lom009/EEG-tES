@@ -1,0 +1,57 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "脑机辅助康复产品流程：从联合执行到疗程反馈",
+    "locale": "zh-CN",
+    "output": "eeg-rehab-integration.workflow.html",
+    "quality_profile": "showcase"
+  },
+  "lanes": [
+    { "id": "system", "label": "医生、治疗师与统一疗程系统" },
+    { "id": "rehab", "label": "平板康复训练与 tES 执行" },
+    { "id": "evidence", "label": "EEG 测量、Agent 分析与反馈" }
+  ],
+  "phases": [
+    { "id": "plan", "label": "确定脑机如何介入康复", "fromCol": 0, "toCol": 1 },
+    { "id": "session", "label": "同一 Session 联合执行", "fromCol": 2, "toCol": 3, "variant": "emphasis" },
+    { "id": "feedback", "label": "形成证据并反馈疗程", "fromCol": 4, "toCol": 5, "variant": "dashed" }
+  ],
+  "groups": [
+    { "id": "session_binding", "label": "Course ID + Session ID + 统一时间", "lane": "system", "fromCol": 1, "toCol": 2, "variant": "emphasis" },
+    { "id": "joint_execution", "label": "训练表现与刺激执行分别记录", "lane": "rehab", "fromCol": 3, "toCol": 4, "variant": "emphasis" },
+    { "id": "eeg_support", "label": "按疗程计划选择性测量", "lane": "evidence", "fromCol": 2, "toCol": 4, "variant": "dashed" },
+    { "id": "course_feedback", "label": "单次结果进入多次趋势", "lane": "evidence", "fromCol": 5, "toCol": 5, "variant": "security" }
+  ],
+  "mainPath": ["course", "schedule", "session", "pre_eeg", "treatment", "execution_result", "post_eeg", "session_result", "trend", "doctor"],
+  "nodes": [
+    { "id": "course", "lane": "system", "col": 0, "type": "external", "label": "建立康复疗程", "sublabel": "目标、次数与评估节点", "tag": "Course ID", "width": 138 },
+    { "id": "schedule", "lane": "system", "col": 1, "type": "frontend", "label": "配置脑机介入点", "sublabel": "是否联合 tES、何时测 EEG", "tag": "协议级配置", "width": 138 },
+    { "id": "session", "lane": "system", "col": 2, "type": "messagebus", "label": "创建本次 Session", "sublabel": "绑定平板、脑机与统一时间", "tag": "不再手工对时", "width": 138 },
+    { "id": "pre_eeg", "lane": "evidence", "col": 2, "type": "backend", "label": "训练前 EEG", "sublabel": "测量并返回可用状态", "tag": "可选 Pre", "width": 138 },
+    { "id": "treatment", "lane": "rehab", "col": 3, "type": "messagebus", "label": "平板 + tES 同步执行", "sublabel": "统一开始、暂停与结束", "tag": "治疗中不采 EEG", "width": 138 },
+    { "id": "execution_result", "lane": "rehab", "col": 4, "type": "frontend", "label": "汇总训练与刺激结果", "sublabel": "行为表现 + 刺激完整性", "tag": "两类结果分开", "width": 138 },
+    { "id": "post_eeg", "lane": "evidence", "col": 4, "type": "backend", "label": "训练后 EEG", "sublabel": "同协议测量并判断可比性", "tag": "可选 Post", "width": 138 },
+    { "id": "session_result", "lane": "evidence", "col": 5, "type": "cloud", "label": "生成单次康复结果", "sublabel": "训练为主，EEG为辅助", "tag": "允许降级", "width": 138 },
+    { "id": "trend", "lane": "rehab", "col": 5, "type": "database", "label": "累计多次疗程趋势", "sublabel": "区分趋势、波动与冲突", "width": 138 },
+    { "id": "doctor", "lane": "system", "col": 5, "type": "external", "label": "医生评估后续康复", "sublabel": "继续、调整、追加测量或结疗", "tag": "人工决策", "width": 138 }
+  ],
+  "edges": [
+    { "id": "course_schedule", "from": "course", "to": "schedule", "variant": "emphasis", "role": "main" },
+    { "id": "schedule_session", "from": "schedule", "to": "session", "label": "生成Session计划", "variant": "emphasis", "role": "main" },
+    { "id": "session_pre", "from": "session", "to": "pre_eeg", "label": "本次安排 Pre", "variant": "security", "role": "main" },
+    { "id": "pre_treatment", "from": "pre_eeg", "to": "treatment", "label": "记录质量后开始", "variant": "emphasis", "role": "main" },
+    { "id": "session_skip_pre", "from": "session", "to": "treatment", "label": "无 Pre", "variant": "dashed", "role": "branch" },
+    { "id": "treatment_execution", "from": "treatment", "to": "execution_result", "label": "训练与刺激结束", "variant": "emphasis", "role": "main" },
+    { "id": "execution_post", "from": "execution_result", "to": "post_eeg", "label": "本次安排 Post", "variant": "security", "role": "main" },
+    { "id": "post_session_result", "from": "post_eeg", "to": "session_result", "label": "可比时加入 EEG", "variant": "security", "role": "main" },
+    { "id": "execution_skip_post", "from": "execution_result", "to": "session_result", "label": "无 Post：仅行为/执行", "variant": "dashed", "role": "branch" },
+    { "id": "result_trend", "from": "session_result", "to": "trend", "label": "累计到 Course", "variant": "emphasis", "role": "main" },
+    { "id": "trend_doctor", "from": "trend", "to": "doctor", "label": "用于后续决策", "variant": "emphasis", "role": "main" }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "产品联动点", "items": ["所有设备进入同一 Course 与 Session，并使用统一时间", "发送开始指令后必须记录平板与tES的实际响应和执行状态"] },
+    { "dot": "emerald", "title": "三类结果不混淆", "items": ["平板回答功能表现；刺激日志回答是否按方案执行", "EEG只在数据可用且前后可比时提供辅助生理变化"] },
+    { "dot": "rose", "title": "允许部分结果", "items": ["无EEG仍可完成康复Session并分析行为结果", "刺激中断或EEG低质量分别标记，不把整个Session简单判为失败"] }
+  ]
+}
