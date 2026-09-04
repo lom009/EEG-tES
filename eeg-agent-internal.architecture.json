@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "康复 EEG Agent 内部工具架构",
+    "locale": "zh-CN",
+    "output": "eeg-agent-internal.architecture.html",
+    "quality_profile": "showcase",
+    "viewBox": [1340, 820]
+  },
+  "components": [
+    { "id": "request", "type": "external", "label": "医生分析请求", "sublabel": "是否改善？数据是否可信？", "pos": [30, 300], "size": [150, 80] },
+    { "id": "context", "type": "database", "label": "疗程上下文", "sublabel": "患者、协议、Pre/Post、历史疗程", "pos": [230, 70], "size": [190, 90] },
+    { "id": "planner", "type": "cloud", "label": "Agent 任务规划器", "sublabel": "理解问题并拆分分析步骤", "pos": [230, 300], "size": [180, 90] },
+    { "id": "router", "type": "messagebus", "label": "工具注册与路由", "sublabel": "按条件选择确定性工具", "pos": [470, 300], "size": [180, 90] },
+    { "id": "qc", "type": "security", "label": "采集质控工具", "sublabel": "阻抗、掉线、坏通道、伪迹", "pos": [250, 560], "size": [170, 90] },
+    { "id": "prep", "type": "backend", "label": "预处理工具", "sublabel": "滤波、参考、坏段、分段", "pos": [470, 560], "size": [170, 90] },
+    { "id": "eeg_tools", "type": "backend", "label": "EEG 指标工具", "sublabel": "频带、脑区、稳定性、连接", "pos": [670, 560], "size": [170, 90] },
+    { "id": "compare", "type": "security", "label": "可比性工具", "sublabel": "共同通道、协议与质量差异", "pos": [870, 560], "size": [170, 90] },
+    { "id": "treatment_tools", "type": "backend", "label": "康复业务工具", "sublabel": "训练结果分析 + 刺激执行核对", "pos": [870, 70], "size": [210, 90] },
+    { "id": "fusion", "type": "cloud", "label": "证据融合与约束", "sublabel": "训练为主、EEG为辅、保留不确定性", "tag": "禁止越界诊断", "pos": [870, 300], "size": [210, 100] },
+    { "id": "report", "type": "frontend", "label": "结构化辅助报告", "sublabel": "结论、依据、可信度、限制与趋势", "tag": "医生最终复核", "pos": [1105, 300], "size": [210, 100] },
+    { "id": "audit", "type": "database", "label": "分析审计记录", "sublabel": "工具版本、参数、输入输出、异常", "pos": [1120, 560], "size": [180, 90] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "确定性 EEG 工具链", "wraps": ["qc", "prep", "eeg_tools", "compare"], "pad": 24 },
+    { "kind": "security-group", "label": "临床解释边界", "wraps": ["fusion", "report"], "pad": 24 }
+  ],
+  "connections": [
+    { "id": "request_planner", "from": "request", "to": "planner", "variant": "emphasis" },
+    { "id": "context_planner", "from": "context", "to": "planner", "label": "读取疗程上下文", "variant": "dashed", "fromSide": "bottom", "toSide": "top", "labelAt": [380, 210] },
+    { "id": "planner_router", "from": "planner", "to": "router", "label": "生成调用计划", "variant": "emphasis", "labelAt": [445, 275] },
+    { "id": "router_qc", "from": "router", "to": "qc", "label": "先判断数据能否使用", "fromSide": "bottom", "toSide": "top", "labelAt": [470, 470] },
+    { "id": "qc_prep", "from": "qc", "to": "prep", "label": "质控通过", "variant": "security", "labelAt": [445, 680] },
+    { "id": "prep_eeg", "from": "prep", "to": "eeg_tools", "variant": "emphasis" },
+    { "id": "eeg_compare", "from": "eeg_tools", "to": "compare", "label": "Pre/Post指标", "variant": "emphasis", "labelAt": [855, 680] },
+    { "id": "compare_fusion", "from": "compare", "to": "fusion", "label": "可信 EEG 变化", "variant": "security", "fromSide": "top", "toSide": "bottom", "labelAt": [985, 470] },
+    { "id": "router_treatment", "from": "router", "to": "treatment_tools", "label": "调用业务分析", "fromSide": "top", "toSide": "bottom", "labelAt": [720, 210] },
+    { "id": "treatment_fusion", "from": "treatment_tools", "to": "fusion", "label": "主要疗效 + 执行证据", "variant": "emphasis", "fromSide": "bottom", "toSide": "top", "labelAt": [1100, 220] },
+    { "id": "fusion_report", "from": "fusion", "to": "report", "label": "结构化结论与限制", "variant": "security", "labelAt": [1085, 420] },
+    { "id": "report_audit", "from": "report", "to": "audit", "label": "记录本次分析", "variant": "dashed", "fromSide": "bottom", "toSide": "top", "labelAt": [1300, 480] }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "Agent负责", "items": ["理解问题、选择工具、编排步骤、融合结果", "把结构化证据转成可读报告"] },
+    { "dot": "emerald", "title": "确定性工具负责", "items": ["处理信号、计算指标、执行质控和可比性规则", "每个工具必须有版本、输入、输出与验证记录"] },
+    { "dot": "rose", "title": "临床安全边界", "items": ["不让大模型直接凭原始波形自由诊断", "低质量或低可比数据必须降级、禁用或建议补采"] }
+  ]
+}

@@ -1,0 +1,54 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "EEG-tES 失语症康复完整疗程流程",
+    "locale": "zh-CN",
+    "output": "eeg-tes-course.workflow.html",
+    "quality_profile": "showcase"
+  },
+  "lanes": [
+    { "id": "system", "label": "治疗师与统一疗程系统" },
+    { "id": "treatment", "label": "采集、训练、刺激与结果" },
+    { "id": "evidence", "label": "质控、分析与报告" }
+  ],
+  "phases": [
+    { "id": "setup", "label": "建档与训练前基线", "fromCol": 0, "toCol": 1 },
+    { "id": "therapy", "label": "同步治疗执行", "fromCol": 2, "toCol": 3, "variant": "emphasis" },
+    { "id": "analysis", "label": "训练后评估与解释", "fromCol": 4, "toCol": 5, "variant": "dashed" }
+  ],
+  "groups": [
+    { "id": "pre_gate", "label": "训练前数据准入", "lane": "evidence", "fromCol": 1, "toCol": 1, "variant": "security" },
+    { "id": "therapy_group", "label": "同一 Session ID", "lane": "treatment", "fromCol": 2, "toCol": 3, "variant": "emphasis" },
+    { "id": "post_gate", "label": "训练后数据准入", "lane": "evidence", "fromCol": 4, "toCol": 4, "variant": "security" },
+    { "id": "evidence_chain", "label": "辅助证据生成", "lane": "evidence", "fromCol": 5, "toCol": 5, "variant": "dashed" }
+  ],
+  "mainPath": ["create", "protocol", "pre_acq", "pre_qc", "sync", "post_acq", "post_qc", "preprocess", "compare", "report"],
+  "nodes": [
+    { "id": "create", "lane": "system", "col": 0, "type": "external", "label": "建立本次疗程", "sublabel": "选择患者与治疗目标", "width": 142 },
+    { "id": "protocol", "lane": "system", "col": 1, "type": "frontend", "label": "确认统一协议", "sublabel": "范式、设备、20导配置", "tag": "生成 Session ID", "width": 142 },
+    { "id": "pre_acq", "lane": "treatment", "col": 1, "type": "backend", "label": "训练前 EEG", "sublabel": "阻抗通过后标准采集", "tag": "Pre", "width": 142 },
+    { "id": "pre_qc", "lane": "evidence", "col": 1, "type": "security", "label": "训练前质控", "sublabel": "通道、伪迹、有效时长", "tag": "不合格则补采", "width": 142 },
+    { "id": "sync", "lane": "system", "col": 2, "type": "messagebus", "label": "统一开始治疗", "sublabel": "记录统一时间与状态", "width": 142 },
+    { "id": "tablet", "lane": "treatment", "col": 2, "type": "frontend", "label": "平板康复训练", "sublabel": "题目、回答、提示、时间", "width": 142 },
+    { "id": "tes", "lane": "treatment", "col": 3, "type": "external", "label": "tES 刺激执行", "sublabel": "强度、时长、中断、耐受", "width": 142 },
+    { "id": "post_acq", "lane": "treatment", "col": 4, "type": "backend", "label": "训练后 EEG", "sublabel": "按同一协议再次采集", "tag": "Post", "width": 142 },
+    { "id": "post_qc", "lane": "evidence", "col": 4, "type": "security", "label": "训练后质控", "sublabel": "通道、伪迹、有效时长", "tag": "不合格则补采", "width": 142 },
+    { "id": "preprocess", "lane": "evidence", "col": 5, "type": "backend", "label": "固定预处理", "sublabel": "同一算法版本处理前后数据", "width": 142 },
+    { "id": "compare", "lane": "system", "col": 5, "type": "security", "label": "前后可比性判断", "sublabel": "协议、共同通道、质量", "tag": "可信度分级", "width": 142 },
+    { "id": "report", "lane": "treatment", "col": 5, "type": "cloud", "label": "辅助变化报告", "sublabel": "训练为主，EEG为辅", "tag": "医生复核", "width": 142 }
+  ],
+  "edges": [
+    { "id": "create_protocol", "from": "create", "to": "protocol", "variant": "emphasis", "role": "main" },
+    { "id": "protocol_pre", "from": "protocol", "to": "pre_acq", "label": "进入训练前测量", "variant": "emphasis", "role": "main" },
+    { "id": "pre_qc_check", "from": "pre_acq", "to": "pre_qc", "variant": "security", "role": "main" },
+    { "id": "pre_pass", "from": "pre_qc", "to": "sync", "label": "质控通过", "variant": "security", "role": "main" },
+    { "id": "sync_tablet", "from": "sync", "to": "tablet", "label": "并行执行训练", "variant": "emphasis", "role": "branch" },
+    { "id": "sync_tes", "from": "sync", "to": "tes", "label": "并行执行刺激", "variant": "dashed", "role": "branch" },
+    { "id": "therapy_post", "from": "sync", "to": "post_acq", "label": "训练与刺激结束", "variant": "emphasis", "role": "main" },
+    { "id": "post_qc_check", "from": "post_acq", "to": "post_qc", "variant": "security", "role": "main" },
+    { "id": "post_process", "from": "post_qc", "to": "preprocess", "label": "前后均可用", "variant": "security", "role": "main" },
+    { "id": "process_compare", "from": "preprocess", "to": "compare", "variant": "emphasis", "role": "main" },
+    { "id": "compare_report", "from": "compare", "to": "report", "label": "融合训练、刺激与EEG", "variant": "emphasis", "role": "main" }
+  ]
+}
