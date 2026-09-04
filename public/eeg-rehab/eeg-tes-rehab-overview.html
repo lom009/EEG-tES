@@ -69,12 +69,14 @@
     }
     .hint { margin-left: auto; color: var(--muted); font-size: 12px; white-space: nowrap; }
     main { min-height: 0; padding: 14px; }
-    .workspace { height: 100%; display: grid; gap: 12px; }
-    .workspace.single { grid-template-columns: minmax(0,1fr); }
-    .workspace.course-reading,
-    .workspace.analysis-reading,
-    .workspace.integration-reading,
-    .workspace.consensus-reading { grid-template-columns: clamp(360px, 34vw, 520px) minmax(0,1fr); }
+    .workspace { height: 100%; min-height: 0; }
+    .view { height: 100%; min-height: 0; display: grid; gap: 12px; }
+    .view[hidden] { display: none !important; }
+    .view.single { grid-template-columns: minmax(0,1fr); }
+    .view.course-reading,
+    .view.analysis-reading,
+    .view.integration-reading,
+    .view.consensus-reading { grid-template-columns: clamp(360px, 34vw, 520px) minmax(0,1fr); }
     .note-panel {
       min-width: 0;
       min-height: 0;
@@ -85,7 +87,13 @@
       background: white;
       box-shadow: var(--shadow);
       scrollbar-gutter: stable;
+      scrollbar-width: thin;
+      scrollbar-color: #9fb3c8 #edf2f7;
     }
+    .note-panel::-webkit-scrollbar { width: 10px; }
+    .note-panel::-webkit-scrollbar-track { background: #edf2f7; border-radius: 999px; }
+    .note-panel::-webkit-scrollbar-thumb { background: #9fb3c8; border: 2px solid #edf2f7; border-radius: 999px; }
+    .note-panel::-webkit-scrollbar-thumb:hover { background: #7891aa; }
     .note-panel h2 { margin: 0 0 8px; font-size: 21px; line-height: 1.3; }
     .note-panel h3 {
       display: flex;
@@ -176,10 +184,10 @@
       .brand { min-width: 0; width: 100%; }
       .hint { display: none; }
       main { padding: 8px; }
-      .workspace.course-reading,
-      .workspace.analysis-reading,
-      .workspace.integration-reading,
-      .workspace.consensus-reading { grid-template-columns: 1fr; grid-template-rows: minmax(260px, .85fr) minmax(420px, 1.15fr); overflow: auto; }
+      .view.course-reading,
+      .view.analysis-reading,
+      .view.integration-reading,
+      .view.consensus-reading { grid-template-columns: 1fr; grid-template-rows: minmax(260px, .85fr) minmax(420px, 1.15fr); overflow: auto; }
     }
   </style>
 </head>
@@ -200,7 +208,7 @@
       <div class="hint">快捷键 1 / 2 / 3 / 4 / 5 切换视图</div>
     </header>
     <main>
-      <div id="workspace" class="workspace single"></div>
+      <div id="workspace" class="workspace"></div>
     </main>
   </div>
   <template id="course-notes">
@@ -480,7 +488,7 @@
     </article>
   </template>
   <template id="consensus-notes">
-    <article class="notes">
+    <article class="note-panel">
       <div class="eyebrow">2026 nBCI 临床共识 · 产品转译</div>
       <h2>三类范式不是同一种“治疗”</h2>
       <p>《非侵入式脑机接口在中枢神经系统损伤康复中的规范化应用专家共识（2026版）》把 MI、SSVEP、P300 纳入同一临床框架，但三者承担的任务不同。产品必须先区分<strong>治疗闭环、辅助沟通、辅助评估</strong>，再决定采什么数据、输出什么结果。</p>
@@ -572,6 +580,7 @@
     };
     const workspace = document.getElementById('workspace');
     const buttons = [...document.querySelectorAll('[data-mode]')];
+    const viewCache = new Map();
 
     function createAnalysisNotes() {
       return document.getElementById('analysis-notes').content.cloneNode(true);
@@ -612,27 +621,38 @@
       return pane;
     }
 
-    function render(mode) {
-      workspace.replaceChildren();
+    function createView(mode) {
+      const view = document.createElement('div');
+      view.dataset.view = mode;
       if (mode === 'consensus') {
-        workspace.className = 'workspace consensus-reading';
-        workspace.appendChild(createConsensusNotes());
-        workspace.appendChild(createConsensusBoard());
+        view.className = 'view consensus-reading';
+        view.appendChild(createConsensusNotes());
+        view.appendChild(createConsensusBoard());
       } else if (mode === 'course' || mode === 'analysis' || mode === 'integration') {
-        workspace.className = 'workspace ' + mode + '-reading';
+        view.className = 'view ' + mode + '-reading';
         const notes = mode === 'course'
           ? createCourseNotes()
           : mode === 'analysis'
             ? createAnalysisNotes()
             : createIntegrationNotes();
-        workspace.appendChild(notes);
-        workspace.appendChild(createPane(mode));
+        view.appendChild(notes);
+        view.appendChild(createPane(mode));
       } else {
-        workspace.className = 'workspace single';
-        workspace.appendChild(createPane(mode));
+        view.className = 'view single';
+        view.appendChild(createPane(mode));
       }
+      view.hidden = true;
+      viewCache.set(mode, view);
+      workspace.appendChild(view);
+      return view;
+    }
+
+    function render(mode) {
       buttons.forEach(button => button.setAttribute('aria-selected', String(button.dataset.mode === mode)));
       history.replaceState(null, '', '#' + mode);
+      const nextView = viewCache.get(mode) || createView(mode);
+      viewCache.forEach((view, key) => { view.hidden = key !== mode; });
+      nextView.hidden = false;
     }
 
     buttons.forEach(button => button.addEventListener('click', () => render(button.dataset.mode)));
@@ -643,6 +663,7 @@
       if (event.key === '4') render('integration');
       if (event.key === '5') render('consensus');
     });
+    createView('consensus');
     const initialMode = ['course', 'agent', 'analysis', 'integration', 'consensus'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'integration';
     render(initialMode);
   </script>
