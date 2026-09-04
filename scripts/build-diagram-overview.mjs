@@ -6,6 +6,7 @@ const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(scriptDir, '..');
 const outputPath = path.join(rootDir, 'eeg-tes-rehab-overview.html');
 const deployDirectory = path.join(rootDir, 'public', 'eeg-rehab');
+const defaultMode = 'integration';
 
 const documents = {
   course: 'eeg-tes-course.workflow.html',
@@ -89,10 +90,10 @@ const html = `<!doctype html>
     main { min-height: 0; padding: 14px; }
     .workspace { height: 100%; display: grid; gap: 12px; }
     .workspace.single { grid-template-columns: minmax(0,1fr); }
-    .workspace.compare { grid-template-columns: repeat(2, minmax(0,1fr)); }
     .workspace.course-reading,
     .workspace.analysis-reading,
-    .workspace.integration-reading { grid-template-columns: clamp(360px, 34vw, 520px) minmax(0,1fr); }
+    .workspace.integration-reading,
+    .workspace.consensus-reading { grid-template-columns: clamp(360px, 34vw, 520px) minmax(0,1fr); }
     .note-panel {
       min-width: 0;
       min-height: 0;
@@ -194,10 +195,10 @@ const html = `<!doctype html>
       .brand { min-width: 0; width: 100%; }
       .hint { display: none; }
       main { padding: 8px; }
-      .workspace.compare { grid-template-columns: 1fr; grid-template-rows: repeat(2, minmax(0,1fr)); }
       .workspace.course-reading,
       .workspace.analysis-reading,
-      .workspace.integration-reading { grid-template-columns: 1fr; grid-template-rows: minmax(260px, .85fr) minmax(420px, 1.15fr); overflow: auto; }
+      .workspace.integration-reading,
+      .workspace.consensus-reading { grid-template-columns: 1fr; grid-template-rows: minmax(260px, .85fr) minmax(420px, 1.15fr); overflow: auto; }
     }
   </style>
 </head>
@@ -209,11 +210,11 @@ const html = `<!doctype html>
         <div class="subtitle">一处查看完整疗程、脑机与康复联动、Agent 工具架构，以及从数据准入到医生复核的分析链路</div>
       </div>
       <div class="switcher" role="tablist" aria-label="图谱视图">
-        <button type="button" role="tab" data-mode="course" aria-selected="true">完整疗程</button>
+        <button type="button" role="tab" data-mode="course" aria-selected="false">完整疗程</button>
         <button type="button" role="tab" data-mode="agent" aria-selected="false">Agent 架构</button>
         <button type="button" role="tab" data-mode="analysis" aria-selected="false">分析链路</button>
-        <button type="button" role="tab" data-mode="integration" aria-selected="false">康复联动</button>
-        <button type="button" role="tab" data-mode="compare" aria-selected="false">双图对照</button>
+        <button type="button" role="tab" data-mode="integration" aria-selected="true">康复联动</button>
+        <button type="button" role="tab" data-mode="consensus" aria-selected="false">临床共识</button>
       </div>
       <div class="hint">快捷键 1 / 2 / 3 / 4 / 5 切换视图</div>
     </header>
@@ -497,6 +498,89 @@ const html = `<!doctype html>
       <div class="callout"><strong>脑机在这个产品里的实际作用：</strong>提供标准化测量、完整执行追踪和可复核的辅助趋势；训练结果仍是主体，EEG增加的是证据维度与解释边界。</div>
     </article>
   </template>
+  <template id="consensus-notes">
+    <article class="notes">
+      <div class="eyebrow">2026 nBCI 临床共识 · 产品转译</div>
+      <h2>三类范式不是同一种“治疗”</h2>
+      <p>《非侵入式脑机接口在中枢神经系统损伤康复中的规范化应用专家共识（2026版）》把 MI、SSVEP、P300 纳入同一临床框架，但三者承担的任务不同。产品必须先区分<strong>治疗闭环、辅助沟通、辅助评估</strong>，再决定采什么数据、输出什么结果。</p>
+      <div class="callout"><strong>关键边界：</strong>MI 更接近治疗型闭环；SSVEP 主要帮助患者选择和表达；P300 主要提供主动注意与刺激辨别的辅助证据。任何脑机结果都不能脱离临床评估独立给出疗效、意识或预后结论。</div>
+
+      <h3><span>1</span> MI：治疗型闭环</h3>
+      <p>患者想象动作，EEG 解码运动意图，再驱动 FES、康复机器人或视觉反馈。最明确的适用方向是恢复期上肢中重度运动障碍；下肢和平衡仍偏探索，吞咽 MI 是常规训练之外的辅助方案。</p>
+      <ul>
+        <li>输入：运动想象任务、EEG、患者功能基线；</li>
+        <li>闭环：意图识别 → 外部动作/感觉反馈；</li>
+        <li>主结果：FMA、Barthel 等临床功能变化；</li>
+        <li>辅助结果：任务成功率、解码稳定性、训练依从性。</li>
+      </ul>
+
+      <h3><span>2</span> SSVEP：辅助沟通</h3>
+      <p>屏幕选项以不同频率闪烁，系统根据枕叶稳态响应判断患者注视目标。它可以帮助不能说话、但保留视觉认知与稳定注视能力的患者选择字符或需求，不等于改善语言组织能力。</p>
+      <ul>
+        <li>适合：候选项明确、能够稳定注视；</li>
+        <li>输出：选择结果、置信度、确认/撤销记录；</li>
+        <li>限制：视觉疲劳、注视能力和刺激舒适度。</li>
+      </ul>
+
+      <h3><span>3</span> P300：辅助评估与沟通</h3>
+      <p>P300 不要求肢体运动，但仍要求患者能够辨别靶/非靶刺激并投入主动注意。可用于拼写沟通或残余意识辅助评估，不能单独用于意识分级、预后判断或治疗决策。</p>
+
+      <h3><span>4</span> 共识转化成产品字段</h3>
+      <ul>
+        <li>范式类型、单次时长、反馈形式；</li>
+        <li>训练频次、疗程周期、刺激参数；</li>
+        <li>电极阻抗、信号质量指数、可用时段；</li>
+        <li>患者疲劳评分、不良反应和处置；</li>
+        <li>临床量表、行为结果、医生复核意见。</li>
+      </ul>
+      <p>阻抗应满足临床设备与方案要求；共识提出通道阻抗不高于 10 kΩ、推荐不高于 5 kΩ。系统应保存原始值、阈值版本、检测时间和失败原因，而不只显示“通过/不通过”。</p>
+
+      <h3><span>5</span> Agent 的位置</h3>
+      <p>Agent 负责准入检查、疗程完整性、质控、趋势分析和辅助报告。安全门禁、阻抗阈值、范式解码与不良事件规则应由确定性程序或经验证模型执行；LLM 只能解释与归纳，结论必须由医生复核。</p>
+      <div class="callout"><strong>与当前产品的关系：</strong>训练结果仍是主证据；刺激记录证明是否按方案执行；EEG提供可比时才进入辅助变化分析；共识为统一 Session、质控记录、权限分级和医生复核提供临床依据。</div>
+    </article>
+  </template>
+
+  <template id="consensus-board">
+    <section class="consensus-panel" aria-label="2026 nBCI临床共识产品转译图">
+      <style>
+        .consensus-panel{height:100%;overflow:auto;border-radius:16px;background:#07101f;color:#e8f0fa;padding:24px;box-shadow:var(--shadow)}
+        .consensus-panel *{box-sizing:border-box}.consensus-kicker{color:#67d8ee;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}.consensus-panel h2{margin:8px 0 6px;font-size:24px}.consensus-lead{margin:0 0 20px;color:#9fb0c7;line-height:1.65}
+        .paradigm-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.paradigm-card{min-height:172px;border:1px solid #23344e;border-radius:14px;padding:16px;background:#0d182a}.paradigm-card h3{margin:0 0 8px;font-size:18px}.paradigm-card p{margin:0;color:#aebbd0;line-height:1.55;font-size:13px}.paradigm-card .role{display:inline-flex;margin-top:14px;padding:5px 9px;border-radius:999px;font-size:11px;font-weight:800}.mi{border-color:#21c997}.mi .role{background:#123c34;color:#6ce7bd}.ssvep{border-color:#25b6d2}.ssvep .role{background:#123848;color:#7adff0}.p300{border-color:#a78bfa}.p300 .role{background:#2b2450;color:#cbbcff}
+        .consensus-flow{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;align-items:stretch;margin:18px 0}.flow-step{position:relative;border:1px solid #253957;border-radius:12px;padding:13px 12px;background:#0a1527}.flow-step:not(:last-child)::after{content:'→';position:absolute;right:-10px;top:50%;transform:translateY(-50%);z-index:2;color:#45d3a5;font-weight:900}.flow-step b{display:block;color:#f2f6fb;font-size:13px;margin-bottom:5px}.flow-step span{color:#8fa2bb;font-size:11px;line-height:1.4}
+        .consensus-bottom{display:grid;grid-template-columns:1.05fr .95fr;gap:12px}.consensus-box{border:1px solid #22344f;border-radius:14px;padding:16px;background:#0b1728}.consensus-box h3{margin:0 0 10px;font-size:15px}.consensus-box ul{margin:0;padding-left:18px;color:#aebbd0;font-size:12px;line-height:1.7}.boundary{border-color:#e9a23b}.boundary h3{color:#ffc56b}.agent-box{border-color:#36cfa2}.agent-box h3{color:#69e4bd}
+        .institution-title{margin:18px 0 10px;font-size:14px;color:#dce7f5}.institution-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.institution-card{border:1px solid #22344f;border-radius:12px;padding:13px;background:#0a1526}.institution-card b{display:block;margin-bottom:5px;font-size:13px}.institution-card span{display:block;color:#91a4bd;font-size:11px;line-height:1.55}.session-strip{display:grid;grid-template-columns:auto repeat(4,minmax(0,1fr));gap:7px;align-items:center;margin-top:12px;border:1px solid #20344f;border-radius:12px;padding:10px 12px;background:#091526}.session-strip strong{color:#6fdcf0;font-size:12px}.session-strip span{padding:7px 8px;border-radius:8px;background:#101f33;color:#b8c7da;font-size:11px;text-align:center}.consensus-source{margin-top:12px;color:#70839f;font-size:11px;line-height:1.5}
+        @media(max-width:1100px){.paradigm-grid,.institution-grid{grid-template-columns:1fr}.consensus-flow{grid-template-columns:1fr}.flow-step:not(:last-child)::after{content:'↓';right:auto;left:50%;top:auto;bottom:-13px}.consensus-bottom{grid-template-columns:1fr}.session-strip{grid-template-columns:1fr 1fr}.session-strip strong{grid-column:1/-1}}
+      </style>
+      <div class="consensus-kicker">Clinical consensus → Product requirements</div>
+      <h2>从范式选择到医生复核</h2>
+      <p class="consensus-lead">共识不是要求一个产品同时宣称三种治疗能力，而是要求按患者能力、临床目标和机构条件选择范式，并把执行、质量与结果完整留痕。</p>
+      <div class="paradigm-grid">
+        <article class="paradigm-card mi"><h3>MI 运动想象</h3><p>识别运动意图，驱动 FES、机器人或视觉反馈，形成主动训练闭环。</p><span class="role">治疗型闭环</span></article>
+        <article class="paradigm-card ssvep"><h3>SSVEP 稳态视觉诱发</h3><p>识别患者稳定注视的频率目标，用于字符、图标或需求选择。</p><span class="role">辅助沟通</span></article>
+        <article class="paradigm-card p300"><h3>P300 事件相关电位</h3><p>检测对稀有靶刺激的主动注意响应，用于沟通或残余意识辅助评估。</p><span class="role">辅助评估 / 沟通</span></article>
+      </div>
+      <div class="consensus-flow">
+        <div class="flow-step"><b>患者评估</b><span>功能、认知、视听能力与禁忌证</span></div>
+        <div class="flow-step"><b>范式匹配</b><span>临床目标、患者能力与机构权限</span></div>
+        <div class="flow-step"><b>标准执行</b><span>训练、刺激、EEG进入同一 Session</span></div>
+        <div class="flow-step"><b>质量与趋势</b><span>阻抗、信号质量、行为与多次变化</span></div>
+        <div class="flow-step"><b>医生复核</b><span>接受、修改、退回或补充临床观察</span></div>
+      </div>
+      <div class="consensus-bottom">
+        <article class="consensus-box agent-box"><h3>Agent 可以做</h3><ul><li>准入和疗程完整性检查</li><li>数据质控与 EEG 可比性判断</li><li>行为、刺激、EEG 多证据汇总</li><li>多次趋势分析与报告草稿</li></ul></article>
+        <article class="consensus-box boundary"><h3>Agent 不能替代</h3><ul><li>不能单凭脑机结果判定疗效</li><li>不能单凭 P300 判断意识或预后</li><li>不能绕过安全规则修改刺激方案</li><li>不能跳过医生形成最终临床结论</li></ul></article>
+      </div>
+      <h3 class="institution-title">分级诊疗对应产品能力</h3>
+      <div class="institution-grid">
+        <article class="institution-card"><b>一级｜标准执行</b><span>注册设备、固定范式、参数锁定；承担稳定期训练、随访与规范上转。</span></article>
+        <article class="institution-card"><b>二级｜区域临床</b><span>常规范式与基础联合应用；承担区域质控、转诊和下级机构指导。</span></article>
+        <article class="institution-card"><b>三级｜精准与研究</b><span>复杂病例、个体化联合范式、参数优化、临床研究与严重事件分析。</span></article>
+      </div>
+      <div class="session-strip"><strong>统一 Session 必记</strong><span>范式与参数</span><span>阻抗与信号质量</span><span>行为、疲劳与不良事件</span><span>临床量表与复核</span></div>
+      <p class="consensus-source">依据：2026年《非侵入式脑机接口在中枢神经系统损伤康复中的规范化应用专家共识》。本模块为产品设计转译，不替代正式共识原文与临床判断。</p>
+    </section>
+  </template>
   <script>
     const documents = ${documentUrls};
     const metadata = {
@@ -520,6 +604,14 @@ const html = `<!doctype html>
       return document.getElementById('integration-notes').content.cloneNode(true);
     }
 
+    function createConsensusNotes() {
+      return document.getElementById('consensus-notes').content.cloneNode(true);
+    }
+
+    function createConsensusBoard() {
+      return document.getElementById('consensus-board').content.cloneNode(true);
+    }
+
     function openStandalone(key) {
       window.open(documents[key], '_blank', 'noopener,noreferrer');
     }
@@ -541,7 +633,11 @@ const html = `<!doctype html>
 
     function render(mode) {
       workspace.replaceChildren();
-      if (mode === 'course' || mode === 'analysis' || mode === 'integration') {
+      if (mode === 'consensus') {
+        workspace.className = 'workspace consensus-reading';
+        workspace.appendChild(createConsensusNotes());
+        workspace.appendChild(createConsensusBoard());
+      } else if (mode === 'course' || mode === 'analysis' || mode === 'integration') {
         workspace.className = 'workspace ' + mode + '-reading';
         const notes = mode === 'course'
           ? createCourseNotes()
@@ -551,9 +647,8 @@ const html = `<!doctype html>
         workspace.appendChild(notes);
         workspace.appendChild(createPane(mode));
       } else {
-        workspace.className = 'workspace ' + (mode === 'compare' ? 'compare' : 'single');
-        const keys = mode === 'compare' ? ['course', 'agent'] : [mode];
-        keys.forEach(key => workspace.appendChild(createPane(key)));
+        workspace.className = 'workspace single';
+        workspace.appendChild(createPane(mode));
       }
       buttons.forEach(button => button.setAttribute('aria-selected', String(button.dataset.mode === mode)));
       history.replaceState(null, '', '#' + mode);
@@ -565,9 +660,9 @@ const html = `<!doctype html>
       if (event.key === '2') render('agent');
       if (event.key === '3') render('analysis');
       if (event.key === '4') render('integration');
-      if (event.key === '5') render('compare');
+      if (event.key === '5') render('consensus');
     });
-    const initialMode = ['course', 'agent', 'analysis', 'integration', 'compare'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'course';
+    const initialMode = ['course', 'agent', 'analysis', 'integration', 'consensus'].includes(location.hash.slice(1)) ? location.hash.slice(1) : '${defaultMode}';
     render(initialMode);
   </script>
 </body>
