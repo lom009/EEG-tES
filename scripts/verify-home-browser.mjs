@@ -14,26 +14,16 @@ try {
   const runtimeErrors = [];
   page.on("pageerror", (error) => runtimeErrors.push(error.message));
 
-  await page.goto("http://127.0.0.1:5173/", { waitUntil: "networkidle" });
-  await page.locator("video.home-background-video").waitFor();
-  await page.waitForFunction(() => {
-    const video = document.querySelector("video.home-background-video");
-    return video && video.readyState >= 2 && !video.paused;
-  });
-  const videoState = await page.locator("video.home-background-video").evaluate((video) => ({
-    muted: video.muted,
-    loop: video.loop,
-    paused: video.paused,
-    readyState: video.readyState,
-  }));
-  assert.equal(videoState.muted, true, "homepage video should be muted for autoplay");
-  assert.equal(videoState.loop, true, "homepage video should loop");
-  assert.equal(videoState.paused, false, "homepage video should autoplay");
-  await page.getByRole("button", { name: /新建实验/ }).click();
+  const baseUrl = process.env.EEG_DEMO_URL || "http://127.0.0.1:5173";
+  await page.goto(`${baseUrl}/home`, { waitUntil: "networkidle" });
+  await page.locator("img.home-background-image").waitFor();
+  assert.equal(await page.locator("video").count(), 0, "homepage should use a static background");
+  assert.equal(await page.locator("img.home-background-image").evaluate((image) => image.complete && image.naturalWidth > 0), true, "homepage background should load");
+  await page.getByRole("button", { name: /开始实验/ }).click();
   await page.getByRole("button", { name: "新建实验", exact: true }).waitFor();
   assert.equal(await page.getByRole("button", { name: "新建实验", exact: true }).getAttribute("class"), "is-active");
 
-  await page.goto("http://127.0.0.1:5173/", { waitUntil: "networkidle" });
+  await page.goto(`${baseUrl}/home`, { waitUntil: "networkidle" });
   await page.getByRole("button", { name: /实验记录/ }).click();
   await page.getByRole("table", { name: "实验历史记录" }).waitFor();
 
