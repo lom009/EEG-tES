@@ -1,0 +1,172 @@
+<Window
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+  xmlns:vm="clr-namespace:EGGtCSPlatform.ViewModels"
+  xmlns:controls="using:EGGtCSPlatform.Controls"
+  mc:Ignorable="d"
+  x:Class="EGGtCSPlatform.Views.LoginWindow"
+  x:DataType="vm:LoginViewModel"
+  Title="登录"
+  Width="1152"
+  Height="720"
+  MinWidth="768"
+  MinHeight="480"
+  CanResize="False"
+  WindowStartupLocation="CenterScreen"
+  Background="#F5F8FE"
+>
+  <Window.Resources>
+    <SolidColorBrush x:Key="TextControlBorderBrushFocused" Color="#8294B2" />
+    <SolidColorBrush x:Key="TextControlBorderBrushPointerOver" Color="#C4CFDF" />
+    <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="#80FFFFFF" />
+    <SolidColorBrush x:Key="TextControlBackgroundPointerOver" Color="#80FFFFFF" />
+    <SolidColorBrush x:Key="TextControlForegroundFocused" Color="#364459" />
+    <Thickness x:Key="TextControlBorderThemeThicknessFocused">1</Thickness>
+    <x:Double x:Key="TextControlPlaceholderOpacity">1</x:Double>
+  </Window.Resources>
+  <Window.Styles>
+    <!-- These styles are scoped to the login window so the application theme is unaffected. -->
+    <Style Selector="Button.login-primary">
+      <Setter Property="Height" Value="40" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="FontSize" Value="18" />
+      <Setter Property="FontFamily" Value="{DynamicResource AlibabaPuHuiTi}" />
+      <Setter Property="Foreground" Value="White" />
+      <Setter Property="Background" Value="#3941B6" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="Effect" Value="{x:Null}" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Border
+            Background="{TemplateBinding Background}"
+            CornerRadius="{TemplateBinding CornerRadius}"
+          >
+            <ContentPresenter
+              Content="{TemplateBinding Content}"
+              HorizontalAlignment="Center"
+              VerticalAlignment="Center"
+              TextElement.Foreground="{TemplateBinding Foreground}"
+              TextElement.FontSize="{TemplateBinding FontSize}"
+            />
+          </Border>
+        </ControlTemplate>
+      </Setter>
+    </Style>
+    <Style Selector="Button.login-primary:pointerover">
+      <Setter Property="Background" Value="#3038A6" />
+    </Style>
+    <Style Selector="Button.login-primary:pressed">
+      <Setter Property="Background" Value="#343AAF" />
+    </Style>
+
+    <Style Selector="CheckBox.login-remember">
+      <Setter Property="MinHeight" Value="20" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="FontSize" Value="{DynamicResource FontSize14}" />
+      <Setter Property="Foreground" Value="#ACB7C8" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderBrush" Value="#B8C4D7" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Grid ColumnDefinitions="24,*">
+            <Border
+              x:Name="CheckBorder"
+              Width="16"
+              Height="16"
+              HorizontalAlignment="Left"
+              VerticalAlignment="Center"
+              Background="{TemplateBinding Background}"
+              BorderBrush="{TemplateBinding BorderBrush}"
+              BorderThickness="1"
+              CornerRadius="1"
+            />
+            <TextBlock
+              x:Name="CheckGlyph"
+              Text="✓"
+              Margin="2,-1,0,0"
+              FontSize="{DynamicResource FontSize12}"
+              Foreground="White"
+              Opacity="0"
+            />
+            <ContentPresenter
+              Grid.Column="1"
+              Content="{TemplateBinding Content}"
+              VerticalAlignment="Center"
+              TextElement.Foreground="{TemplateBinding Foreground}"
+              TextElement.FontSize="{TemplateBinding FontSize}"
+            />
+          </Grid>
+        </ControlTemplate>
+      </Setter>
+    </Style>
+    <Style Selector="CheckBox.login-remember:checked /template/ Border#CheckBorder">
+      <Setter Property="Background" Value="#3941B6" />
+      <Setter Property="BorderBrush" Value="#3941B6" />
+    </Style>
+    <Style Selector="CheckBox.login-remember:checked /template/ TextBlock#CheckGlyph">
+      <Setter Property="Opacity" Value="1" />
+    </Style>
+
+    <Style Selector="Button.company-backend-toggle">
+      <Setter Property="Width" Value="240" />
+      <Setter Property="Height" Value="40" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Focusable" Value="False" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Border Background="Transparent"><ContentPresenter Content="{TemplateBinding Content}" HorizontalAlignment="Center" VerticalAlignment="Center" /></Border>
+        </ControlTemplate>
+      </Setter>
+    </Style>
+  </Window.Styles>
+  <Grid>
+    <Image Source="/Assets/Images/login-background.png" Stretch="UniformToFill" />
+    <StackPanel Orientation="Horizontal" Spacing="10" Margin="41,36,0,0" HorizontalAlignment="Left" VerticalAlignment="Top">
+      <Border Width="3" Height="30" CornerRadius="2">
+        <Border.Background>
+          <LinearGradientBrush StartPoint="0%,0%" EndPoint="0%,100%">
+            <GradientStop Color="#ACF53D" Offset="0" />
+            <GradientStop Color="#3845FB" Offset="0.47" />
+            <GradientStop Color="#2CDBF6" Offset="1" />
+          </LinearGradientBrush>
+        </Border.Background>
+      </Border>
+      <StackPanel>
+        <TextBlock Text="EEG-tES BRAIN-COMPUTER INTERFACE" FontSize="12" Foreground="#ACB7C8" />
+        <TextBlock Text="RESEARCH PLATFORM" FontSize="10" Foreground="#ACB7C8" />
+      </StackPanel>
+    </StackPanel>
+    <Border x:Name="LoginCard" Width="500" Height="616" Margin="0,0,113,0"
+            HorizontalAlignment="Right" VerticalAlignment="Center"
+            Background="#D1FFFFFF" CornerRadius="16" BoxShadow="0 4 10 0 #333941B6">
+      <Canvas>
+        <Image Canvas.Left="40" Canvas.Top="55" Width="182" Height="36"
+               Source="{SvgImage /Assets/Images/login-logo.svg}" Stretch="Uniform" />
+        <TextBlock Canvas.Left="40" Canvas.Top="131" FontFamily="{DynamicResource AlibabaPuHuiTi}"
+                   FontWeight="Medium" FontSize="20" Foreground="#1E2531" Text="欢迎使用 EEG-tES 脑机实验系统" />
+        <controls:FormInput x:Name="AccountInput" Canvas.Left="40" Canvas.Top="197" Width="420" Height="96"
+                            HeaderText="账号" Watermark="请输入手机号" InputText="{Binding Username}" />
+        <controls:FormInput x:Name="PasswordInput" Canvas.Left="40" Canvas.Top="325" Width="420" Height="96"
+                            HeaderText="密码" Watermark="请输入密码" PasswordChar="●" InputText="{Binding Password}" />
+        <CheckBox Canvas.Left="40" Canvas.Top="437" Height="22" Classes="login-remember" Content="记住密码" />
+        <TextBlock Canvas.Left="390" Canvas.Top="437" Height="22" VerticalAlignment="Center"
+                   Cursor="Hand" FontSize="14" Foreground="#3941B6" Text="忘记密码?" />
+        <TextBlock Canvas.Left="40" Canvas.Top="471" Width="420" FontSize="13"
+                   Foreground="#C73F4A" Text="{Binding ErrorMessage}" TextWrapping="Wrap" />
+        <Button Canvas.Left="40" Canvas.Top="503" Width="420" Classes="login-primary"
+                Command="{Binding LoginCommand}"><TextBlock Text="登录" FontSize="18" FontWeight="SemiBold" Foreground="White" /></Button>
+      </Canvas>
+    </Border>
+    <Button Margin="0,0,0,18" HorizontalAlignment="Center" VerticalAlignment="Bottom"
+            Classes="company-backend-toggle" Command="{Binding CompanyNameClickedCommand}"
+            AutomationProperties.Name="切换设备运行模式">
+      <TextBlock Text="杭州南粟科技有限公司" Foreground="#6B7D99" FontSize="14" />
+    </Button>
+  </Grid>
+</Window>

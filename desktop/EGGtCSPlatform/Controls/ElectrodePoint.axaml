@@ -1,0 +1,123 @@
+<ResourceDictionary
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:controls="clr-namespace:EGGtCSPlatform.Controls"
+  xmlns:pages="clr-namespace:EGGtCSPlatform.ViewModels.Pages"
+>
+  <ControlTheme x:Key="{x:Type controls:ElectrodePoint}" TargetType="controls:ElectrodePoint">
+    <Setter Property="Width" Value="50" />
+    <Setter Property="Height" Value="50" />
+    <Setter Property="ClipToBounds" Value="False" />
+    <Setter Property="RenderTransformOrigin" Value="50%,50%" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Button
+          Command="{TemplateBinding Command}"
+          CommandParameter="{TemplateBinding CommandParameter}"
+          Cursor="Hand"
+          IsEnabled="{TemplateBinding IsAvailable}"
+          Theme="{StaticResource ElectrodePointButtonTheme}"
+          ToolTip.Tip="{TemplateBinding ToolTipText}"
+        >
+          <Border
+            x:Name="PointSurface"
+            Width="44"
+            Height="44"
+            BorderBrush="{DynamicResource ProductSurface}"
+            BorderThickness="2"
+            BoxShadow="0 4 4 0 #40685FB7"
+            ClipToBounds="{TemplateBinding ClipToBounds}"
+            CornerRadius="25"
+          >
+            <Border.Background>
+              <LinearGradientBrush StartPoint="0%,0%" EndPoint="0%,100%">
+                <GradientStop Color="{StaticResource ProductColorPointTop}" Offset="0" />
+                <GradientStop Color="{StaticResource ProductColorPointBottom}" Offset="0.882333" />
+              </LinearGradientBrush>
+            </Border.Background>
+            <TextBlock
+              x:Name="PointLabel"
+              ClipToBounds="False"
+              HorizontalAlignment="Center"
+              VerticalAlignment="Center"
+              FontFamily="{DynamicResource AlibabaPuHuiTi}"
+              FontWeight="Bold"
+              FontSize="{DynamicResource ProductPointFontSize}"
+              Foreground="{DynamicResource ProductText}"
+              LineHeight="{DynamicResource ProductPointLineHeight}"
+              MaxLines="2"
+              Text="{TemplateBinding Label}"
+              TextAlignment="Center"
+              TextTrimming="None"
+            />
+          </Border>
+        </Button>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:multiline /template/ TextBlock#PointLabel, ^:stimulus /template/ TextBlock#PointLabel">
+      <Setter Property="FontSize" Value="{DynamicResource ProductPointMultilineFontSize}" />
+    </Style>
+    <Style Selector="^:back">
+      <Setter Property="RenderTransform" Value="rotate(180deg)" />
+    </Style>
+    <Style Selector="^:stimulus /template/ Border#PointSurface">
+      <Setter Property="Background" Value="{DynamicResource ProductSelected}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ProductSurface}" />
+      <Setter Property="BoxShadow" Value="0 4 8 0 #332F86FF" />
+    </Style>
+    <Style Selector="^:red-stimulus /template/ Border#PointSurface">
+      <Setter Property="Background" Value="{DynamicResource ProductSelected}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ProductSurface}" />
+      <Setter Property="BoxShadow" Value="0 4 8 0 #332F86FF" />
+    </Style>
+    <Style Selector="^:blue-stimulus /template/ Border#PointSurface">
+      <Setter Property="Background" Value="{DynamicResource ProductSelected}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ProductSurface}" />
+      <Setter Property="BoxShadow" Value="0 4 8 0 #332F86FF" />
+    </Style>
+    <Style Selector="^:acquisition /template/ Border#PointSurface, ^:reference /template/ Border#PointSurface, ^:ground /template/ Border#PointSurface">
+      <Setter Property="Background" Value="{DynamicResource ProductSelected}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ProductSurface}" />
+      <Setter Property="BoxShadow" Value="0 4 8 0 #332F86FF" />
+      <Setter Property="CornerRadius" Value="25" />
+    </Style>
+    <Style Selector="^:stimulus /template/ TextBlock#PointLabel, ^:acquisition /template/ TextBlock#PointLabel, ^:reference /template/ TextBlock#PointLabel, ^:ground /template/ TextBlock#PointLabel">
+      <Setter Property="Foreground" Value="{DynamicResource ProductSurface}" />
+    </Style>
+    <Style Selector="^:excellent /template/ Border#PointSurface">
+      <Setter Property="Background" Value="{DynamicResource ProductExcellent}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ProductSurface}" />
+    </Style>
+    <Style Selector="^:good /template/ Border#PointSurface">
+      <Setter Property="Background" Value="{DynamicResource ProductGood}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ProductSurface}" />
+    </Style>
+    <Style Selector="^:medium /template/ Border#PointSurface">
+      <Setter Property="Background" Value="{DynamicResource ProductMedium}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ProductSurface}" />
+    </Style>
+    <Style Selector="^:poor /template/ Border#PointSurface">
+      <Setter Property="Background" Value="{DynamicResource ProductPoor}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ProductSurface}" />
+    </Style>
+    <Style Selector="^:bad /template/ Border#PointSurface">
+      <Setter Property="Background" Value="{DynamicResource ProductBad}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ProductSurface}" />
+    </Style>
+    <Style Selector="^:medium /template/ TextBlock#PointLabel">
+      <Setter Property="Foreground" Value="{DynamicResource ProductText}" />
+    </Style>
+    <Style Selector="^:excellent /template/ TextBlock#PointLabel, ^:good /template/ TextBlock#PointLabel, ^:poor /template/ TextBlock#PointLabel, ^:bad /template/ TextBlock#PointLabel">
+      <Setter Property="Foreground" Value="{DynamicResource ProductSurface}" />
+    </Style>
+    <Style Selector="^:not(:unavailable):pointerover /template/ Border#PointSurface">
+      <Setter Property="BoxShadow" Value="0 5 12 0 #504148C5" />
+    </Style>
+    <Style Selector="^:selected /template/ Border#PointSurface">
+      <Setter Property="BoxShadow" Value="0 0 0 2 #804148C5, 0 4 10 0 #70303BD3" />
+    </Style>
+    <Style Selector="^:unavailable:not(:assigned) /template/ Border#PointSurface">
+      <Setter Property="Opacity" Value="0.45" />
+    </Style>
+  </ControlTheme>
+</ResourceDictionary>

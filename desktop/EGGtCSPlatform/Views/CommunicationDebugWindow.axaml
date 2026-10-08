@@ -1,0 +1,176 @@
+<Window
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+  xmlns:vm="clr-namespace:EGGtCSPlatform.ViewModels"
+  xmlns:services="clr-namespace:EGGtCSPlatform.Services"
+  x:Class="EGGtCSPlatform.Views.CommunicationDebugWindow"
+  x:DataType="vm:CommunicationDebugAssistantViewModel"
+  mc:Ignorable="d"
+  Title="指令调试"
+  Width="900"
+  Height="520"
+  MinWidth="720"
+  MinHeight="360"
+  Icon="/Assets/Images/icon.ico"
+  Background="#F5F7FB"
+  WindowStartupLocation="CenterScreen"
+>
+  <Window.Styles>
+    <Style Selector="CheckBox.traffic-filter">
+      <Setter Property="Foreground" Value="#283449" />
+      <Setter Property="FontSize" Value="{DynamicResource FontSize13}" />
+      <Setter Property="MinHeight" Value="28" />
+    </Style>
+    <Style Selector="Button.traffic-clear">
+      <Setter Property="Padding" Value="13,6" />
+      <Setter Property="FontSize" Value="{DynamicResource FontSize13}" />
+      <Setter Property="Foreground" Value="#334155" />
+      <Setter Property="Background" Value="#FFFFFF" />
+      <Setter Property="BorderBrush" Value="#CBD5E1" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="7" />
+      <Setter Property="Effect" Value="{x:Null}" />
+    </Style>
+    <Style Selector="Button.traffic-copy">
+      <Setter Property="Padding" Value="7,2" />
+      <Setter Property="Margin" Value="8,0,0,0" />
+      <Setter Property="MinHeight" Value="22" />
+      <Setter Property="FontSize" Value="{DynamicResource FontSize11}" />
+      <Setter Property="Foreground" Value="#CBD5E1" />
+      <Setter Property="Background" Value="#293447" />
+      <Setter Property="BorderBrush" Value="#475569" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="5" />
+      <Setter Property="Effect" Value="{x:Null}" />
+    </Style>
+    <Style Selector="ListBox.traffic-list">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Padding" Value="0" />
+    </Style>
+    <Style Selector="ListBox.traffic-list ListBoxItem">
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="Margin" Value="0" />
+      <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Focusable" Value="False" />
+    </Style>
+  </Window.Styles>
+
+  <Grid Margin="12" RowDefinitions="Auto,*" RowSpacing="10">
+    <Border
+      Padding="12,8"
+      Background="#FFFFFF"
+      CornerRadius="9"
+      BorderBrush="#DCE3EE"
+      BorderThickness="1"
+    >
+      <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto,Auto" ColumnSpacing="12">
+        <CheckBox
+          Grid.Column="0"
+          Classes="traffic-filter"
+          Content="TX 发送"
+          IsChecked="{Binding ShowTransmit}"
+        />
+        <CheckBox
+          Grid.Column="1"
+          Classes="traffic-filter"
+          Content="RX 接收"
+          IsChecked="{Binding ShowReceive}"
+        />
+        <TextBlock
+          Grid.Column="3"
+          VerticalAlignment="Center"
+          FontSize="{DynamicResource FontSize12}"
+          Foreground="#64748B"
+          Text="{Binding PacketCountText}"
+        />
+        <Button
+          Grid.Column="4"
+          Classes="traffic-clear"
+          Command="{Binding ToggleCaptureCommand}"
+          Content="{Binding CaptureButtonText}"
+          ToolTip.Tip="暂停期间不向调试助手记录新报文，不影响 UDP 通信和文件日志"
+        />
+        <Button
+          Grid.Column="5"
+          Classes="traffic-clear"
+          Command="{Binding ClearCommand}"
+          Content="清空"
+        />
+      </Grid>
+    </Border>
+
+    <Border Grid.Row="1" Padding="12" Background="#1D2432" CornerRadius="9">
+      <Grid>
+        <ListBox x:Name="TrafficList" Classes="traffic-list" ItemsSource="{Binding VisibleEntries}">
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="services:UdpTrafficDisplayEntry">
+              <Border Padding="2,5" BorderBrush="#2B3546" BorderThickness="0,0,0,1">
+                <StackPanel Spacing="3">
+                  <WrapPanel VerticalAlignment="Center">
+                    <TextBlock
+                      Margin="0,0,8,0"
+                      FontFamily="{DynamicResource AlibabaPuHuiTi}"
+                      FontWeight="Normal"
+                      FontSize="{DynamicResource FontSize12}"
+                      Foreground="#6EE7B7"
+                      Text="{Binding TimestampText}"
+                    />
+                    <TextBlock
+                      Margin="0,0,8,0"
+                      FontFamily="{DynamicResource AlibabaPuHuiTi}"
+                      FontWeight="Normal"
+                      FontSize="{DynamicResource FontSize12}"
+                      Foreground="#FBBF24"
+                      Text="{Binding CommandText}"
+                    />
+                    <TextBlock
+                      FontFamily="{DynamicResource AlibabaPuHuiTi}"
+                      FontWeight="Normal"
+                      FontSize="{DynamicResource FontSize11}"
+                      Foreground="#94A3B8"
+                      Text="{Binding MetadataText}"
+                    />
+                    <Button Classes="traffic-copy" Click="OnCopyPacketClick" Content="复制报文" />
+                  </WrapPanel>
+                  <SelectableTextBlock
+                    FontFamily="{DynamicResource AlibabaPuHuiTi}"
+                    FontWeight="Normal"
+                    FontSize="{DynamicResource FontSize12}"
+                    Foreground="#E2E8F0"
+                    Text="{Binding HexText}"
+                    TextWrapping="Wrap"
+                    ToolTip.Tip="拖动选择报文字节后按 Ctrl+C 复制"
+                  />
+                </StackPanel>
+              </Border>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+
+        <StackPanel
+          HorizontalAlignment="Center"
+          VerticalAlignment="Center"
+          IsVisible="{Binding !HasVisibleEntries}"
+          Spacing="6"
+        >
+          <TextBlock
+            HorizontalAlignment="Center"
+            FontSize="{DynamicResource FontSize15}"
+            Foreground="#CBD5E1"
+            Text="等待 UDP 通信数据"
+          />
+          <TextBlock
+            HorizontalAlignment="Center"
+            FontSize="{DynamicResource FontSize11}"
+            Foreground="#64748B"
+            Text="仅记录调试助手打开后的数据包"
+          />
+        </StackPanel>
+      </Grid>
+    </Border>
+  </Grid>
+</Window>

@@ -1,0 +1,118 @@
+<ResourceDictionary
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:controls="clr-namespace:EGGtCSPlatform.Controls"
+  xmlns:pages="clr-namespace:EGGtCSPlatform.ViewModels.Pages"
+  x:CompileBindings="False"
+>
+  <ControlTheme x:Key="ExperimentRunCompactComboBoxTheme" TargetType="ComboBox">
+    <Setter Property="Height" Value="32" />
+    <Setter Property="MinWidth" Value="64" />
+    <Setter Property="Padding" Value="8,0" />
+    <Setter Property="Foreground" Value="#34455D" />
+    <Setter Property="Background" Value="#F7F9FC" />
+    <Setter Property="BorderBrush" Value="#D8E0EB" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="5" />
+    <Setter Property="FontFamily" Value="{DynamicResource AlibabaPuHuiTi}" />
+    <Setter Property="FontSize" Value="{DynamicResource FontSize14}" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="MaxDropDownHeight" Value="320" />
+    <Setter
+      Property="ItemContainerTheme"
+      Value="{StaticResource ExperimentRunCompactComboBoxItemTheme}"
+    />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Grid ColumnDefinitions="*,26">
+          <Border
+            x:Name="PART_Background"
+            Grid.ColumnSpan="2"
+            Background="{TemplateBinding Background}"
+            BorderBrush="{TemplateBinding BorderBrush}"
+            BorderThickness="{TemplateBinding BorderThickness}"
+            CornerRadius="{TemplateBinding CornerRadius}"
+          />
+          <ContentControl
+            x:Name="PART_SelectedContent"
+            Margin="6,0,2,0"
+            HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+            VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+            Content="{TemplateBinding SelectionBoxItem}"
+            ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+            Foreground="{TemplateBinding Foreground}"
+          >
+            <ContentControl.Styles>
+              <Style Selector="TextBlock:disabled">
+                <Setter
+                  Property="Foreground"
+                  Value="{StaticResource ExperimentDurationDisabledForeground}"
+                />
+                <Setter Property="Opacity" Value="1" />
+              </Style>
+            </ContentControl.Styles>
+          </ContentControl>
+          <Path
+            x:Name="PART_DropDownArrow"
+            Grid.Column="1"
+            Width="9"
+            Height="5"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            Data="M 0,0 L 4.5,5 L 9,0"
+            Stroke="#78879B"
+            StrokeThickness="1.4"
+          />
+          <Popup
+            Name="PART_Popup"
+            MinWidth="{Binding Bounds.Width, RelativeSource={RelativeSource TemplatedParent}}"
+            MaxHeight="{TemplateBinding MaxDropDownHeight}"
+            IsLightDismissEnabled="True"
+            IsOpen="{TemplateBinding IsDropDownOpen, Mode=TwoWay}"
+            Placement="BottomEdgeAlignedLeft"
+            PlacementTarget="{Binding #PART_Background}"
+          >
+            <Border
+              Margin="0,4,0,0"
+              Padding="0,3"
+              Background="White"
+              BorderBrush="#DDE3EC"
+              BorderThickness="1"
+              BoxShadow="0 8 22 0 #26152538"
+              ClipToBounds="True"
+              CornerRadius="7"
+            >
+              <ScrollViewer
+                HorizontalScrollBarVisibility="Disabled"
+                VerticalScrollBarVisibility="Auto"
+              >
+                <ItemsPresenter
+                  Name="PART_ItemsPresenter"
+                  ItemsPanel="{TemplateBinding ItemsPanel}"
+                />
+              </ScrollViewer>
+            </Border>
+          </Popup>
+        </Grid>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:pointerover /template/ Border#PART_Background">
+      <Setter Property="BorderBrush" Value="#B8C5D6" />
+    </Style>
+    <Style Selector="^:focus /template/ Border#PART_Background">
+      <Setter Property="BorderBrush" Value="#8064E2" />
+    </Style>
+    <Style Selector="^:disabled">
+      <Setter Property="Foreground" Value="{StaticResource ExperimentDurationDisabledForeground}" />
+    </Style>
+    <Style Selector="^:disabled /template/ Border#PART_Background">
+      <Setter Property="Background" Value="{StaticResource ExperimentDurationDisabledBackground}" />
+      <Setter Property="BorderBrush" Value="{StaticResource ExperimentDurationDisabledBorder}" />
+      <Setter Property="BorderThickness" Value="1" />
+    </Style>
+    <Style Selector="^:disabled /template/ Path#PART_DropDownArrow">
+      <Setter Property="Stroke" Value="{StaticResource ExperimentDurationDisabledArrow}" />
+    </Style>
+  </ControlTheme>
+</ResourceDictionary>

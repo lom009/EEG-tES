@@ -1,0 +1,41 @@
+<ResourceDictionary
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:controls="clr-namespace:EGGtCSPlatform.Controls"
+  xmlns:pages="clr-namespace:EGGtCSPlatform.ViewModels.Pages"
+  x:ClassModifier="internal"
+  x:CompileBindings="False"
+>
+  <ControlTheme x:Key="StimulusSliderTheme" TargetType="Slider">
+    <Setter Property="Height" Value="24" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Track
+          Name="PART_Track"
+          Height="24"
+          IsDirectionReversed="{TemplateBinding IsDirectionReversed}"
+          Maximum="{TemplateBinding Maximum}"
+          Minimum="{TemplateBinding Minimum}"
+          Orientation="Horizontal"
+          Value="{TemplateBinding Value}"
+        >
+          <Track.DecreaseButton>
+            <Button
+              Background="{TemplateBinding Foreground}"
+              Theme="{StaticResource StimulusSliderTrackButtonTheme}"
+            />
+          </Track.DecreaseButton>
+          <Track.IncreaseButton>
+            <Button
+              Background="{TemplateBinding Background}"
+              Theme="{StaticResource StimulusSliderTrackButtonTheme}"
+            />
+          </Track.IncreaseButton>
+          <Track.Thumb>
+            <Thumb Theme="{StaticResource StimulusSliderThumbTheme}" />
+          </Track.Thumb>
+        </Track>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+</ResourceDictionary>

@@ -1,0 +1,70 @@
+<ResourceDictionary
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+>
+  <ControlTheme x:Key="StimulusChannelToggleTheme" TargetType="ToggleButton">
+    <Setter Property="Width" Value="56" />
+    <Setter Property="Height" Value="24" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Cursor" Value="Hand" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border x:Name="PillTrack" Background="{DynamicResource ProductDisabled}" CornerRadius="12">
+          <Grid>
+            <StackPanel x:Name="OffState" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="2">
+              <Ellipse Width="16" Height="16" Fill="White" />
+              <TextBlock VerticalAlignment="Center" FontSize="14" FontWeight="Medium" Foreground="White" Text="{TemplateBinding Content}" />
+            </StackPanel>
+            <StackPanel x:Name="OnState" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="2" IsVisible="False">
+              <TextBlock VerticalAlignment="Center" FontSize="14" FontWeight="Medium" Foreground="White" Text="{TemplateBinding Content}" />
+              <Ellipse Width="16" Height="16" Fill="White" />
+            </StackPanel>
+          </Grid>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:checked /template/ Border#PillTrack">
+      <Setter Property="Background" Value="{DynamicResource ProductExcellent}" />
+    </Style>
+    <Style Selector="^:checked /template/ StackPanel#OffState">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+    <Style Selector="^:checked /template/ StackPanel#OnState">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+  </ControlTheme>
+
+  <ControlTheme x:Key="StimulusFixedChannelPillTheme" TargetType="RadioButton">
+    <Setter Property="Width" Value="56" />
+    <Setter Property="Height" Value="24" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Cursor" Value="Hand" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border x:Name="PillTrack" Background="{DynamicResource ProductDisabled}" CornerRadius="12">
+          <Grid>
+            <StackPanel x:Name="OffState" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="2">
+              <Ellipse Width="16" Height="16" Fill="White" />
+              <TextBlock VerticalAlignment="Center" FontSize="14" FontWeight="Medium" Foreground="White" Text="{TemplateBinding Content}" />
+            </StackPanel>
+            <StackPanel x:Name="OnState" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="2" IsVisible="False">
+              <TextBlock VerticalAlignment="Center" FontSize="14" FontWeight="Medium" Foreground="White" Text="{TemplateBinding Content}" />
+              <Ellipse Width="16" Height="16" Fill="White" />
+            </StackPanel>
+          </Grid>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:checked /template/ Border#PillTrack">
+      <Setter Property="Background" Value="{DynamicResource ProductExcellent}" />
+    </Style>
+    <Style Selector="^:checked /template/ StackPanel#OffState">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+    <Style Selector="^:checked /template/ StackPanel#OnState">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+  </ControlTheme>
+</ResourceDictionary>

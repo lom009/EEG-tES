@@ -1,0 +1,67 @@
+.user-menu {
+  position: relative;
+  z-index: 30;
+  flex: 0 0 auto;
+}
+
+.user-menu .avatar,
+.user-menu .home-avatar {
+  padding: 0;
+  border: 0;
+  cursor: pointer;
+}
+
+.user-menu .avatar:focus-visible,
+.user-menu .home-avatar:focus-visible {
+  outline: 3px solid rgba(57, 65, 182, 0.22);
+  outline-offset: 3px;
+}
+
+.user-menu__popover {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 168px;
+  padding: 8px;
+  border: 1px solid #e5eaf2;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgba(66, 82, 108, 0.14);
+}
+
+.user-menu__identity {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 8px 10px;
+  border-bottom: 1px solid #edf0f5;
+}
+
+.user-menu__identity strong {
+  color: #364459;
+  font: 600 14px/20px Inter, Arial, sans-serif;
+}
+
+.user-menu__identity span {
+  color: #8a98ad;
+  font: 400 12px/18px "PingFang SC", Arial, sans-serif;
+}
+
+.user-menu__logout {
+  width: 100%;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  padding: 8px;
+  border: 0;
+  border-radius: 6px;
+  color: #4f607d;
+  background: transparent;
+  font: 400 14px/20px "PingFang SC", Arial, sans-serif;
+  cursor: pointer;
+}
+
+.user-menu__logout:hover { color: #c73f4a; background: #fff3f4; }
+.user-menu__logout:focus-visible { outline: 2px solid #8294b2; outline-offset: 1px; }

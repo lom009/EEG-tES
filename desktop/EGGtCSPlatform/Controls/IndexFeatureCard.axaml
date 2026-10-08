@@ -1,0 +1,138 @@
+<ResourceDictionary
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:controls="clr-namespace:EGGtCSPlatform.Controls"
+  x:ClassModifier="internal"
+>
+  <Design.PreviewWith>
+    <Grid Width="500" Height="600" Background="#EEF3FB">
+      <controls:IndexFeatureCard
+        HorizontalAlignment="Center"
+        VerticalAlignment="Center"
+        ImageSource="/Assets/Images/start-experiment.png"
+        Title="开始实验"
+        Subtitle="创建并配置新的脑机实验"
+      />
+    </Grid>
+  </Design.PreviewWith>
+
+  <ControlTheme x:Key="{x:Type controls:IndexFeatureCard}" TargetType="controls:IndexFeatureCard">
+    <!-- Reserve enough space for the expanded hover shadow. -->
+    <Setter Property="CardBoxShadow" Value="0 4 12 0 #336885B3" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <BoxShadowsTransition Property="CardBoxShadow" Duration="0:0:0.22" />
+      </Transitions>
+    </Setter>
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Button
+          Width="306"
+          Height="470"
+          Padding="0"
+          Background="Transparent"
+          BorderThickness="0"
+          Effect="{x:Null}"
+          HorizontalContentAlignment="Center"
+          VerticalContentAlignment="Center"
+          Command="{TemplateBinding Command}"
+          CommandParameter="{TemplateBinding CommandParameter}"
+        >
+          <Button.Template>
+            <ControlTemplate>
+              <ContentPresenter
+                Content="{TemplateBinding Content}"
+                HorizontalContentAlignment="Center"
+                VerticalContentAlignment="Center"
+              />
+            </ControlTemplate>
+          </Button.Template>
+
+          <Grid Width="306" Height="470">
+            <Border
+              Margin="18,12,18,24"
+              Background="#FEFEFE"
+              BorderThickness="0"
+              CornerRadius="8"
+              BoxShadow="{TemplateBinding CardBoxShadow}"
+            />
+
+            <Border
+              Margin="18,12,18,24"
+              Background="#FEFEFE"
+              BorderThickness="0"
+              CornerRadius="8"
+              ClipToBounds="True"
+            >
+              <Canvas Width="270" Height="434">
+                <Image
+                  x:Name="FeatureImage"
+                  Canvas.Left="15"
+                  Canvas.Top="53"
+                  Width="240"
+                  Height="240"
+                  Source="{TemplateBinding ImageSource}"
+                  Stretch="Uniform"
+                />
+
+                <TextBlock
+                  Canvas.Top="315"
+                  Width="270"
+                  FontFamily="{DynamicResource AlibabaPuHuiTi}"
+                  FontWeight="Normal"
+                  FontSize="{DynamicResource FontSize24}"
+                  Foreground="#232B38"
+                  Text="{TemplateBinding Title}"
+                  TextAlignment="Center"
+                />
+
+                <Grid Canvas.Top="360" Width="270" Height="24">
+                  <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Spacing="6">
+                    <Image
+                      Width="20"
+                      Height="20"
+                      Source="{TemplateBinding StatusIconSource}"
+                      IsVisible="{Binding StatusIconSource, RelativeSource={RelativeSource TemplatedParent}, Converter={x:Static ObjectConverters.IsNotNull}}"
+                      Stretch="Uniform"
+                    />
+                    <TextBlock
+                      VerticalAlignment="Center"
+                      FontFamily="{DynamicResource AlibabaPuHuiTi}"
+                      FontWeight="Normal"
+                      FontSize="{DynamicResource FontSize17}"
+                      Foreground="{TemplateBinding SubtitleBrush}"
+                      Text="{TemplateBinding Subtitle}"
+                    />
+                  </StackPanel>
+                </Grid>
+              </Canvas>
+            </Border>
+          </Grid>
+        </Button>
+      </ControlTemplate>
+    </Setter>
+
+    <Style Selector="^ /template/ Image#FeatureImage">
+      <Setter Property="RenderTransformOrigin" Value="50%,50%" />
+      <Setter Property="RenderTransform" Value="translate(0px, 0px) scale(1)" />
+      <Setter Property="Transitions">
+        <Transitions>
+          <TransformOperationsTransition
+            Easing="BackEaseOut"
+            Property="RenderTransform"
+            Duration="0:0:0.2"
+          />
+        </Transitions>
+      </Setter>
+    </Style>
+
+    <Style Selector="^:pointerover">
+      <Setter Property="Cursor" Value="Hand" />
+      <Setter Property="CardBoxShadow" Value="0 8 30 0 #596885B3" />
+    </Style>
+
+    <Style Selector="^:pointerover /template/ Image#FeatureImage">
+      <Setter Property="RenderTransform" Value="translate(0px, -8px) scale(1.04)" />
+    </Style>
+  </ControlTheme>
+</ResourceDictionary>

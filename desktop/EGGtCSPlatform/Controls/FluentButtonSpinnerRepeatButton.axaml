@@ -1,0 +1,38 @@
+<ResourceDictionary
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:sys="using:System"
+  xmlns:converters="using:Avalonia.Controls.Converters"
+  x:ClassModifier="internal"
+>
+  <ControlTheme x:Key="FluentButtonSpinnerRepeatButton" TargetType="RepeatButton">
+    <Setter Property="MinWidth" Value="34" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <ContentPresenter
+          x:Name="PART_ContentPresenter"
+          Background="{TemplateBinding Background}"
+          BorderBrush="{TemplateBinding BorderBrush}"
+          BorderThickness="{TemplateBinding BorderThickness}"
+          Content="{TemplateBinding Content}"
+          ContentTemplate="{TemplateBinding ContentTemplate}"
+          Padding="{TemplateBinding Padding}"
+          HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+          VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+        />
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource RepeatButtonBackgroundPointerOver}" />
+    </Style>
+
+    <Style Selector="^:pressed /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource RepeatButtonBackgroundPressed}" />
+    </Style>
+
+    <Style Selector="^:disabled /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource RepeatButtonBackgroundDisabled}" />
+      <Setter Property="Foreground" Value="{DynamicResource RepeatButtonForegroundDisabled}" />
+    </Style>
+  </ControlTheme>
+</ResourceDictionary>

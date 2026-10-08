@@ -1,0 +1,230 @@
+<ResourceDictionary
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:controls="clr-namespace:EGGtCSPlatform.Controls"
+  xmlns:pages="clr-namespace:EGGtCSPlatform.ViewModels.Pages"
+  xmlns:vm="clr-namespace:EGGtCSPlatform.ViewModels"
+>
+  <ControlTheme
+    x:Key="{x:Type controls:ExperimentConfigurationDialog}"
+    TargetType="controls:ExperimentConfigurationDialog"
+  >
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Grid>
+        <Border
+          IsVisible="{TemplateBinding EnvelopeConfirmation, Converter={x:Static ObjectConverters.IsNotNull}}"
+          Width="599"
+          MinHeight="296"
+          Padding="24"
+          Background="White"
+          BoxShadow="0 18 52 0 #550B1533"
+          CornerRadius="8"
+        >
+          <Grid RowDefinitions="24,Auto,32" RowSpacing="16">
+            <Grid ColumnDefinitions="*,24">
+              <TextBlock Text="实验配置二次确认"
+                         FontFamily="{DynamicResource AlibabaPuHuiTi}"
+                         FontWeight="Bold" FontSize="18" Foreground="#232B38" />
+              <Button Grid.Column="1" Width="24" Height="24" Padding="0"
+                      Command="{TemplateBinding CloseCommand}"
+                      Theme="{StaticResource ElectrodePointButtonTheme}">
+                <Path Width="14" Height="14" Data="M 1 1 L 13 13 M 13 1 L 1 13"
+                      Stroke="#232B38" StrokeThickness="2" />
+              </Button>
+            </Grid>
+            <Border Grid.Row="1" MinHeight="160" Padding="15"
+                    BorderBrush="#E8EFF7" BorderThickness="1" CornerRadius="4">
+              <ContentControl Content="{TemplateBinding EnvelopeConfirmation}"
+                              HorizontalContentAlignment="Stretch">
+                <ContentControl.ContentTemplate>
+                  <DataTemplate x:DataType="vm:EnvelopeConfirmationData">
+                    <StackPanel Spacing="16">
+                      <StackPanel.Styles>
+                        <Style Selector="TextBlock">
+                          <Setter Property="FontFamily" Value="{DynamicResource AlibabaPuHuiTi}" />
+                          <Setter Property="FontSize" Value="14" />
+                          <Setter Property="Foreground" Value="#232B38" />
+                          <Setter Property="TextWrapping" Value="Wrap" />
+                        </Style>
+                      </StackPanel.Styles>
+                      <TextBlock><Run Foreground="#6B7D99" Text="刺激范式：" /><Run Text="包络-tACS · 单刺激" /></TextBlock>
+                      <TextBlock><Run Foreground="#6B7D99" Text="最大电流：" /><Run Text="{Binding MaximumCurrent}" /></TextBlock>
+                      <TextBlock><Run Foreground="#6B7D99" Text="刺激启动延时：" /><Run Text="{Binding StartupDelay}" /></TextBlock>
+                      <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                        <TextBlock><Run Foreground="#6B7D99" Text="固定刺激通道：" /><Run Text="{Binding FixedChannel}" /></TextBlock>
+                        <TextBlock Grid.Column="1"><Run Foreground="#6B7D99" Text="自选刺激通道：" /><Run Text="{Binding SelectableChannel}" /></TextBlock>
+                      </Grid>
+                    </StackPanel>
+                  </DataTemplate>
+                </ContentControl.ContentTemplate>
+              </ContentControl>
+            </Border>
+            <Button Grid.Row="2" Height="32" Background="#3941B6"
+                    Command="{TemplateBinding ConfirmCommand}"
+                    Theme="{StaticResource ConfirmationButtonTheme}">
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <Image Width="20" Height="20" Source="{SvgImage /Assets/Images/Dialog/check-double-line.svg}" />
+                <TextBlock Text="确认并进入言语训练" FontSize="14"
+                           FontFamily="{DynamicResource AlibabaPuHuiTi}" FontWeight="Bold" />
+              </StackPanel>
+            </Button>
+          </Grid>
+        </Border>
+        <Border
+          IsVisible="{TemplateBinding EnvelopeConfirmation, Converter={x:Static ObjectConverters.IsNull}}"
+          Width="800"
+          Padding="24"
+          Background="White"
+          BoxShadow="0 18 52 0 #550B1533"
+          CornerRadius="10"
+        >
+          <Grid RowDefinitions="32,110,92,36" RowSpacing="10">
+            <Grid ColumnDefinitions="*,Auto">
+              <TextBlock
+                FontFamily="{DynamicResource AlibabaPuHuiTi}"
+                FontWeight="Bold"
+                FontSize="{DynamicResource FontSize20}"
+                Foreground="#202938"
+                Text="实验配置二次确认"
+              />
+              <Button
+                Grid.Column="1"
+                Width="28"
+                Height="28"
+                Command="{TemplateBinding CloseCommand}"
+                Content="×"
+                FontSize="{DynamicResource FontSize22}"
+                Theme="{StaticResource ElectrodePointButtonTheme}"
+              />
+            </Grid>
+            <Grid Grid.Row="1" ColumnDefinitions="*,16,*">
+              <Border Padding="12" BorderBrush="#DDE6F2" BorderThickness="1" CornerRadius="4">
+                <StackPanel Spacing="7">
+                  <TextBlock
+                    FontFamily="{DynamicResource AlibabaPuHuiTi}"
+                    FontWeight="Medium"
+                    FontSize="{DynamicResource FontSize15}"
+                    Foreground="#30394A"
+                    Text="▧  患者与实验"
+                  />
+                  <TextBlock FontSize="{DynamicResource FontSize13}" Foreground="#637590">
+                    <Run Text="患者ID：" />
+                    <Run Text="{TemplateBinding SubjectId}" />
+                  </TextBlock>
+                  <TextBlock FontSize="{DynamicResource FontSize13}" Foreground="#637590">
+                    <Run Text="实验ID：" />
+                    <Run Text="{TemplateBinding ExperimentId}" />
+                  </TextBlock>
+                </StackPanel>
+              </Border>
+              <Border
+                IsVisible="{TemplateBinding ShowStimulation}"
+                Grid.Column="2"
+                Padding="12"
+                BorderBrush="#DDE6F2"
+                BorderThickness="1"
+                CornerRadius="4"
+              >
+                <StackPanel Spacing="7">
+                  <TextBlock
+                    FontFamily="{DynamicResource AlibabaPuHuiTi}"
+                    FontWeight="Medium"
+                    FontSize="{DynamicResource FontSize15}"
+                    Foreground="#30394A"
+                    Text="ϟ  刺激方案"
+                  />
+                  <TextBlock
+                    FontSize="{DynamicResource FontSize13}"
+                    Foreground="#637590"
+                    Text="{TemplateBinding StimulusSummary}"
+                  />
+                  <TextBlock
+                    FontSize="{DynamicResource FontSize13}"
+                    Foreground="#637590"
+                    Text="{TemplateBinding ParameterSummary}"
+                    TextWrapping="Wrap"
+                  />
+                </StackPanel>
+              </Border>
+            </Grid>
+            <Grid Grid.Row="2" ColumnDefinitions="*,16,*">
+              <Border Padding="12" BorderBrush="#DDE6F2" BorderThickness="1" CornerRadius="4">
+                <ScrollViewer>
+                  <StackPanel Spacing="6">
+                    <TextBlock
+                      FontFamily="{DynamicResource AlibabaPuHuiTi}"
+                      FontWeight="Medium"
+                      FontSize="{DynamicResource FontSize15}"
+                      Foreground="#30394A"
+                      Text="⌁  电极与采集"
+                    />
+                    <TextBlock
+                      FontSize="{DynamicResource FontSize12}"
+                      Foreground="#637590"
+                      Text="{TemplateBinding StimulusElectrodes}"
+                      IsVisible="{TemplateBinding ShowStimulation}"
+                      TextWrapping="Wrap"
+                    />
+                    <TextBlock
+                      FontSize="{DynamicResource FontSize12}"
+                      Foreground="#637590"
+                      Text="{TemplateBinding AcquisitionElectrodes}"
+                      IsVisible="{TemplateBinding ShowAcquisition}"
+                      TextWrapping="Wrap"
+                    />
+                  </StackPanel>
+                </ScrollViewer>
+              </Border>
+              <Border
+                Grid.Column="2"
+                Padding="12"
+                BorderBrush="#DDE6F2"
+                BorderThickness="1"
+                CornerRadius="4"
+              >
+                <ScrollViewer>
+                  <StackPanel Spacing="7">
+                    <TextBlock
+                      FontFamily="{DynamicResource AlibabaPuHuiTi}"
+                      FontWeight="Medium"
+                      FontSize="{DynamicResource FontSize15}"
+                      Foreground="#30394A"
+                      Text="▣  安全校验"
+                    />
+                    <TextBlock
+                      FontSize="{DynamicResource FontSize13}"
+                      Foreground="#637590"
+                      Text="患者耐受记录：-"
+                    />
+                    <TextBlock
+                      FontSize="{DynamicResource FontSize13}"
+                      Foreground="#637590"
+                      Text="{TemplateBinding SafetySummary}"
+                    />
+                  </StackPanel>
+                </ScrollViewer>
+              </Border>
+            </Grid>
+            <Button
+              Grid.Row="3"
+              Command="{TemplateBinding ConfirmCommand}"
+              Theme="{StaticResource ConfirmationButtonTheme}"
+            >
+              <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Spacing="8">
+                <TextBlock FontSize="{DynamicResource FontSize14}" Text="✓✓" />
+                <TextBlock
+                  FontFamily="{DynamicResource AlibabaPuHuiTi}"
+                  FontWeight="Bold"
+                  FontSize="{DynamicResource FontSize14}"
+                  Text="确认参数配置"
+                />
+              </StackPanel>
+            </Button>
+          </Grid>
+        </Border>
+        </Grid>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+</ResourceDictionary>

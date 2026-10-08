@@ -1,0 +1,220 @@
+<ResourceDictionary
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:sys="using:System"
+  x:ClassModifier="internal"
+>
+  <Design.PreviewWith>
+    <Border Padding="20" Background="#F2F3F5">
+      <StackPanel Spacing="10">
+        <ComboBox PlaceholderText="Select an item">
+          <ComboBoxItem>Item 1</ComboBoxItem>
+          <ComboBoxItem>Item 2</ComboBoxItem>
+        </ComboBox>
+        <ComboBox
+          IsEnabled="False"
+          Width="200"
+          SelectedIndex="1"
+          HorizontalContentAlignment="Center"
+        >
+          <ComboBoxItem>Item 1</ComboBoxItem>
+          <ComboBoxItem>Item 2</ComboBoxItem>
+        </ComboBox>
+        <ComboBox PlaceholderText="Error">
+          <DataValidationErrors.Error>
+            <sys:Exception>
+              <x:Arguments>
+                <x:String>Error</x:String>
+              </x:Arguments>
+            </sys:Exception>
+          </DataValidationErrors.Error>
+        </ComboBox>
+      </StackPanel>
+    </Border>
+  </Design.PreviewWith>
+
+  <Thickness x:Key="ComboBoxTopHeaderMargin">0,0,0,4</Thickness>
+  <x:Int32 x:Key="ComboBoxPopupMaxNumberOfItems">15</x:Int32>
+  <x:Int32 x:Key="ComboBoxPopupMaxNumberOfItemsThatCanBeShownOnOneSide">7</x:Int32>
+
+  <Thickness x:Key="ComboBoxPadding">12,0,0,0</Thickness>
+  <Thickness x:Key="ComboBoxEditableTextPadding">11,5,32,6</Thickness>
+  <x:Double x:Key="ComboBoxMinHeight">32</x:Double>
+
+  <ControlTheme x:Key="{x:Type ComboBox}" TargetType="ComboBox">
+    <Setter Property="FontSize" Value="{DynamicResource FontSize14}" />
+    <Setter Property="Padding" Value="{DynamicResource ComboBoxPadding}" />
+    <Setter Property="FocusAdorner" Value="{x:Null}" />
+    <Setter Property="MaxDropDownHeight" Value="504" />
+    <Setter Property="Foreground" Value="{DynamicResource ComboBoxForeground}" />
+    <Setter Property="Background" Value="{DynamicResource ComboBoxBackground}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource ComboBoxBorderBrush}" />
+    <Setter Property="BorderThickness" Value="{DynamicResource ComboBoxBorderThemeThickness}" />
+    <Setter Property="CornerRadius" Value="4" />
+    <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
+    <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
+    <Setter Property="MinHeight" Value="{DynamicResource ComboBoxMinHeight}" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="VerticalAlignment" Value="Top" />
+    <Setter
+      Property="PlaceholderForeground"
+      Value="{DynamicResource ComboBoxPlaceHolderForeground}"
+    />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <DataValidationErrors>
+          <Grid x:Name="ComboBoxLayoutRoot" ColumnDefinitions="*,32">
+            <Border
+              x:Name="Background"
+              Grid.Column="0"
+              Grid.ColumnSpan="2"
+              Background="{TemplateBinding Background}"
+              BorderBrush="{TemplateBinding BorderBrush}"
+              BorderThickness="{TemplateBinding BorderThickness}"
+              CornerRadius="{TemplateBinding CornerRadius}"
+              MinWidth="{DynamicResource ComboBoxThemeMinWidth}"
+            />
+
+            <TextBlock
+              x:Name="PlaceholderTextBlock"
+              Grid.Column="0"
+              Padding="15 0 0 0"
+              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+              Margin="{TemplateBinding Padding}"
+              Text="{TemplateBinding PlaceholderText}"
+              Foreground="{TemplateBinding PlaceholderForeground}"
+              IsVisible="{TemplateBinding SelectionBoxItem, Converter={x:Static ObjectConverters.IsNull}}"
+            />
+            <ContentControl
+              x:Name="ContentPresenter"
+              Content="{TemplateBinding SelectionBoxItem}"
+              Grid.Column="0"
+              Padding="15 0 0 0"
+              ClipToBounds="{TemplateBinding ClipToBounds}"
+              Margin="{TemplateBinding Padding}"
+              HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+              ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+              VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+            >
+              <ContentControl.Styles>
+                <Style Selector="TextBlock">
+                  <Setter Property="VerticalAlignment" Value="Center"></Setter>
+                </Style>
+              </ContentControl.Styles>
+            </ContentControl>
+
+            <Border
+              x:Name="DropDownOverlay"
+              Grid.Column="1"
+              Background="Transparent"
+              Margin="0,1,1,1"
+              Width="30"
+              IsVisible="False"
+              HorizontalAlignment="Right"
+            />
+
+            <Label
+              Classes="icon"
+              x:Name="DropDownGlyph"
+              Grid.Column="1"
+              HorizontalAlignment="Center"
+              VerticalAlignment="Center"
+              Content="&#xe136;"
+              Foreground="{TemplateBinding BorderBrush}"
+            />
+
+            <Popup
+              Name="PART_Popup"
+              WindowManagerAddShadowHint="False"
+              IsOpen="{TemplateBinding IsDropDownOpen, Mode=TwoWay}"
+              MinWidth="{Binding Bounds.Width, RelativeSource={RelativeSource TemplatedParent}}"
+              MaxHeight="{TemplateBinding MaxDropDownHeight}"
+              PlacementTarget="Background"
+              IsLightDismissEnabled="True"
+              InheritsTransform="True"
+            >
+              <Border
+                x:Name="PopupBorder"
+                Background="#FFFFFF"
+                BorderBrush="#E4E7ED"
+                BorderThickness="1"
+                BoxShadow="0 2 12 0 #1A000000"
+                ClipToBounds="True"
+                Padding="0"
+                HorizontalAlignment="Stretch"
+                CornerRadius="4"
+              >
+                <ScrollViewer
+                  HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"
+                  VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}"
+                  IsDeferredScrollingEnabled="{TemplateBinding (ScrollViewer.IsDeferredScrollingEnabled)}"
+                >
+                  <ItemsPresenter
+                    Name="PART_ItemsPresenter"
+                    Margin="0"
+                    ItemsPanel="{TemplateBinding ItemsPanel}"
+                  />
+                </ScrollViewer>
+              </Border>
+            </Popup>
+          </Grid>
+        </DataValidationErrors>
+      </ControlTemplate>
+    </Setter>
+
+    <!-- Add Styles Here -->
+    <Style Selector="^">
+      <Setter Property="Margin" Value="0 0"></Setter>
+      <Setter Property="Padding" Value="0 10"></Setter>
+      <Setter Property="BorderBrush" Value="#DCDFE6"></Setter>
+      <Setter Property="BorderThickness" Value="1"></Setter>
+      <Setter Property="PlaceholderForeground" Value="#A8ABB2"></Setter>
+      <Setter Property="Foreground" Value="#606266"></Setter>
+      <Setter Property="Background" Value="#FFFFFF"></Setter>
+    </Style>
+
+    <!--  PointerOver State  -->
+    <Style Selector="^:pointerover">
+      <Setter Property="Background" Value="#FFFFFF" />
+      <Setter Property="BorderBrush" Value="#C0C4CC" />
+    </Style>
+
+    <!--  Pressed State  -->
+    <Style Selector="^:pressed">
+      <Setter Property="Background" Value="#FFFFFF" />
+    </Style>
+
+    <!-- Error State -->
+    <Style Selector="^:error">
+      <Setter Property="BorderBrush" Value="#F56C6C" />
+    </Style>
+
+    <!--  Focus Pressed State  -->
+    <Style Selector="^:focus">
+      <Setter Property="BorderBrush" Value="#409EFF" />
+    </Style>
+
+    <!--  Disabled State  -->
+    <Style Selector="^:disabled">
+      <Setter Property="Background" Value="#F5F7FA" />
+      <Setter Property="BorderBrush" Value="#E4E7ED" />
+      <Setter Property="Foreground" Value="#C0C4CC" />
+      <Setter Property="PlaceholderForeground" Value="#C0C4CC" />
+    </Style>
+
+    <!-- 阻抗列表中的刺激物理通道选择器使用紧凑布局，不影响其他 ComboBox。 -->
+    <Style Selector="^.logical-channel /template/ ContentControl#ContentPresenter">
+      <Setter Property="Margin" Value="0" />
+      <Setter Property="Padding" Value="10,0,2,0" />
+    </Style>
+    <Style Selector="^.logical-channel /template/ Border#Background">
+      <Setter Property="BoxShadow" Value="0 2 6 0 #24334155" />
+    </Style>
+    <Style Selector="^.logical-channel /template/ Label#DropDownGlyph">
+      <Setter Property="FontSize" Value="{DynamicResource FontSize10}" />
+    </Style>
+  </ControlTheme>
+</ResourceDictionary>

@@ -1,0 +1,1274 @@
+<UserControl
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+  xmlns:controls="clr-namespace:EGGtCSPlatform.Controls"
+  xmlns:pages="clr-namespace:EGGtCSPlatform.ViewModels.Pages"
+  x:Class="EGGtCSPlatform.Views.Pages.ExperimentRunPageView"
+  x:DataType="pages:ExperimentRunPageViewModel"
+  d:DesignHeight="768"
+  d:DesignWidth="1440"
+  mc:Ignorable="d"
+>
+  <UserControl.Resources>
+    <ControlTheme x:Key="EegScrollThumbTheme" TargetType="Thumb">
+      <Setter Property="MinHeight" Value="16" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Border Background="#ACB7C8" CornerRadius="4" />
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
+    <ControlTheme x:Key="EegScrollPageButtonTheme" TargetType="RepeatButton">
+      <Setter Property="Focusable" Value="False" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Border Background="Transparent" />
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
+    <ControlTheme x:Key="EegVerticalScrollBarTheme" TargetType="ScrollBar">
+      <Setter Property="Width" Value="8" />
+      <Setter Property="MinWidth" Value="8" />
+      <Setter Property="MaxWidth" Value="8" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Border Background="#F5F7FA" CornerRadius="4">
+            <Track
+              Minimum="{TemplateBinding Minimum}"
+              Maximum="{TemplateBinding Maximum}"
+              Value="{TemplateBinding Value, Mode=TwoWay}"
+              ViewportSize="{TemplateBinding ViewportSize}"
+              Orientation="Vertical"
+              IsDirectionReversed="True"
+              DeferThumbDrag="{TemplateBinding ScrollViewer.IsDeferredScrollingEnabled}"
+            >
+              <Track.DecreaseButton>
+                <RepeatButton
+                  Name="PART_PageUpButton"
+                  Theme="{StaticResource EegScrollPageButtonTheme}"
+                />
+              </Track.DecreaseButton>
+              <Track.IncreaseButton>
+                <RepeatButton
+                  Name="PART_PageDownButton"
+                  Theme="{StaticResource EegScrollPageButtonTheme}"
+                />
+              </Track.IncreaseButton>
+              <Track.Thumb>
+                <Thumb Theme="{StaticResource EegScrollThumbTheme}" />
+              </Track.Thumb>
+            </Track>
+          </Border>
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
+    <ControlTheme x:Key="EegScrollViewerTheme" TargetType="ScrollViewer">
+      <!-- Use the card's right gutter: 4px gap, 8px scrollbar, 4px to the card edge.
+           Keep the plot aligned with the timeline even when the scrollbar is hidden. -->
+      <Setter Property="AllowAutoHide" Value="False" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Grid ColumnDefinitions="*,12">
+            <ScrollContentPresenter
+              Name="PART_ContentPresenter"
+              Background="Transparent"
+              Padding="{TemplateBinding Padding}"
+              ScrollViewer.IsScrollInertiaEnabled="{TemplateBinding IsScrollInertiaEnabled}"
+            >
+              <ScrollContentPresenter.GestureRecognizers>
+                <ScrollGestureRecognizer
+                  CanHorizontallyScroll="False"
+                  CanVerticallyScroll="{Binding CanVerticallyScroll, ElementName=PART_ContentPresenter}"
+                  IsScrollInertiaEnabled="{Binding (ScrollViewer.IsScrollInertiaEnabled), ElementName=PART_ContentPresenter}"
+                  Offset="{Binding Offset, ElementName=PART_ContentPresenter}"
+                  Viewport="{Binding Viewport, ElementName=PART_ContentPresenter}"
+                  Extent="{Binding Extent, ElementName=PART_ContentPresenter}"
+                />
+              </ScrollContentPresenter.GestureRecognizers>
+            </ScrollContentPresenter>
+            <ScrollBar
+              Name="PART_VerticalScrollBar"
+              Grid.Column="1"
+              Margin="4,0,0,0"
+              Orientation="Vertical"
+              Theme="{StaticResource EegVerticalScrollBarTheme}"
+            />
+          </Grid>
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
+    <ControlTheme
+      x:Key="RunPageSecondaryButtonTheme"
+      TargetType="Button"
+      BasedOn="{StaticResource RunPagePrimaryButtonTheme}"
+    >
+      <Setter Property="Background" Value="#F4F6FA" />
+      <Setter Property="Foreground" Value="#506078" />
+      <Setter Property="BorderBrush" Value="#DDE3EC" />
+      <Setter Property="BorderThickness" Value="1" />
+    </ControlTheme>
+
+    <ControlTheme
+      x:Key="RunPagePlaybackButtonTheme"
+      TargetType="Button"
+      BasedOn="{StaticResource RunPageSecondaryButtonTheme}"
+    >
+      <Setter Property="Width" Value="44" />
+      <Setter Property="Height" Value="30" />
+      <Setter Property="Padding" Value="4,0" />
+      <Setter Property="Background" Value="White" />
+      <Setter Property="Foreground" Value="#334155" />
+      <Setter Property="CornerRadius" Value="5" />
+      <Setter Property="FontSize" Value="{DynamicResource FontSize12}" />
+    </ControlTheme>
+    <ControlTheme x:Key="RunPageResultCheckBoxTheme" TargetType="CheckBox">
+      <Setter Property="Foreground" Value="#3F4D61" />
+      <Setter Property="FontSize" Value="{DynamicResource FontSize12}" />
+      <Setter Property="Cursor" Value="Hand" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <StackPanel Orientation="Horizontal" Spacing="7">
+            <Border
+              x:Name="PART_ResultCheckBorder"
+              Width="14"
+              Height="14"
+              VerticalAlignment="Center"
+              Background="White"
+              BorderBrush="#AAB5C5"
+              BorderThickness="1"
+              CornerRadius="2"
+            >
+              <TextBlock
+                x:Name="PART_ResultCheckMark"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                FontFamily="{DynamicResource AlibabaPuHuiTi}"
+                FontWeight="Medium"
+                FontSize="{DynamicResource FontSize10}"
+                Foreground="White"
+                Opacity="0"
+                Text="✓"
+              />
+            </Border>
+            <ContentPresenter VerticalAlignment="Center" Content="{TemplateBinding Content}" />
+          </StackPanel>
+        </ControlTemplate>
+      </Setter>
+      <Style Selector="^:checked /template/ Border#PART_ResultCheckBorder">
+        <Setter Property="Background" Value="#38A169" />
+        <Setter Property="BorderBrush" Value="#38A169" />
+      </Style>
+      <Style Selector="^:checked /template/ TextBlock#PART_ResultCheckMark">
+        <Setter Property="Opacity" Value="1" />
+      </Style>
+    </ControlTheme>
+    <ControlTheme x:Key="RunPageCursorCheckBoxTheme" TargetType="CheckBox">
+      <Setter Property="Foreground" Value="#697990" />
+      <Setter Property="FontSize" Value="{DynamicResource FontSize13}" />
+      <Setter Property="Cursor" Value="Hand" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <Border
+              x:Name="PART_CheckBorder"
+              Width="18"
+              Height="18"
+              VerticalAlignment="Center"
+              Background="White"
+              BorderBrush="#B9C4D3"
+              BorderThickness="1.5"
+              CornerRadius="5"
+            >
+              <TextBlock
+                x:Name="PART_CheckMark"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                FontFamily="{DynamicResource AlibabaPuHuiTi}"
+                FontWeight="Medium"
+                FontSize="{DynamicResource FontSize12}"
+                Foreground="White"
+                Opacity="0"
+                Text="✓"
+              />
+            </Border>
+            <ContentPresenter
+              VerticalAlignment="Center"
+              Content="{TemplateBinding Content}"
+              Foreground="{TemplateBinding Foreground}"
+            />
+          </StackPanel>
+        </ControlTemplate>
+      </Setter>
+      <Style Selector="^:checked /template/ Border#PART_CheckBorder">
+        <Setter Property="Background" Value="#7457DA" />
+        <Setter Property="BorderBrush" Value="#7457DA" />
+      </Style>
+      <Style Selector="^:checked /template/ TextBlock#PART_CheckMark">
+        <Setter Property="Opacity" Value="1" />
+      </Style>
+      <Style Selector="^:pointerover /template/ Border#PART_CheckBorder">
+        <Setter Property="BorderBrush" Value="#7457DA" />
+      </Style>
+      <Style Selector="^:disabled">
+        <Setter Property="Opacity" Value="0.5" />
+      </Style>
+    </ControlTheme>
+    <ControlTheme x:Key="RunPageCursorInlineCheckBoxTheme" TargetType="CheckBox">
+      <Setter Property="Foreground" Value="#232B38" />
+      <Setter Property="FontSize" Value="{DynamicResource FontSize14}" />
+      <Setter Property="Cursor" Value="Hand" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <ContentPresenter
+            x:Name="PART_CursorContent"
+            VerticalAlignment="Center"
+            Content="{TemplateBinding Content}"
+            Foreground="{TemplateBinding Foreground}"
+          />
+        </ControlTemplate>
+      </Setter>
+      <Style Selector="^:checked">
+        <Setter Property="Foreground" Value="#2FA36B" />
+      </Style>
+      <Style Selector="^:pointerover">
+        <Setter Property="Foreground" Value="#2FA36B" />
+      </Style>
+    </ControlTheme>
+  </UserControl.Resources>
+
+  <Grid Margin="24,0,24,24" ColumnDefinitions="*,16,400">
+    <Border Grid.Column="0" Background="White" CornerRadius="8" BoxShadow="0 4 12 0 #336885B3">
+      <Grid RowDefinitions="48,*,86">
+        <ScrollViewer Background="#FAFBFC" HorizontalScrollBarVisibility="Auto">
+          <Grid Margin="16,0" ColumnDefinitions="Auto,Auto,Auto,Auto,Auto,*,Auto" ColumnSpacing="8">
+            <StackPanel VerticalAlignment="Center" Orientation="Horizontal" Spacing="4">
+              <TextBlock
+                VerticalAlignment="Center"
+                FontSize="{DynamicResource FontSize14}"
+                Foreground="#6B7D99"
+                Text="显示范围"
+              />
+              <ComboBox
+                Width="126"
+                ItemsSource="{Binding DisplayRangeOptions}"
+                SelectedItem="{Binding DisplayRangeMicrovolts}"
+                Theme="{StaticResource ExperimentRunInlineComboBoxTheme}"
+              >
+                <ComboBox.ItemTemplate>
+                  <DataTemplate>
+                    <StackPanel Orientation="Horizontal">
+                      <TextBlock Text="±" />
+                      <TextBlock Text="{Binding}" />
+                      <TextBlock Text=" μV" />
+                    </StackPanel>
+                  </DataTemplate>
+                </ComboBox.ItemTemplate>
+              </ComboBox>
+            </StackPanel>
+            <StackPanel
+              Grid.Column="1"
+              VerticalAlignment="Center"
+              Orientation="Horizontal"
+              Spacing="4"
+            >
+              <TextBlock
+                VerticalAlignment="Center"
+                FontSize="{DynamicResource FontSize14}"
+                Foreground="#6B7D99"
+                Text="时间范围"
+              />
+              <ComboBox
+                Width="96"
+                ItemsSource="{Binding TimeRangeOptions}"
+                SelectedItem="{Binding TimeRangeSeconds}"
+                Theme="{StaticResource ExperimentRunInlineComboBoxTheme}"
+              >
+                <ComboBox.ItemTemplate>
+                  <DataTemplate>
+                    <StackPanel Orientation="Horizontal">
+                      <TextBlock Text="{Binding}" />
+                      <TextBlock Text=" s" />
+                    </StackPanel>
+                  </DataTemplate>
+                </ComboBox.ItemTemplate>
+              </ComboBox>
+            </StackPanel>
+            <StackPanel
+              Grid.Column="2"
+              VerticalAlignment="Center"
+              Orientation="Horizontal"
+              Spacing="4"
+            >
+              <TextBlock
+                VerticalAlignment="Center"
+                FontSize="{DynamicResource FontSize14}"
+                Foreground="#6B7D99"
+                Text="高通"
+              />
+              <ComboBox
+                Width="90"
+                ItemsSource="{Binding HighPassOptions}"
+                SelectedItem="{Binding SelectedHighPassFilter}"
+                Theme="{StaticResource ExperimentRunInlineComboBoxTheme}"
+              />
+            </StackPanel>
+            <StackPanel
+              Grid.Column="3"
+              VerticalAlignment="Center"
+              Orientation="Horizontal"
+              Spacing="4"
+            >
+              <TextBlock
+                VerticalAlignment="Center"
+                FontSize="{DynamicResource FontSize14}"
+                Foreground="#6B7D99"
+                Text="低通"
+              />
+              <ComboBox
+                Width="90"
+                ItemsSource="{Binding LowPassOptions}"
+                SelectedItem="{Binding SelectedLowPassFilter}"
+                Theme="{StaticResource ExperimentRunInlineComboBoxTheme}"
+              />
+            </StackPanel>
+            <StackPanel
+              Grid.Column="4"
+              VerticalAlignment="Center"
+              Orientation="Horizontal"
+              Spacing="4"
+            >
+              <TextBlock
+                VerticalAlignment="Center"
+                FontSize="{DynamicResource FontSize14}"
+                Foreground="#6B7D99"
+                Text="陷波"
+              />
+              <ComboBox
+                Width="90"
+                ItemsSource="{Binding NotchOptions}"
+                SelectedItem="{Binding SelectedNotchFilter}"
+                Theme="{StaticResource ExperimentRunInlineComboBoxTheme}"
+              />
+            </StackPanel>
+            <StackPanel
+              Grid.Column="5"
+              HorizontalAlignment="Center"
+              VerticalAlignment="Center"
+              IsVisible="{Binding IsHistoricalResult}"
+              Orientation="Horizontal"
+              Spacing="4"
+            >
+              <Button
+                Command="{Binding TogglePlaybackCommand}"
+                Content="{Binding PlaybackActionText}"
+                Theme="{StaticResource RunPagePlaybackButtonTheme}"
+              />
+              <ComboBox
+                Width="60"
+                ItemsSource="{Binding PlaybackSpeedOptions}"
+                SelectedItem="{Binding PlaybackSpeed}"
+                Theme="{StaticResource ExperimentRunInlineComboBoxTheme}"
+              >
+                <ComboBox.ItemTemplate>
+                  <DataTemplate>
+                    <TextBlock Text="{Binding StringFormat={}{0:0.0}×}" />
+                  </DataTemplate>
+                </ComboBox.ItemTemplate>
+              </ComboBox>
+            </StackPanel>
+            <StackPanel
+              Grid.Column="6"
+              VerticalAlignment="Center"
+              Orientation="Horizontal"
+              Spacing="12"
+            >
+              <CheckBox
+                VerticalAlignment="Center"
+                Content="X光标"
+                IsChecked="{Binding ShowXCursor}"
+                Theme="{StaticResource RunPageCursorInlineCheckBoxTheme}"
+              />
+              <Border Width="1" Height="14" Background="#E0E6EE" />
+              <CheckBox
+                VerticalAlignment="Center"
+                Content="Y光标"
+                IsChecked="{Binding ShowYCursor}"
+                Theme="{StaticResource RunPageCursorInlineCheckBoxTheme}"
+              />
+            </StackPanel>
+          </Grid>
+        </ScrollViewer>
+        <Border Grid.Row="0" Height="1" VerticalAlignment="Bottom" Background="#E2E8F2" IsHitTestVisible="False" />
+
+        <Border Grid.Row="1" Margin="16,0,4,1" BorderBrush="#E8EDF4" BorderThickness="0">
+          <controls:WaveformHoverScope HoverState="{Binding WaveformHover}">
+            <Grid>
+              <ScrollViewer
+                Theme="{StaticResource EegScrollViewerTheme}"
+                HorizontalScrollBarVisibility="Disabled"
+                IsVisible="{Binding IsSingleColumnLayout}"
+                VerticalScrollBarVisibility="Auto"
+              >
+                <ItemsControl ItemsSource="{Binding WaveformChannels}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="pages:WaveformChannelViewModel">
+                      <controls:EegWaveformChannel
+                        Height="96"
+                        Margin="0,6"
+                        ContinuousStimulationOverlay="True"
+                        ChannelId="{Binding ChannelId}"
+                        ShowAmplitudeUnit="{Binding ShowAmplitudeUnit}"
+                        ChannelBackground="{Binding Background}"
+                        DataAvailableThrough="{Binding $parent[UserControl].DataContext.WaveformDataAvailableThrough}"
+                        HoverState="{Binding $parent[UserControl].DataContext.WaveformHover}"
+                        IsFollowingLatest="{Binding $parent[UserControl].DataContext.IsFollowingLatest, Mode=TwoWay}"
+                        LiveValue="{Binding $parent[UserControl].DataContext.TimelineLivePosition}"
+                        MaximumAmplitude="{Binding $parent[UserControl].DataContext.DisplayRangeMicrovolts}"
+                        SampleLookup="{Binding}"
+                        Samples="{Binding Samples}"
+                        ShowXCursor="{Binding $parent[UserControl].DataContext.ShowXCursor}"
+                        ShowYCursor="{Binding $parent[UserControl].DataContext.ShowYCursor}"
+                        Stage="{Binding $parent[UserControl].DataContext.CurrentStage}"
+                        TimelineSegments="{Binding $parent[UserControl].DataContext.TimelineSegments}"
+                        TimelineMaximum="{Binding $parent[UserControl].DataContext.TimelineMaximum}"
+                        ViewEnd="{Binding $parent[UserControl].DataContext.TimelineViewEnd, Mode=TwoWay}"
+                        ViewStart="{Binding $parent[UserControl].DataContext.TimelineViewStart, Mode=TwoWay}"
+                        WaveformBrush="{Binding Stroke}"
+                        WaveformStrokeThickness="{Binding $parent[UserControl].DataContext.WaveformStrokeThickness}"
+                      />
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </ScrollViewer>
+
+              <ScrollViewer
+                Theme="{StaticResource EegScrollViewerTheme}"
+                HorizontalScrollBarVisibility="Disabled"
+                IsVisible="{Binding IsDoubleColumnLayout}"
+                VerticalScrollBarVisibility="Auto"
+              >
+                <ItemsControl VerticalAlignment="Top" ItemsSource="{Binding WaveformChannels}">
+                  <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                      <UniformGrid Columns="2" />
+                    </ItemsPanelTemplate>
+                  </ItemsControl.ItemsPanel>
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="pages:WaveformChannelViewModel">
+                      <controls:EegWaveformChannel
+                        Height="112"
+                        Margin="0,6"
+                        ChannelId="{Binding ChannelId}"
+                        ShowAmplitudeUnit="{Binding ShowAmplitudeUnit}"
+                        ChannelBackground="{Binding Background}"
+                        DataAvailableThrough="{Binding $parent[UserControl].DataContext.WaveformDataAvailableThrough}"
+                        HoverState="{Binding $parent[UserControl].DataContext.WaveformHover}"
+                        IsFollowingLatest="{Binding $parent[UserControl].DataContext.IsFollowingLatest, Mode=TwoWay}"
+                        LiveValue="{Binding $parent[UserControl].DataContext.TimelineLivePosition}"
+                        MaximumAmplitude="{Binding $parent[UserControl].DataContext.DisplayRangeMicrovolts}"
+                        SampleLookup="{Binding}"
+                        Samples="{Binding Samples}"
+                        ShowXCursor="{Binding $parent[UserControl].DataContext.ShowXCursor}"
+                        ShowYCursor="{Binding $parent[UserControl].DataContext.ShowYCursor}"
+                        Stage="{Binding $parent[UserControl].DataContext.CurrentStage}"
+                        TimelineSegments="{Binding $parent[UserControl].DataContext.TimelineSegments}"
+                        TimelineMaximum="{Binding $parent[UserControl].DataContext.TimelineMaximum}"
+                        ViewEnd="{Binding $parent[UserControl].DataContext.TimelineViewEnd, Mode=TwoWay}"
+                        ViewStart="{Binding $parent[UserControl].DataContext.TimelineViewStart, Mode=TwoWay}"
+                        WaveformBrush="{Binding Stroke}"
+                        WaveformStrokeThickness="{Binding $parent[UserControl].DataContext.WaveformStrokeThickness}"
+                      />
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </ScrollViewer>
+
+              <ScrollViewer
+                Theme="{StaticResource EegScrollViewerTheme}"
+                HorizontalScrollBarVisibility="Disabled"
+                IsVisible="{Binding IsComb32Layout}"
+                VerticalScrollBarVisibility="Auto"
+              >
+                <ItemsControl VerticalAlignment="Top" ItemsSource="{Binding WaveformChannels}">
+                  <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                      <UniformGrid Columns="4" />
+                    </ItemsPanelTemplate>
+                  </ItemsControl.ItemsPanel>
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="pages:WaveformChannelViewModel">
+                      <controls:EegWaveformChannel
+                        Height="116"
+                        Margin="0,6"
+                        ChannelId="{Binding ChannelId}"
+                        ShowAmplitudeUnit="{Binding ShowAmplitudeUnit}"
+                        ChannelBackground="{Binding Background}"
+                        DataAvailableThrough="{Binding $parent[UserControl].DataContext.WaveformDataAvailableThrough}"
+                        HoverState="{Binding $parent[UserControl].DataContext.WaveformHover}"
+                        IsFollowingLatest="{Binding $parent[UserControl].DataContext.IsFollowingLatest, Mode=TwoWay}"
+                        LiveValue="{Binding $parent[UserControl].DataContext.TimelineLivePosition}"
+                        MaximumAmplitude="{Binding $parent[UserControl].DataContext.DisplayRangeMicrovolts}"
+                        SampleLookup="{Binding}"
+                        Samples="{Binding Samples}"
+                        ShowXCursor="{Binding $parent[UserControl].DataContext.ShowXCursor}"
+                        ShowYCursor="{Binding $parent[UserControl].DataContext.ShowYCursor}"
+                        Stage="{Binding $parent[UserControl].DataContext.CurrentStage}"
+                        TimelineSegments="{Binding $parent[UserControl].DataContext.TimelineSegments}"
+                        TimelineMaximum="{Binding $parent[UserControl].DataContext.TimelineMaximum}"
+                        ViewEnd="{Binding $parent[UserControl].DataContext.TimelineViewEnd, Mode=TwoWay}"
+                        ViewStart="{Binding $parent[UserControl].DataContext.TimelineViewStart, Mode=TwoWay}"
+                        WaveformBrush="{Binding Stroke}"
+                        WaveformStrokeThickness="{Binding $parent[UserControl].DataContext.WaveformStrokeThickness}"
+                      />
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </ScrollViewer>
+
+              <StackPanel
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Margin="0,110,0,0"
+                IsVisible="{Binding ShowWaveformStartHint}"
+                Spacing="8"
+              >
+                <TextBlock
+                  HorizontalAlignment="Center"
+                  FontSize="32"
+                  Foreground="#B3BDCB"
+                  FontFamily="{DynamicResource Icon-FontFamily}"
+                  Text="&#xe634;"
+                />
+                <TextBlock
+                  FontSize="{DynamicResource FontSize14}"
+                  Foreground="#9AA7B8"
+                  Text="启动采集后将在此显示实时 EEG 波形"
+                />
+              </StackPanel>
+
+              <Border
+                Padding="14,9"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Background="#F2FFFFFF"
+                BorderBrush="#D8E5F5"
+                BorderThickness="1"
+                CornerRadius="8"
+                IsHitTestVisible="False"
+                IsVisible="{Binding IsHistoricalWaveformLoading}"
+                ZIndex="30"
+              >
+                <TextBlock
+                  FontSize="{DynamicResource FontSize12}"
+                  Foreground="#64748B"
+                  Text="历史波形加载中…"
+                />
+              </Border>
+
+              <Border
+                Padding="14,9"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Background="#F2FFFFFF"
+                BorderBrush="#D8E5F5"
+                BorderThickness="1"
+                CornerRadius="8"
+                IsHitTestVisible="False"
+                IsVisible="{Binding ShowHistoricalWaveformError}"
+                ZIndex="30"
+              >
+                <TextBlock
+                  FontSize="{DynamicResource FontSize12}"
+                  Foreground="#64748B"
+                  Text="{Binding HistoricalWaveformErrorText}"
+                />
+              </Border>
+
+              <controls:StimulationPeriodOverlay
+                Margin="86,14,12,8"
+                IsHitTestVisible="False"
+                IsVisible="{Binding IsStimulating}"
+                ContinuousSpan="{Binding IsSingleColumnLayout}"
+                Segments="{Binding TimelineSegments}"
+                ViewStart="{Binding TimelineViewStart}"
+                ViewEnd="{Binding TimelineViewEnd}"
+                LiveValue="{Binding TimelineLivePosition}"
+                ZIndex="20">
+                <controls:StimulusOverviewCard
+                  Width="177" Height="104"
+                  Descriptor="{Binding StimulusWaveform}"
+                  CurrentLabel="{Binding StimulusCurrentLabel}"
+                  CurrentText="{Binding StimulusCurrentText}"
+                  StatusText="{Binding StimulusModeText, StringFormat={}{0}刺激中}" />
+              </controls:StimulationPeriodOverlay>
+            </Grid>
+          </controls:WaveformHoverScope>
+        </Border>
+
+        <Grid Grid.Row="2" Margin="102,6,16,4" RowDefinitions="48,26">
+          <controls:ExperimentPhaseTimeline
+            Maximum="{Binding TimelineMaximum}"
+            Progress="{Binding TimelineLivePosition}"
+            Segments="{Binding TimelineSegments}"
+            ViewEnd="{Binding TimelineViewEnd}"
+            ViewStart="{Binding TimelineViewStart}"
+          />
+          <controls:TimelineRangeNavigator
+            Grid.Row="1"
+            Margin="-16,0,-16,0"
+            IsDragging="{Binding IsTimelineDragging, Mode=OneWayToSource}"
+            IsFollowingLatest="{Binding IsFollowingLatest, Mode=TwoWay}"
+            LiveValue="{Binding TimelineLivePosition}"
+            Maximum="{Binding TimelineMaximum}"
+            Minimum="0"
+            MinimumSpan="1"
+            ViewEnd="{Binding TimelineViewEnd, Mode=TwoWay}"
+            ViewStart="{Binding TimelineViewStart, Mode=TwoWay}"
+          />
+        </Grid>
+      </Grid>
+    </Border>
+
+    <Border Grid.Column="2" Background="White" CornerRadius="8" BoxShadow="0 4 12 0 #336885B3">
+      <Grid>
+        <Grid Margin="16,14,16,16" IsVisible="{Binding !IsResults}">
+          <Grid.RowDefinitions>
+            <RowDefinition Height="28" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="{Binding StimulusSeparatorHeight}" />
+            <RowDefinition Height="{Binding StimulusTitleHeight}" />
+            <RowDefinition Height="{Binding StimulusDetailsHeight}" />
+            <RowDefinition Height="15" />
+            <RowDefinition Height="34" />
+            <RowDefinition Height="34" />
+            <RowDefinition Height="2*" />
+            <RowDefinition Height="44" />
+          </Grid.RowDefinitions>
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBlock
+              VerticalAlignment="Center"
+              FontFamily="{DynamicResource AlibabaPuHuiTi}"
+              FontWeight="Medium"
+              FontSize="{DynamicResource FontSize18}"
+              Foreground="#26364E"
+              Text="运行监控"
+            />
+            <StackPanel
+              Grid.Column="1"
+              VerticalAlignment="Center"
+              Orientation="Horizontal"
+              Spacing="4"
+            >
+              <Image
+                Width="14"
+                Height="14"
+                IsVisible="{Binding CommunicationHealthy}"
+                Source="{SvgImage /Assets/Images/experiment-run-communication-healthy.svg}"
+              />
+              <Border
+                Width="14"
+                Height="14"
+                Background="#E65058"
+                CornerRadius="7"
+                IsVisible="{Binding !CommunicationHealthy}"
+              >
+                <TextBlock
+                  HorizontalAlignment="Center"
+                  VerticalAlignment="Center"
+                  FontSize="{DynamicResource FontSize9}"
+                  Foreground="White"
+                  Text="!"
+                />
+              </Border>
+              <TextBlock
+                VerticalAlignment="Center"
+                FontSize="{DynamicResource FontSize11}"
+                Foreground="#38A169"
+                IsVisible="{Binding CommunicationHealthy}"
+                Text="{Binding CommunicationStatusText}"
+              />
+              <TextBlock
+                VerticalAlignment="Center"
+                FontSize="{DynamicResource FontSize11}"
+                Foreground="#E65058"
+                IsVisible="{Binding !CommunicationHealthy}"
+                Text="{Binding CommunicationStatusText}"
+              />
+            </StackPanel>
+          </Grid>
+
+          <Grid Grid.Row="1" Margin="0,6,0,0" ColumnDefinitions="*,126" RowDefinitions="Auto,Auto">
+            <Grid Margin="0,2,8,0" RowDefinitions="28,28,28,28,28">
+              <Grid ColumnDefinitions="24,Auto,*">
+                <Image
+                  Width="20"
+                  Height="20"
+                  Source="{SvgImage /Assets/Images/experiment-run-monitor-stage.svg}"
+                />
+                <TextBlock
+                  Grid.Column="1"
+                  VerticalAlignment="Center"
+                  FontSize="{DynamicResource FontSize14}"
+                  Foreground="#6B7D99"
+                  Text="当前阶段："
+                />
+                <TextBlock
+                  Grid.Column="2"
+                  VerticalAlignment="Center"
+                  FontFamily="{DynamicResource AlibabaPuHuiTi}"
+                  FontWeight="Medium"
+                  FontSize="{DynamicResource FontSize14}"
+                  Foreground="#232B38"
+                  Text="{Binding CurrentStageMonitorText}"
+                  TextTrimming="CharacterEllipsis"
+                />
+              </Grid>
+              <Grid
+                Grid.Row="1"
+                ColumnDefinitions="24,Auto,*"
+                IsVisible="{Binding !IsAcquisitionOnly}"
+              >
+                <Image
+                  Width="20"
+                  Height="20"
+                  Source="{SvgImage /Assets/Images/experiment-run-monitor-current.svg}"
+                />
+                <TextBlock
+                  Grid.Column="1"
+                  VerticalAlignment="Center"
+                  FontSize="{DynamicResource FontSize14}"
+                  Foreground="#6B7D99"
+                  Text="{Binding StimulusCurrentLabel}"
+                  Margin="0,0,6,0"
+                />
+                <TextBlock
+                  Grid.Column="2"
+                  VerticalAlignment="Center"
+                  FontSize="{DynamicResource FontSize14}"
+                  Foreground="#232B38"
+                  Text="{Binding StimulusCurrentText}"
+                />
+              </Grid>
+              <Grid Grid.Row="2" ColumnDefinitions="24,Auto,*">
+                <Image
+                  Width="20"
+                  Height="20"
+                  Source="{SvgImage /Assets/Images/experiment-run-monitor-impedance.svg}"
+                />
+                <TextBlock
+                  Grid.Column="1"
+                  VerticalAlignment="Center"
+                  FontSize="{DynamicResource FontSize14}"
+                  Foreground="#6B7D99"
+                  Text="阻抗状态："
+                />
+                <TextBlock
+                  Grid.Column="2"
+                  VerticalAlignment="Center"
+                  FontSize="{DynamicResource FontSize14}"
+                  Foreground="#232B38"
+                  Text="{Binding AverageImpedanceMonitorText}"
+                />
+              </Grid>
+              <Grid Grid.Row="3" ColumnDefinitions="24,Auto,*">
+                <Image
+                  Width="20"
+                  Height="20"
+                  Source="{SvgImage /Assets/Images/experiment-run-monitor-duration.svg}"
+                />
+                <TextBlock
+                  Grid.Column="1"
+                  VerticalAlignment="Center"
+                  FontSize="{DynamicResource FontSize14}"
+                  Foreground="#6B7D99"
+                  Text="运行时长："
+                />
+                <TextBlock
+                  Grid.Column="2"
+                  VerticalAlignment="Center"
+                  FontSize="{DynamicResource FontSize14}"
+                  Foreground="#232B38"
+                  Text="{Binding ElapsedText}"
+                />
+              </Grid>
+              <Grid Grid.Row="4" ColumnDefinitions="24,Auto,*">
+                <Image
+                  Width="20"
+                  Height="20"
+                  Source="{SvgImage /Assets/Images/experiment-run-monitor-exception.svg}"
+                />
+                <TextBlock
+                  Grid.Column="1"
+                  VerticalAlignment="Center"
+                  FontSize="{DynamicResource FontSize14}"
+                  Foreground="#6B7D99"
+                  Text="异常事件："
+                />
+                <TextBlock
+                  Grid.Column="2"
+                  VerticalAlignment="Center"
+                  FontSize="{DynamicResource FontSize14}"
+                  Foreground="#232B38"
+                  Text="{Binding ExceptionSummaryText}"
+                />
+              </Grid>
+            </Grid>
+            <controls:RunStatusIndicator
+              Grid.Column="1"
+              Width="115"
+              Height="115"
+              HorizontalAlignment="Right"
+              VerticalAlignment="Center"
+              Progress="{Binding RunProgress}"
+              State="{Binding CurrentStage}"
+              Text="{Binding StageDisplayText}"
+            />
+            <StackPanel Grid.Row="1" Grid.ColumnSpan="2" Spacing="3" Margin="0,4,0,0" IsVisible="{Binding !IsRunning}">
+              <TextBlock
+                FontSize="{DynamicResource FontSize12}"
+                Foreground="#33445B"
+                Text="{Binding ImpedanceStatusText}"
+                TextWrapping="Wrap"
+              />
+              <TextBlock
+                FontSize="{DynamicResource FontSize12}"
+                Foreground="#33445B"
+                Text="{Binding StimulationImpedanceStatusText}"
+                IsVisible="{Binding !IsAcquisitionOnly}"
+                TextWrapping="Wrap"
+              />
+              <TextBlock
+                FontSize="{DynamicResource FontSize11}"
+                Foreground="#7C8BA0"
+                Text="{Binding ImpedanceDetectionTimeText}"
+                TextWrapping="Wrap"
+              />
+            </StackPanel>
+          </Grid>
+
+          <Path
+            Grid.Row="2"
+            IsVisible="{Binding !IsAcquisitionOnly}"
+            Margin="0,7,0,7"
+            Data="M 0,0 L 100,0"
+            Stretch="Fill"
+            Stroke="#CAD5E4"
+            StrokeDashArray="5,4"
+            StrokeThickness="1"
+          />
+          <TextBlock
+            Grid.Row="3"
+            VerticalAlignment="Center"
+            FontFamily="{DynamicResource AlibabaPuHuiTi}"
+            FontWeight="Medium"
+            FontSize="{DynamicResource FontSize16}"
+            Foreground="#26364E"
+            Text="刺激参数配置"
+            IsVisible="{Binding !IsAcquisitionOnly}"
+          />
+          <ScrollViewer
+            x:Name="StimulationParametersScroll"
+            IsVisible="{Binding !IsAcquisitionOnly}"
+            Grid.Row="4"
+            HorizontalScrollBarVisibility="Disabled"
+            VerticalScrollBarVisibility="Auto"
+          >
+            <ItemsControl ItemsSource="{Binding StimulationConfigurationItems}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="pages:ExperimentResultDetailItem">
+                  <Grid MinHeight="22" ColumnDefinitions="108,*" Margin="0,1,8,1">
+                    <TextBlock
+                      VerticalAlignment="Top"
+                      FontSize="{DynamicResource FontSize12}"
+                      Foreground="#7C8BA0"
+                      Text="{Binding Label}"
+                      TextWrapping="Wrap"
+                    />
+                    <TextBlock
+                      Grid.Column="1"
+                      FontSize="{DynamicResource FontSize12}"
+                      Foreground="#33445B"
+                      Text="{Binding Value}"
+                      TextWrapping="Wrap"
+                    />
+                  </Grid>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </ScrollViewer>
+
+          <Path
+            Grid.Row="5"
+            Margin="0,7,0,7"
+            Data="M 0,0 L 100,0"
+            Stretch="Fill"
+            Stroke="#CAD5E4"
+            StrokeDashArray="5,4"
+            StrokeThickness="1"
+          />
+          <Grid Grid.Row="6" ColumnDefinitions="*,Auto">
+            <TextBlock
+              VerticalAlignment="Center"
+              FontFamily="{DynamicResource AlibabaPuHuiTi}"
+              FontWeight="Medium"
+              FontSize="{DynamicResource FontSize16}"
+              Foreground="#26364E"
+              Text="时序控制"
+            />
+            <StackPanel
+              Grid.Column="1"
+              VerticalAlignment="Center"
+              IsVisible="{Binding IsCycleCountVisible}"
+              Orientation="Horizontal"
+              Spacing="7"
+            >
+              <TextBlock
+                VerticalAlignment="Center"
+                FontSize="{DynamicResource FontSize12}"
+                Foreground="#718199"
+                Text="循环次数："
+              />
+              <controls:StimulusNumericInput
+                Width="84"
+                Height="32"
+                CornerRadius="5"
+                DecimalPlaces="0"
+                Increment="1"
+                IsEnabled="{Binding IsTimingSetup}"
+                Maximum="200"
+                Minimum="0"
+                Unit="次"
+                Value="{Binding CycleCount, Mode=TwoWay}"
+              />
+            </StackPanel>
+          </Grid>
+          <Border Grid.Row="7" Background="#F4F6F9">
+            <Grid Margin="8,0" ColumnDefinitions="88,166,*">
+              <TextBlock
+                VerticalAlignment="Center"
+                FontSize="{DynamicResource FontSize12}"
+                Foreground="#718199"
+                Text="阶段"
+              />
+              <TextBlock
+                Grid.Column="1"
+                VerticalAlignment="Center"
+                FontSize="{DynamicResource FontSize12}"
+                Foreground="#718199"
+                Text="时长"
+              />
+              <TextBlock
+                Grid.Column="2"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                FontSize="{DynamicResource FontSize12}"
+                Foreground="#718199"
+                Text="状态"
+              />
+            </Grid>
+          </Border>
+
+          <ScrollViewer Grid.Row="8" Margin="0,8,0,8">
+            <ItemsControl ItemsSource="{Binding Stages}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="pages:ExperimentStageViewModel">
+                  <controls:ExperimentStageControl
+                    Title="{Binding Title}"
+                    Stage="{Binding Stage}"
+                    DurationValue="{Binding DurationValue, Mode=TwoWay}"
+                    Units="{Binding Units}"
+                    DurationMaximumMilliseconds="{Binding DurationMaximumMilliseconds}"
+                    DurationMinimumMilliseconds="{Binding DurationMinimumMilliseconds}"
+                    DurationStepMilliseconds="{Binding DurationStepMilliseconds}"
+                    SelectedUnit="{Binding SelectedUnit, Mode=TwoWay}"
+                    Status="{Binding Status}"
+                    StatusText="{Binding StatusText}"
+                    Progress="{Binding Progress}"
+                    IsDurationEditable="{Binding IsEditable}"
+                    ValidationText="{Binding ValidationText}"
+                  />
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </ScrollViewer>
+
+          <Grid Grid.Row="9">
+            <controls:ExperimentRunActions
+              IsVisible="{Binding IsStandardFooterVisible}"
+              IsEmergencyOnly="{Binding IsEmergencyOnlyFooter}"
+              EmergencyCommand="{Binding EmergencyStopCommand}"
+              IsEmergencyEnabled="{Binding IsEmergencyActionEnabled}"
+              PrimaryCommand="{Binding ExecuteFooterPrimaryCommand}"
+              PrimaryText="{Binding FooterPrimaryText}"
+              IsPrimaryEnabled="{Binding IsFooterPrimaryEnabled}"
+            />
+            <controls:ExperimentRunActions
+              IsCompletion="True"
+              ButtonHeight="32"
+              CompletionCommand="{Binding ExecuteFooterPrimaryCommand}"
+              CompletionText="{Binding FooterPrimaryText}"
+              IsCompletionEnabled="{Binding IsFooterPrimaryEnabled}"
+              IsVisible="{Binding IsCompletionActionVisible}"
+            />
+          </Grid>
+        </Grid>
+
+        <Grid Margin="16,16" RowDefinitions="*,Auto,Auto,8,32" IsVisible="{Binding IsResults}">
+          <ScrollViewer x:Name="ResultDetailsScroll" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel>
+              <Border Padding="12,10" Background="#FAFBFC" CornerRadius="4">
+                <Grid RowDefinitions="24,*">
+                  <TextBlock
+                    FontFamily="{DynamicResource AlibabaPuHuiTi}"
+                    FontWeight="Medium"
+                    FontSize="{DynamicResource FontSize13}"
+                    Foreground="#27364D"
+                    Text="实验概览"
+                  />
+                  <ItemsControl Grid.Row="1" ItemsSource="{Binding ResultOverviewItems}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="pages:ExperimentResultDetailItem">
+                        <Grid MinHeight="25" ColumnDefinitions="112,*">
+                          <TextBlock
+                            VerticalAlignment="Top"
+                            FontSize="{DynamicResource FontSize11_5}"
+                            Foreground="#7889A1"
+                            Text="{Binding Label}"
+                          />
+                          <TextBlock
+                            Grid.Column="1"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center"
+                            FontSize="{DynamicResource FontSize11_5}"
+                            Foreground="#2F3B4E"
+                            Text="{Binding Value}"
+                            TextTrimming="CharacterEllipsis"
+                          />
+                        </Grid>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </Grid>
+              </Border>
+
+              <Border Padding="12,9" Background="#FAFBFC" CornerRadius="4">
+                <Grid RowDefinitions="24,*">
+                  <TextBlock
+                    FontFamily="{DynamicResource AlibabaPuHuiTi}"
+                    FontWeight="Medium"
+                    FontSize="{DynamicResource FontSize13}"
+                    Foreground="#27364D"
+                    Text="采集配置"
+                  />
+                  <ItemsControl Grid.Row="1" ItemsSource="{Binding ResultAcquisitionItems}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="pages:ExperimentResultDetailItem">
+                        <Grid MinHeight="22" ColumnDefinitions="100,*">
+                          <TextBlock
+                            VerticalAlignment="Top"
+                            FontSize="{DynamicResource FontSize11_5}"
+                            Foreground="#7889A1"
+                            Text="{Binding Label}"
+                          />
+                          <TextBlock
+                            Grid.Column="1"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center"
+                            FontSize="{DynamicResource FontSize11_5}"
+                            Foreground="#2F3B4E"
+                            TextWrapping="Wrap"
+                            Text="{Binding Value}"
+                            TextTrimming="CharacterEllipsis"
+                          />
+                        </Grid>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </Grid>
+              </Border>
+
+              <Border
+                IsVisible="{Binding !IsAcquisitionOnly}"
+                Padding="12,9"
+                Background="#FAFBFC"
+                CornerRadius="4"
+              >
+                <Grid RowDefinitions="24,*">
+                  <TextBlock
+                    FontFamily="{DynamicResource AlibabaPuHuiTi}"
+                    FontWeight="Medium"
+                    FontSize="{DynamicResource FontSize13}"
+                    Foreground="#27364D"
+                    Text="刺激配置"
+                  />
+                  <ItemsControl Grid.Row="1" ItemsSource="{Binding ResultStimulationItems}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="pages:ExperimentResultDetailItem">
+                        <Grid MinHeight="27" ColumnDefinitions="108,*">
+                          <TextBlock
+                            VerticalAlignment="Top"
+                            FontSize="{DynamicResource FontSize11}"
+                            Foreground="#7889A1"
+                            Text="{Binding Label}"
+                          />
+                          <TextBlock
+                            Grid.Column="1"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center"
+                            FontSize="{DynamicResource FontSize11}"
+                            Foreground="#2F3B4E"
+                            Text="{Binding Value}"
+                            TextAlignment="Right"
+                            TextTrimming="CharacterEllipsis"
+                            TextWrapping="Wrap"
+                          />
+                        </Grid>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </Grid>
+              </Border>
+              <Path
+                Margin="0,5"
+                Data="M 0,0 L 100,0"
+                Stretch="Fill"
+                Stroke="#CBD5E3"
+                StrokeDashArray="5,4"
+                StrokeThickness="1"
+              />
+            </StackPanel>
+          </ScrollViewer>
+
+          <TextBlock
+            Grid.Row="1"
+            VerticalAlignment="Center"
+            FontSize="{DynamicResource FontSize11_5}"
+            Foreground="#7889A1"
+            Text="文件名由程序根据实验参数自动生成，同名时自动追加序号。"
+            TextWrapping="Wrap"
+          />
+
+          <StackPanel Grid.Row="2">
+            <CheckBox
+              Content="导出 EDF+脑电数据"
+              IsChecked="{Binding ExportEdf}"
+              Theme="{StaticResource RunPageResultCheckBoxTheme}"
+            />
+            <CheckBox
+              Content="导出 CSV 原始脑电数据"
+              IsChecked="{Binding ExportCsv}"
+              Theme="{StaticResource RunPageResultCheckBoxTheme}"
+            />
+            <CheckBox
+              Grid.ColumnSpan="2"
+              Content="导出 .expp 实验配置"
+              IsChecked="{Binding ExportExpp}"
+              Theme="{StaticResource RunPageResultCheckBoxTheme}"
+            />
+          </StackPanel>
+
+          <ProgressBar
+            Grid.Row="3"
+            Height="4"
+            VerticalAlignment="Center"
+            Maximum="100"
+            Value="{Binding ExportProgress}"
+            IsVisible="{Binding IsExporting}"
+          />
+
+          <Grid Grid.Row="4" ColumnDefinitions="*,8,*,8,1.3*">
+            <Button
+              Command="{Binding ExportDataCommand}"
+              Theme="{StaticResource RunPageCompletionButtonTheme}"
+            >
+              <TextBlock Text="导出" />
+            </Button>
+            <Button
+              Grid.Column="2"
+              Command="{Binding SaveExportAsCommand}"
+              Theme="{StaticResource RunPageCompletionButtonTheme}"
+            >
+              <TextBlock Text="另存为…" />
+            </Button>
+            <Button
+              Grid.Column="4"
+              Height="32"
+              Command="{Binding RerunExperimentCommand}"
+              Theme="{StaticResource RunPageSecondaryButtonTheme}"
+            >
+              <TextBlock FontSize="{DynamicResource FontSize12}" Text="再次运行此实验" />
+            </Button>
+          </Grid>
+        </Grid>
+      </Grid>
+    </Border>
+
+    <Border
+      Grid.ColumnSpan="3"
+      Margin="12"
+      Padding="14"
+      Background="#F8FBFF"
+      BorderBrush="#C5D3E6"
+      BorderThickness="1"
+      CornerRadius="10"
+      IsVisible="{Binding IsAllChannelsViewOpen}"
+      ZIndex="20"
+    >
+      <Grid RowDefinitions="44,*">
+        <Grid ColumnDefinitions="*,Auto">
+          <TextBlock
+            VerticalAlignment="Center"
+            FontFamily="{DynamicResource AlibabaPuHuiTi}"
+            FontWeight="Medium"
+            FontSize="{DynamicResource FontSize18}"
+            Foreground="#26364E"
+            Text="全部采集导联 · 8×4 视图"
+          />
+          <Button
+            Grid.Column="1"
+            Command="{Binding CloseAllChannelsCommand}"
+            Content="关闭"
+            Theme="{StaticResource RunPageSecondaryButtonTheme}"
+          />
+        </Grid>
+        <controls:WaveformHoverScope Grid.Row="1" HoverState="{Binding WaveformHover}">
+          <ScrollViewer>
+            <ItemsControl ItemsSource="{Binding WaveformChannels}">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <UniformGrid Columns="4" />
+                </ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="pages:WaveformChannelViewModel">
+                  <controls:EegWaveformChannel
+                    Height="128"
+                    ChannelId="{Binding ChannelId}"
+                    ShowAmplitudeUnit="{Binding ShowAmplitudeUnit}"
+                    ChannelBackground="{Binding Background}"
+                    DataAvailableThrough="{Binding $parent[UserControl].DataContext.WaveformDataAvailableThrough}"
+                    HoverState="{Binding $parent[UserControl].DataContext.WaveformHover}"
+                    LiveValue="{Binding $parent[UserControl].DataContext.TimelineLivePosition}"
+                    SampleLookup="{Binding}"
+                    Samples="{Binding Samples}"
+                    WaveformBrush="{Binding Stroke}"
+                    MaximumAmplitude="{Binding $parent[UserControl].DataContext.DisplayRangeMicrovolts}"
+                    ShowXCursor="{Binding $parent[UserControl].DataContext.ShowXCursor}"
+                    ShowYCursor="{Binding $parent[UserControl].DataContext.ShowYCursor}"
+                    Stage="{Binding $parent[UserControl].DataContext.CurrentStage}"
+                    TimelineSegments="{Binding $parent[UserControl].DataContext.TimelineSegments}"
+                    ViewEnd="{Binding $parent[UserControl].DataContext.TimelineViewEnd}"
+                    ViewStart="{Binding $parent[UserControl].DataContext.TimelineViewStart}"
+                    WaveformStrokeThickness="{Binding $parent[UserControl].DataContext.WaveformStrokeThickness}"
+                  />
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </ScrollViewer>
+        </controls:WaveformHoverScope>
+      </Grid>
+    </Border>
+  </Grid>
+</UserControl>

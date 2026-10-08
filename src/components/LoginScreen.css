@@ -1,0 +1,123 @@
+.login-shell {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  overflow: hidden;
+  color: #1e2531;
+  background: #e6ecf2 url("/assets/login-background.png") center/cover no-repeat;
+}
+
+.login-platform-label {
+  position: absolute;
+  top: 36px;
+  left: 41px;
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  color: #acb7c8;
+  font: 400 12px/15px Inter, Arial, sans-serif;
+}
+
+.login-platform-label i {
+  width: 3px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, #acf53d 0%, #3845fb 47%, #2cdbf6 100%);
+}
+
+.login-platform-label small { font-size: 10px; line-height: 12px; }
+
+.login-card-stage {
+  position: absolute;
+  top: 50%;
+  right: max(9.8vw, 48px);
+  width: 500px;
+  height: 616px;
+  transform: translateY(-50%);
+}
+
+.login-card {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 55px 40px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 4px 10px rgba(57, 65, 182, 0.2);
+  backdrop-filter: blur(4px);
+}
+
+.login-logo { width: 182px; height: 36px; object-fit: contain; object-position: left center; }
+
+.login-card h1 {
+  margin: 40px 0 42px;
+  color: #1e2531;
+  font: 500 20px/24px Inter, "PingFang SC", Arial, sans-serif;
+}
+
+.login-fields { display: grid; grid-template-columns: 1fr; }
+.login-fields label { margin-bottom: 8px; color: #4f607d; font: 500 20px/28px "PingFang SC", Arial, sans-serif; }
+.login-fields label:not(:first-child) { margin-top: 32px; }
+.login-fields input {
+  width: 100%;
+  height: 60px;
+  padding: 0 16px;
+  border: 1px solid #e2e8f2;
+  border-radius: 8px;
+  color: #364459;
+  background: rgba(255, 255, 255, 0.5);
+  font: 400 16px/22px "PingFang SC", Arial, sans-serif;
+  outline: none;
+}
+.login-fields input::placeholder { color: #acb7c8; }
+.login-fields input:focus { border-color: #8294b2; box-shadow: 0 0 0 3px rgba(130, 148, 178, 0.14); }
+
+.login-options {
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 16px;
+}
+.login-options label { display: inline-flex; align-items: center; gap: 8px; color: #9daac2; font-size: 14px; cursor: pointer; }
+.login-options input { width: 16px; height: 16px; accent-color: #3941b6; }
+.login-options button { padding: 0; border: 0; color: #3941b6; background: transparent; font-size: 14px; cursor: pointer; }
+.login-options button:focus-visible { outline: 2px solid #8294b2; outline-offset: 3px; }
+
+.login-error { min-height: 20px; margin: 12px 0 0; color: #c73f4a; font-size: 13px; line-height: 20px; }
+
+.login-submit {
+  width: 100%;
+  height: 40px;
+  margin-top: 12px;
+  border: 0;
+  border-radius: 6px;
+  color: #ffffff;
+  background: #3941b6;
+  font: 600 18px/20px "Alibaba PuHuiTi 3.0", "PingFang SC", Arial, sans-serif;
+  cursor: pointer;
+}
+.login-submit:hover { background: #3038a6; }
+.login-submit:focus-visible { outline: 3px solid rgba(57, 65, 182, 0.25); outline-offset: 3px; }
+
+.login-footer {
+  position: absolute;
+  left: 50%;
+  bottom: 28px;
+  color: #6b7d99;
+  font: 400 14px/20px "Alibaba PuHuiTi 3.0", "PingFang SC", Arial, sans-serif;
+  transform: translateX(-50%);
+}
+
+@media (max-width: 900px) {
+  .login-shell { display: grid; place-items: center; padding: 80px 24px 64px; }
+  .login-card-stage { position: relative; top: auto; right: auto; width: min(500px, 100%); height: auto; transform: none; }
+  .login-card { height: auto; min-height: 616px; }
+  .login-platform-label { left: 24px; }
+}
+
+@media (max-width: 560px) {
+  .login-card { padding: 40px 24px; }
+  .login-card h1 { margin: 32px 0; font-size: 18px; }
+  .login-fields label { font-size: 17px; }
+}

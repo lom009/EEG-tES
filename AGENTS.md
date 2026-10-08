@@ -18,14 +18,16 @@
 - Both acquisition and stimulation visibility controls are checked by default and must not be changed automatically by workflow transitions.
 - Visibility controls dim already assigned points of that role to 30% opacity when unchecked and restore full opacity when checked. They must never mutate the assignment or render a dimmed assigned point as an unassigned white/default point.
 
-## Durable stimulation impedance workflow
+## Durable stimulation planning and impedance workflow
 
-- Stimulation impedance must remain unavailable immediately after electrode assignment.
-- The stimulation CTA opens a centered two-step workflow without moving the shared head model or the right control panel.
-- Step 1 is stimulation parameter configuration; step 2 is stimulation tolerance testing.
-- Only confirming the tolerance threshold after parameter confirmation may start stimulation impedance detection and reveal stimulation impedance rows.
-- Editing a stimulation assignment invalidates the prior stimulation impedance result and requires the two-step workflow again.
-- The stimulation type selector in the parameter modal is a custom product-styled dropdown; do not replace it with a browser-native `<select>`.
+- The main experiment flow is: patient and experiment information → dedicated stimulation plan page → electrode configuration and detection.
+- The dedicated stimulation plan page contains the complete stimulation configuration: paradigm, stimulation mode, paradigm parameters, mode-specific channel parameters, waveform preview, device/protocol constraints, validation and draft saving.
+- The electrode page only assigns concrete head positions and physical channels, checks conflicts, and performs stimulation/acquisition impedance detection. It must not repeat stimulation parameter configuration.
+- Patient tolerance tests and tolerance-history records are managed from the home page. A new experiment references an applicable completed tolerance record; the electrode page must not run another tolerance test.
+- Page 1 saves an `Experiment Draft` before entering stimulation plan configuration. Page 3 remains unavailable until the stimulation plan draft passes all required validation.
+- Stimulation impedance remains unavailable until the stimulation plan is valid and the required stimulation electrodes have been assigned.
+- Editing the stimulation plan or a stimulation assignment invalidates the prior stimulation impedance result and requires impedance detection again.
+- The stimulation paradigm selector on the dedicated plan page is a custom product-styled control; do not replace it with a browser-native `<select>`.
 - The tDCS waveform must use the original Figma wave asset and its source coordinate placement rather than an approximated path.
 
 ## Durable GitHub synchronization rule

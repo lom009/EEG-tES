@@ -1,0 +1,558 @@
+<Window
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:vm="clr-namespace:EGGtCSPlatform.ViewModels"
+  x:Class="EGGtCSPlatform.Views.SimulationGeneratorWindow"
+  x:DataType="vm:SimulationGeneratorViewModel"
+  Title="数据生成器"
+  Width="1200"
+  Height="860"
+  MinWidth="800"
+  MinHeight="620"
+  Background="#F5F7FB"
+  WindowStartupLocation="CenterOwner"
+>
+  <Window.Styles>
+    <Style Selector="TextBlock">
+      <Setter Property="Foreground" Value="#26364E" />
+    </Style>
+    <Style Selector="NumericUpDown">
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+    </Style>
+    <Style Selector="ComboBox">
+      <Setter Property="ItemTemplate">
+        <DataTemplate>
+          <TextBlock Text="{Binding Converter={x:Static vm:SimulationLabels.Converter}}" />
+        </DataTemplate>
+      </Setter>
+    </Style>
+    <Style Selector="NumericUpDown /template/ ButtonSpinner">
+      <Setter Property="Background" Value="#E8ECF4" />
+      <Setter Property="Foreground" Value="#26364E" />
+    </Style>
+    <Style Selector="NumericUpDown /template/ ButtonSpinner /template/ RepeatButton">
+      <Setter Property="Background" Value="#E8ECF4" />
+      <Setter Property="Foreground" Value="#26364E" />
+    </Style>
+    <Style Selector="Button /template/ ContentPresenter TextBlock">
+      <Setter
+        Property="Foreground"
+        Value="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+      />
+    </Style>
+  </Window.Styles>
+  <Grid RowDefinitions="Auto,*,Auto" Margin="24" Background="#F5F7FB">
+    <StackPanel Spacing="6" Margin="0,0,0,18">
+      <TextBlock Text="实验数据生成器" FontSize="25" FontWeight="SemiBold" />
+      <TextBlock Text="离线生成 · 历史可查 · 完整回放    Ctrl+Shift+G" Foreground="#637189" />
+      <Border Background="#E8ECF4" Padding="12" CornerRadius="6">
+        <TextBlock Text="配置实验参数，完成后可在历史列表中查看与回放。" TextWrapping="Wrap" />
+      </Border>
+    </StackPanel>
+    <TabControl Grid.Row="1">
+      <TabItem Header="生成与参数">
+        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+          <StackPanel Margin="8,12,18,8" MinWidth="1080" IsEnabled="{Binding IsEditable}">
+            <Button
+              Content="载入包络-tACS：32例随机对照预设"
+              Command="{Binding ApplyRandomizedPresetCommand}"
+            />
+            <TextBlock Text="批次设置" FontSize="18" FontWeight="SemiBold" Margin="0,8,0,14" />
+            <Grid ColumnDefinitions="*,*,*" ColumnSpacing="16" Margin="0,0,0,14">
+              <Border Grid.Column="0">
+                <StackPanel Spacing="5">
+                  <TextBlock Text="生成例数" />
+                  <NumericUpDown Value="{Binding Count}" Minimum="1" Maximum="1000" Increment="1" />
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="1">
+                <StackPanel Spacing="5">
+                  <TextBlock Text="被试前缀" />
+                  <TextBox Text="{Binding SubjectPrefix}" />
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="2">
+                <StackPanel Spacing="5">
+                  <TextBlock Text="随机种子" />
+                  <NumericUpDown
+                    Value="{Binding Seed}"
+                    Minimum="-2147483648"
+                    Maximum="2147483647"
+                    Increment="1"
+                  />
+                </StackPanel>
+              </Border>
+            </Grid>
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="16" Margin="0,0,0,14">
+              <StackPanel Spacing="5">
+                <TextBlock Text="开始时间（含时区）" />
+                <TextBox Text="{Binding StartedAt}" />
+              </StackPanel>
+              <StackPanel Grid.Column="1" Spacing="5">
+                <CheckBox Content="使用随机记录间隔" IsChecked="{Binding UseRandomInterval}" />
+                <StackPanel Spacing="5" IsVisible="{Binding !UseRandomInterval}">
+                  <TextBlock Text="固定间隔 / 分钟" />
+                  <NumericUpDown
+                    Value="{Binding IntervalMinutes}"
+                    Minimum="0"
+                    Maximum="525600"
+                    Increment="1"
+                  />
+                </StackPanel>
+                <Grid
+                  ColumnDefinitions="*,*"
+                  ColumnSpacing="12"
+                  IsVisible="{Binding UseRandomInterval}"
+                >
+                  <StackPanel Spacing="5">
+                    <TextBlock Text="最小间隔 / 分钟" />
+                    <NumericUpDown
+                      Value="{Binding MinimumIntervalMinutes}"
+                      Minimum="0"
+                      Maximum="525600"
+                      Increment="1"
+                    />
+                  </StackPanel>
+                  <StackPanel Grid.Column="1" Spacing="5">
+                    <TextBlock Text="最大间隔 / 分钟" />
+                    <NumericUpDown
+                      Value="{Binding MaximumIntervalMinutes}"
+                      Minimum="0"
+                      Maximum="525600"
+                      Increment="1"
+                    />
+                  </StackPanel>
+                </Grid>
+              </StackPanel>
+            </Grid>
+            <TextBlock
+              Text="允许生成日与时段"
+              FontSize="16"
+              FontWeight="SemiBold"
+              Margin="0,0,0,8"
+            />
+            <Grid ColumnDefinitions="1.5*,*" ColumnSpacing="20" Margin="0,0,0,8">
+              <StackPanel Spacing="6">
+                <TextBlock Text="允许星期" />
+                <WrapPanel Orientation="Horizontal">
+                  <CheckBox Content="周一" IsChecked="{Binding AllowMonday}" Margin="0,0,12,0" />
+                  <CheckBox Content="周二" IsChecked="{Binding AllowTuesday}" Margin="0,0,12,0" />
+                  <CheckBox Content="周三" IsChecked="{Binding AllowWednesday}" Margin="0,0,12,0" />
+                  <CheckBox Content="周四" IsChecked="{Binding AllowThursday}" Margin="0,0,12,0" />
+                  <CheckBox Content="周五" IsChecked="{Binding AllowFriday}" Margin="0,0,12,0" />
+                  <CheckBox Content="周六" IsChecked="{Binding AllowSaturday}" Margin="0,0,12,0" />
+                  <CheckBox Content="周日" IsChecked="{Binding AllowSunday}" />
+                </WrapPanel>
+              </StackPanel>
+              <StackPanel Grid.Column="1" Spacing="6">
+                <TextBlock Text="每日允许时段" />
+                <ItemsControl ItemsSource="{Binding GenerationTimeRanges}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:SimulationGenerationTimeRangeRow">
+                      <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,0,6">
+                        <TimePicker
+                          Width="105"
+                          ClockIdentifier="24HourClock"
+                          SelectedTime="{Binding Start, Mode=TwoWay}"
+                        />
+                        <TextBlock VerticalAlignment="Center" Text="至" />
+                        <TimePicker
+                          Width="105"
+                          ClockIdentifier="24HourClock"
+                          SelectedTime="{Binding End, Mode=TwoWay}"
+                        />
+                        <Button
+                          Content="删除"
+                          Command="{Binding $parent[Window].DataContext.RemoveGenerationTimeRangeCommand}"
+                          CommandParameter="{Binding}"
+                        />
+                      </StackPanel>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <Button
+                  Content="添加时段"
+                  Command="{Binding AddGenerationTimeRangeCommand}"
+                  HorizontalAlignment="Left"
+                />
+              </StackPanel>
+            </Grid>
+            <TextBlock
+              Text="每条实验须完整落在一个允许时段内；处于时段空档、夜间或未选日期时，会顺延到下一时段或下一个允许日，因此实际间隔可能变长。随机范围内均匀取值，相同随机种子可复现。"
+              TextWrapping="Wrap"
+              Foreground="#637189"
+              Margin="0,0,0,10"
+            />
+            <CheckBox
+              Content="32例随机对照：16例刺激 + 16例假刺激，每人一次"
+              IsChecked="{Binding Randomized32}"
+            />
+            <TextBlock Text="刺激参数" FontSize="18" FontWeight="SemiBold" Margin="0,8,0,14" />
+            <Grid ColumnDefinitions="*,*,*" ColumnSpacing="16" Margin="0,0,0,14">
+              <Border Grid.Column="0">
+                <StackPanel Spacing="5">
+                  <TextBlock Text="刺激范式" />
+                  <ComboBox
+                    ItemsSource="{Binding Kinds}"
+                    SelectedItem="{Binding SelectedKind}"
+                    HorizontalAlignment="Stretch"
+                  >
+                    <ComboBox.ItemTemplate>
+                      <DataTemplate x:DataType="vm:SimulationKindOption">
+                        <TextBlock Text="{Binding Label}" />
+                      </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                  </ComboBox>
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="1">
+                <StackPanel Spacing="5">
+                  <TextBlock Text="方向" />
+                  <ComboBox
+                    HorizontalAlignment="Stretch"
+                    ItemsSource="{Binding Directions}"
+                    SelectedItem="{Binding Direction}"
+                  />
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="2" IsVisible="{Binding ShowShamMode}">
+                <StackPanel Spacing="5">
+                  <TextBlock Text="假刺激基础波形" />
+                  <ComboBox
+                    HorizontalAlignment="Stretch"
+                    ItemsSource="{Binding ShamModes}"
+                    SelectedItem="{Binding ShamMode}"
+                  />
+                </StackPanel>
+              </Border>
+            </Grid>
+            <Grid
+              ColumnDefinitions="*,*,*"
+              ColumnSpacing="16"
+              Margin="0,0,0,14"
+              IsVisible="{Binding ShowWaveformParameters}"
+            >
+              <Border Grid.Column="0" IsVisible="{Binding ParameterPolicy.ShowFrequency}">
+                <StackPanel Spacing="5">
+                  <TextBlock Text="{Binding FrequencyLabel}" />
+                  <NumericUpDown
+                    Value="{Binding Frequency}"
+                    Minimum="{Binding ParameterPolicy.Frequency.Minimum}"
+                    Maximum="{Binding ParameterPolicy.Frequency.Maximum}"
+                    Increment="{Binding ParameterPolicy.Frequency.Increment}"
+                  />
+                </StackPanel>
+              </Border>
+              <Border
+                Grid.Column="{Binding RampColumn}"
+                IsVisible="{Binding ParameterPolicy.ShowRamp}"
+              >
+                <StackPanel Spacing="5">
+                  <TextBlock Text="{Binding RampLabel}" />
+                  <NumericUpDown
+                    Value="{Binding RampSeconds}"
+                    Minimum="{Binding ParameterPolicy.Ramp.Minimum}"
+                    Maximum="{Binding ParameterPolicy.Ramp.Maximum}"
+                    Increment="{Binding ParameterPolicy.Ramp.Increment}"
+                  />
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="1" IsVisible="{Binding ParameterPolicy.ShowDutyPercent}">
+                <StackPanel Spacing="5">
+                  <TextBlock Text="占空比 / %" />
+                  <NumericUpDown
+                    Value="{Binding DutyPercent}"
+                    Minimum="{Binding DutyRange.Minimum}"
+                    Maximum="{Binding DutyRange.Maximum}"
+                    Increment="{Binding DutyRange.Increment}"
+                  />
+                </StackPanel>
+              </Border>
+            </Grid>
+            <StackPanel IsVisible="{Binding IsEnvelope}">
+              <Grid ColumnDefinitions="*,*,*" ColumnSpacing="16" Margin="0,0,0,14">
+                <Border Grid.Column="0">
+                  <StackPanel Spacing="5">
+                    <TextBlock Text="包络调制频率 / Hz" />
+                    <NumericUpDown
+                      Value="{Binding ModulationHz}"
+                      Minimum="0.01"
+                      Maximum="100"
+                      Increment="0.1"
+                    />
+                  </StackPanel>
+                </Border>
+                <Border Grid.Column="1">
+                  <StackPanel Spacing="5">
+                    <TextBlock Text="调制深度 / 0–1" />
+                    <NumericUpDown
+                      Value="{Binding Depth}"
+                      Minimum="0"
+                      Maximum="1"
+                      Increment="0.05"
+                    />
+                  </StackPanel>
+                </Border>
+                <Border Grid.Column="2">
+                  <StackPanel Spacing="5">
+                    <TextBlock Text="时延 / ms" />
+                    <NumericUpDown
+                      Value="{Binding DelayMilliseconds}"
+                      Minimum="-60000"
+                      Maximum="60000"
+                      Increment="10"
+                    />
+                  </StackPanel>
+                </Border>
+              </Grid>
+              <CheckBox
+                Content="单独生成包络假刺激（32例预设自动分组）"
+                IsChecked="{Binding EnvelopeSham}"
+              />
+            </StackPanel>
+            <TextBlock Text="运行时序" FontSize="18" FontWeight="SemiBold" Margin="0,8,0,14" />
+            <Grid ColumnDefinitions="*,*,*" ColumnSpacing="16" Margin="0,0,0,14">
+              <Border Grid.Column="0">
+                <StackPanel Spacing="5">
+                  <TextBlock Text="运行模式" />
+                  <ComboBox
+                    HorizontalAlignment="Stretch"
+                    ItemsSource="{Binding Modes}"
+                    SelectedItem="{Binding Mode}"
+                  />
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="1">
+                <StackPanel Spacing="5">
+                  <TextBlock Text="循环次数（手动模式固定1次）" />
+                  <NumericUpDown Value="{Binding Cycles}" Minimum="1" Maximum="200" Increment="1" />
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="2">
+                <StackPanel Spacing="5">
+                  <TextBlock Text="采样率 / Hz" />
+                  <ComboBox
+                    HorizontalAlignment="Stretch"
+                    ItemsSource="{Binding Rates}"
+                    SelectedItem="{Binding SampleRate}"
+                  />
+                </StackPanel>
+              </Border>
+            </Grid>
+            <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="16" Margin="0,0,0,14">
+              <Border Grid.Column="0">
+                <StackPanel Spacing="5">
+                  <TextBlock Text="采集 / 秒" />
+                  <NumericUpDown
+                    Value="{Binding AcquisitionSeconds}"
+                    Minimum="0.001"
+                    Maximum="86400"
+                    Increment="1"
+                  />
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="1">
+                <StackPanel Spacing="5">
+                  <TextBlock Text="消隐 / 秒" />
+                  <NumericUpDown
+                    Value="{Binding BlankingSeconds}"
+                    Minimum="0.001"
+                    Maximum="86400"
+                    Increment="1"
+                  />
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="2">
+                <StackPanel Spacing="5">
+                  <TextBlock Text="刺激 / 秒" />
+                  <NumericUpDown
+                    Value="{Binding StimulationSeconds}"
+                    Minimum="0.001"
+                    Maximum="86400"
+                    Increment="1"
+                  />
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="3">
+                <StackPanel Spacing="5">
+                  <TextBlock Text="恢复 / 秒" />
+                  <NumericUpDown
+                    Value="{Binding RecoverySeconds}"
+                    Minimum="0.001"
+                    Maximum="86400"
+                    Increment="1"
+                  />
+                </StackPanel>
+              </Border>
+            </Grid>
+            <TextBlock Text="EEG 合成信号" FontSize="18" FontWeight="SemiBold" Margin="0,8,0,14" />
+            <Grid ColumnDefinitions="*,*,*" ColumnSpacing="16" Margin="0,0,0,14">
+              <Border Grid.Column="0">
+                <StackPanel Spacing="5">
+                  <TextBlock Text="EEG 幅度 / μV" />
+                  <NumericUpDown
+                    Value="{Binding Amplitude}"
+                    Minimum="0.1"
+                    Maximum="1000"
+                    Increment="1"
+                  />
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="1">
+                <StackPanel Spacing="5">
+                  <TextBlock Text="噪声幅度 / μV" />
+                  <NumericUpDown Value="{Binding Noise}" Minimum="0" Maximum="1000" Increment="1" />
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="2">
+                <StackPanel Spacing="5">
+                  <TextBlock Text="主节律 / Hz" />
+                  <NumericUpDown
+                    Value="{Binding RhythmHz}"
+                    Minimum="0.1"
+                    Maximum="100"
+                    Increment="0.1"
+                  />
+                </StackPanel>
+              </Border>
+            </Grid>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+      <TabItem Header="靶点与电极">
+        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+          <StackPanel
+            Margin="8,12,18,8"
+            MinWidth="1080"
+            Spacing="12"
+            IsEnabled="{Binding IsEditable}"
+          >
+            <TextBlock Text="刺激靶点与电流分配" FontSize="18" FontWeight="SemiBold" />
+            <TextBlock
+              Text="双击单元格编辑。相同靶点编号组成一组；每组一个 FixedActive（固定通道），其电流为靶点峰值，其余 Selectable（回流通道）的电流之和须与其相等。"
+              TextWrapping="Wrap"
+            />
+            <Grid ColumnDefinitions="*,*,*" ColumnSpacing="16">
+              <StackPanel>
+                <TextBlock Text="阵列模式" />
+                <ComboBox
+                  HorizontalAlignment="Stretch"
+                  ItemsSource="{Binding ArrayModes}"
+                  SelectedItem="{Binding ArrayMode}"
+                />
+              </StackPanel>
+              <StackPanel Grid.Column="1">
+                <TextBlock Text="参考电极 REF" />
+                <TextBox Text="{Binding Reference}" />
+              </StackPanel>
+              <StackPanel Grid.Column="2">
+                <TextBlock Text="接地电极 GND" />
+                <TextBox Text="{Binding Ground}" />
+              </StackPanel>
+            </Grid>
+            <DataGrid
+              Height="200"
+              AutoGenerateColumns="False"
+              GridLinesVisibility="All"
+              ItemsSource="{Binding StimulusChannels}"
+              SelectedItem="{Binding SelectedStimulusChannel}"
+            >
+              <DataGrid.Columns>
+                <DataGridTextColumn
+                  Header="靶点编号"
+                  Binding="{ReflectionBinding Target}"
+                  Width="105"
+                />
+                <DataGridTextColumn
+                  Header="电极点位"
+                  Binding="{ReflectionBinding Site}"
+                  Width="*"
+                />
+                <DataGridTextColumn
+                  Header="物理通道"
+                  Binding="{ReflectionBinding PhysicalChannel}"
+                  Width="100"
+                />
+                <DataGridTemplateColumn Header="通道角色" Width="200">
+                  <DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate x:DataType="vm:SimulationStimulusRow">
+                      <ComboBox
+                        ItemsSource="{Binding $parent[Window].DataContext.ChannelRoles}"
+                        SelectedItem="{Binding Role}"
+                        HorizontalAlignment="Stretch"
+                      />
+                    </DataTemplate>
+                  </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTextColumn
+                  Header="电流 / mA"
+                  Binding="{ReflectionBinding Current}"
+                  Width="120"
+                />
+              </DataGrid.Columns>
+            </DataGrid>
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <Button Content="添加刺激通道" Command="{Binding AddStimulusChannelCommand}" />
+              <Button Content="删除选中通道" Command="{Binding RemoveStimulusChannelCommand}" />
+            </StackPanel>
+            <TextBlock Text="EEG 采集通道映射" FontSize="18" FontWeight="SemiBold" />
+            <TextBlock
+              Text="这里的采集映射随记录保存，不修改设备通道设置。点位必须来自系统电极目录；物理通道为1–32，不能重复。"
+              TextWrapping="Wrap"
+            />
+            <DataGrid
+              Height="200"
+              AutoGenerateColumns="False"
+              GridLinesVisibility="All"
+              ItemsSource="{Binding AcquisitionChannels}"
+              SelectedItem="{Binding SelectedAcquisitionChannel}"
+            >
+              <DataGrid.Columns>
+                <DataGridTextColumn
+                  Header="采集电极点位"
+                  Binding="{ReflectionBinding Site}"
+                  Width="*"
+                />
+                <DataGridTextColumn
+                  Header="物理通道"
+                  Binding="{ReflectionBinding PhysicalChannel}"
+                  Width="*"
+                />
+              </DataGrid.Columns>
+            </DataGrid>
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <Button Content="添加采集通道" Command="{Binding AddAcquisitionChannelCommand}" />
+              <Button Content="删除选中通道" Command="{Binding RemoveAcquisitionChannelCommand}" />
+            </StackPanel>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+      <TabItem Header="逐例结果">
+        <ListBox ItemsSource="{Binding Results}" Margin="8,12" />
+      </TabItem>
+    </TabControl>
+    <StackPanel Grid.Row="2" Spacing="10" Margin="0,16,0,0">
+      <ProgressBar Minimum="0" Maximum="100" Value="{Binding Progress}" Height="6" />
+      <TextBlock Text="{Binding Status}" TextWrapping="Wrap" MaxHeight="70" />
+      <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Right">
+        <Button
+          Content="校验配置"
+          Command="{Binding ValidateConfigurationCommand}"
+          IsEnabled="{Binding IsEditable}"
+        />
+        <Button
+          Content="生成并保存到历史记录"
+          Command="{Binding GenerateCommand}"
+          IsEnabled="{Binding IsEditable}"
+          Background="#7357DA"
+          Foreground="White"
+        />
+        <Button
+          Content="取消生成"
+          Command="{Binding CancelCommand}"
+          IsEnabled="{Binding IsGenerating}"
+        />
+      </StackPanel>
+    </StackPanel>
+  </Grid>
+</Window>

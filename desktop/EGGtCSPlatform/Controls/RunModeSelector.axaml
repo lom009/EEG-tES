@@ -1,0 +1,76 @@
+<ResourceDictionary
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:controls="clr-namespace:EGGtCSPlatform.Controls"
+  xmlns:pages="clr-namespace:EGGtCSPlatform.ViewModels.Pages"
+  x:CompileBindings="False"
+>
+  <ControlTheme x:Key="{x:Type controls:RunModeSelector}" TargetType="controls:RunModeSelector">
+    <Setter Property="Width" Value="180" />
+    <Setter Property="Height" Value="32" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border
+          Padding="2"
+          Background="White"
+          BorderBrush="#D9E5F4"
+          BorderThickness="1"
+          CornerRadius="16"
+        >
+          <Grid ClipToBounds="True" ColumnDefinitions="*,*">
+            <Border
+              x:Name="PART_ModeThumb"
+              Grid.ColumnSpan="2"
+              Width="87"
+              HorizontalAlignment="Left"
+              Background="#3E42C6"
+              CornerRadius="14"
+            >
+              <Border.RenderTransform>
+                <TranslateTransform X="{Binding ThumbOffset, RelativeSource={RelativeSource TemplatedParent}}">
+                  <TranslateTransform.Transitions>
+                    <Transitions>
+                      <DoubleTransition Property="X" Duration="0:0:0.18" Easing="CubicEaseOut" />
+                    </Transitions>
+                  </TranslateTransform.Transitions>
+                </TranslateTransform>
+              </Border.RenderTransform>
+            </Border>
+            <Button
+              x:Name="PART_ManualButton"
+              Grid.Column="0"
+              Command="{TemplateBinding SelectCommand}"
+              CommandParameter="{x:Static pages:ExperimentRunMode.Manual}"
+              Content="手动运行"
+              Cursor="Hand"
+              IsEnabled="{Binding !IsLocked, RelativeSource={RelativeSource TemplatedParent}}"
+              Theme="{StaticResource ExperimentRunModeButtonTheme}"
+            />
+            <Button
+              x:Name="PART_AutomaticButton"
+              Grid.Column="1"
+              Command="{TemplateBinding SelectCommand}"
+              CommandParameter="{x:Static pages:ExperimentRunMode.Automatic}"
+              Content="自动运行"
+              Cursor="Hand"
+              IsEnabled="{Binding !IsLocked, RelativeSource={RelativeSource TemplatedParent}}"
+              Theme="{StaticResource ExperimentRunModeButtonTheme}"
+            />
+          </Grid>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:manual /template/ Button#PART_ManualButton">
+      <Setter Property="Foreground" Value="White" />
+    </Style>
+    <Style Selector="^:manual /template/ Button#PART_AutomaticButton">
+      <Setter Property="Foreground" Value="#334155" />
+    </Style>
+    <Style Selector="^:automatic /template/ Button#PART_ManualButton">
+      <Setter Property="Foreground" Value="#334155" />
+    </Style>
+    <Style Selector="^:automatic /template/ Button#PART_AutomaticButton">
+      <Setter Property="Foreground" Value="White" />
+    </Style>
+  </ControlTheme>
+</ResourceDictionary>

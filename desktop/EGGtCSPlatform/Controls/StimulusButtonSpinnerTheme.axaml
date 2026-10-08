@@ -1,0 +1,58 @@
+<ResourceDictionary
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:controls="clr-namespace:EGGtCSPlatform.Controls"
+  xmlns:pages="clr-namespace:EGGtCSPlatform.ViewModels.Pages"
+  x:ClassModifier="internal"
+  x:CompileBindings="False"
+>
+  <ControlTheme x:Key="StimulusButtonSpinnerTheme" TargetType="ButtonSpinner">
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border
+          Background="{TemplateBinding Background}"
+          BorderBrush="{TemplateBinding BorderBrush}"
+          BorderThickness="{TemplateBinding BorderThickness}"
+          CornerRadius="{TemplateBinding CornerRadius}"
+        >
+          <Grid ColumnDefinitions="*,Auto">
+            <ContentPresenter
+              Name="PART_ContentPresenter"
+              Margin="{TemplateBinding Padding}"
+              Content="{TemplateBinding Content}"
+              ContentTemplate="{TemplateBinding ContentTemplate}"
+              HorizontalContentAlignment="Stretch"
+              VerticalContentAlignment="Center"
+            />
+            <Border
+              Grid.Column="1"
+              Width="28"
+              IsVisible="{TemplateBinding ShowButtonSpinner}"
+              BorderBrush="#E3E8F0"
+              BorderThickness="1,0,0,0"
+              Background="#F5F7FA"
+            >
+              <Grid RowDefinitions="*,*">
+                <RepeatButton
+                  Name="PART_IncreaseButton"
+                  Theme="{StaticResource StimulusSpinnerButtonTheme}"
+                >
+                  <Image Width="16" Height="16" Source="{SvgImage /Assets/Images/stimulus-figma/chevron-up.svg}" />
+                </RepeatButton>
+                <RepeatButton
+                  Name="PART_DecreaseButton"
+                  Grid.Row="1"
+                  Theme="{StaticResource StimulusSpinnerButtonTheme}"
+                >
+                  <Image Width="16" Height="16" Source="{SvgImage /Assets/Images/stimulus-figma/chevron-down.svg}" />
+                </RepeatButton>
+              </Grid>
+            </Border>
+          </Grid>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+</ResourceDictionary>

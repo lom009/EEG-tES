@@ -1,0 +1,154 @@
+<ResourceDictionary
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:controls="clr-namespace:EGGtCSPlatform.Controls"
+  xmlns:pages="clr-namespace:EGGtCSPlatform.ViewModels.Pages"
+>
+  <Design.PreviewWith>
+    <controls:ImpedanceStatusList></controls:ImpedanceStatusList>
+  </Design.PreviewWith>
+
+  <ControlTheme
+    x:Key="{x:Type controls:ImpedanceStatusList}"
+    TargetType="controls:ImpedanceStatusList"
+  >
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Grid RowDefinitions="Auto,*,Auto">
+          <Grid Height="44" ColumnDefinitions="Auto,Auto,*,Auto">
+            <TextBlock
+              VerticalAlignment="Center"
+              FontFamily="{DynamicResource AlibabaPuHuiTi}"
+              FontWeight="Bold"
+              FontSize="{DynamicResource FontSize18}"
+              Foreground="#1E2633"
+              Text="{TemplateBinding Title}"
+            />
+            <StackPanel
+              Grid.Column="1"
+              Margin="10,0,0,0"
+              VerticalAlignment="Center"
+              Orientation="Horizontal"
+              Spacing="5"
+            >
+              <Ellipse x:Name="StatusDot" Width="10" Height="10" Fill="Transparent" />
+              <TextBlock
+                x:Name="StatusLabel"
+                FontSize="{DynamicResource FontSize12}"
+                Foreground="{DynamicResource ProductBad}"
+                Text="{TemplateBinding StatusText}"
+              />
+            </StackPanel>
+            <Button
+              x:Name="DetectionButton"
+              Grid.Column="3"
+              Command="{TemplateBinding DetectionCommand}"
+              Theme="{StaticResource ImpedanceActionButtonTheme}"
+            >
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <Image Width="20" Height="20" Source="{SvgImage /Assets/Images/electrode-icons/detect.svg}" x:Name="IdleDetectionIcon" IsVisible="{Binding !IsDetecting, RelativeSource={RelativeSource TemplatedParent}}" />
+                <controls:RadarWaveIndicator
+                  x:Name="DetectionRadar"
+                  Width="18"
+                  Height="18"
+                  IsActive="{TemplateBinding IsDetecting}"
+                  IsVisible="{TemplateBinding IsDetecting}"
+                />
+                <TextBlock
+                  FontSize="{DynamicResource FontSize14}"
+                  Text="{TemplateBinding ButtonText}"
+                />
+              </StackPanel>
+            </Button>
+          </Grid>
+
+          <Grid Grid.Row="1">
+            <ScrollViewer
+              HorizontalScrollBarVisibility="Disabled"
+              IsVisible="{TemplateBinding HasItems}"
+              VerticalScrollBarVisibility="Auto"
+            >
+              <ItemsControl ItemsSource="{TemplateBinding ItemsSource}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="pages:ElectrodeImpedanceItemViewModel">
+                    <controls:ImpedanceStatusItem
+                      PointCommand="{Binding PointCommand, RelativeSource={RelativeSource AncestorType=controls:ImpedanceStatusList}}"
+                      PointCommandParameter="{Binding Site}"
+                      IsSelected="{Binding IsSelected}"
+                      ChannelConflictText="{Binding ChannelConflictText}"
+                      HasChannelConflict="{Binding HasChannelConflict}"
+                      ImpedanceText="{Binding ImpedanceText}"
+                      IsHitTestVisible="{Binding !IsInteractionLocked, RelativeSource={RelativeSource AncestorType=controls:ImpedanceStatusList}}"
+                      Label="{Binding Label}"
+                      RoleText="{Binding RoleText}"
+                      StimulationChannels="{Binding StimulationChannels}"
+                      Quality="{Binding Quality}"
+                      QualityText="{Binding QualityText}"
+                      ResolvedStimulationRole="{Binding ResolvedStimulationRole}"
+                      SelectedStimulationChannel="{Binding SelectedStimulationChannel, Mode=TwoWay}"
+                      ShowStimulationChannel="{Binding ShowStimulationChannel}"
+                    />
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </ScrollViewer>
+            <StackPanel
+              HorizontalAlignment="Center"
+              VerticalAlignment="Center"
+              IsVisible="{Binding !HasItems, RelativeSource={RelativeSource TemplatedParent}}"
+              Spacing="10"
+            >
+              <Image Width="230" Height="149" Source="avares://EGGtCSPlatform/Assets/Images/impedance-empty.png" Stretch="Uniform" />
+              <TextBlock
+                HorizontalAlignment="Center"
+                FontSize="{DynamicResource FontSize14}"
+                Foreground="{DynamicResource ProductText}"
+                Text="{TemplateBinding EmptyTitle}"
+              />
+              <TextBlock
+                HorizontalAlignment="Center"
+                FontSize="{DynamicResource FontSize12}"
+                Foreground="{DynamicResource ProductTextMuted}"
+                Text="{TemplateBinding EmptyDescription}"
+              />
+            </StackPanel>
+          </Grid>
+
+          <Border
+            Grid.Row="2"
+            MinHeight="34"
+            Margin="0,8,0,0"
+            Padding="10,7"
+            Background="{DynamicResource ProductDangerSurface}"
+            CornerRadius="6"
+            IsVisible="{TemplateBinding HasValidationMessage}"
+          >
+            <TextBlock
+              FontSize="{DynamicResource FontSize12}"
+              Foreground="{DynamicResource ProductBad}"
+              Text="{TemplateBinding ValidationText}"
+              TextWrapping="Wrap"
+            />
+          </Border>
+        </Grid>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:passed /template/ Ellipse#StatusDot">
+      <Setter Property="Fill" Value="{DynamicResource ProductExcellent}" />
+    </Style>
+    <Style Selector="^:passed /template/ TextBlock#StatusLabel">
+      <Setter Property="Foreground" Value="{DynamicResource ProductExcellent}" />
+    </Style>
+    <Style Selector="^:failed /template/ Ellipse#StatusDot">
+      <Setter Property="Fill" Value="{DynamicResource ProductBad}" />
+    </Style>
+    <Style Selector="^:detecting /template/ Button#DetectionButton">
+      <Setter Property="Background" Value="#FFF8F7" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ProductBad}" />
+      <Setter Property="Foreground" Value="{DynamicResource ProductBad}" />
+    </Style>
+    <Style Selector="^:detecting /template/ Ellipse#StatusDot">
+      <Setter Property="Fill" Value="{DynamicResource ProductBad}" />
+    </Style>
+  </ControlTheme>
+</ResourceDictionary>

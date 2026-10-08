@@ -1,0 +1,67 @@
+<ResourceDictionary
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:controls="clr-namespace:EGGtCSPlatform.Controls"
+  xmlns:pages="clr-namespace:EGGtCSPlatform.ViewModels.Pages"
+  x:CompileBindings="False"
+>
+  <ControlTheme
+    x:Key="{x:Type controls:StimulusOverviewCard}"
+    TargetType="controls:StimulusOverviewCard"
+  >
+    <Setter Property="FontSize" Value="{DynamicResource FontSize12}" />
+    <Setter Property="Padding" Value="22,18" />
+    <Setter Property="ClipToBounds" Value="False" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border
+          Padding="{TemplateBinding Padding}"
+          Background="#80FFFFFF"
+          BorderBrush="#FFFFFF"
+          BorderThickness="1"
+          BoxShadow="0 4 12 0 #17AE00B4"
+          CornerRadius="8"
+          ClipToBounds="False"
+        >
+          <StackPanel Spacing="3">
+            <Canvas Width="131" Height="38"
+                    IsVisible="{Binding IsDirectCurrent, RelativeSource={RelativeSource TemplatedParent}}">
+              <Line StartPoint="1,0" EndPoint="1,37" Stroke="#C99AFF" StrokeThickness="0.5" StrokeDashArray="2,2" />
+              <Line StartPoint="21,1" EndPoint="21,38" Stroke="#C99AFF" StrokeThickness="0.5" StrokeDashArray="2,2" />
+              <Line StartPoint="110,1" EndPoint="110,38" Stroke="#C99AFF" StrokeThickness="0.5" StrokeDashArray="2,2" />
+              <Line StartPoint="130,1" EndPoint="130,38" Stroke="#C99AFF" StrokeThickness="0.5" StrokeDashArray="2,2" />
+              <Image Canvas.Left="0.5625" Canvas.Top="0.5" Width="130" Height="37"
+                     Source="{SvgImage /Assets/Images/stimulation-period-tdcs-wave.svg}" />
+              <Ellipse Canvas.Left="0" Canvas.Top="34" Width="4" Height="4" Fill="White" Stroke="#9536F3" StrokeThickness="0.5" />
+            </Canvas>
+            <controls:StimulusWaveformControl
+              Height="38"
+              IsVisible="{Binding !IsDirectCurrent, RelativeSource={RelativeSource TemplatedParent}}"
+              Descriptor="{TemplateBinding Descriptor}"
+              DisplayMode="Compact"
+            />
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="4">
+              <TextBlock
+                FontSize="{TemplateBinding FontSize}"
+                Foreground="#9536F3"
+                Text="{TemplateBinding CurrentLabel}"
+                IsVisible="False"
+              />
+              <TextBlock
+                FontSize="{TemplateBinding FontSize}"
+                Foreground="#9536F3"
+                Text="{TemplateBinding CurrentText}"
+              />
+            </StackPanel>
+            <TextBlock
+              HorizontalAlignment="Center"
+              FontSize="{TemplateBinding FontSize}"
+              Foreground="#9536F3"
+              Text="{TemplateBinding StatusText}"
+            />
+          </StackPanel>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+</ResourceDictionary>

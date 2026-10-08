@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>EGGtCSPlatform.WindowsSetup</AssemblyName>
+    <RootNamespace>EGGtCSPlatform.WindowsSetup</RootNamespace>
+    <ApplicationIcon>..\EGGtCSPlatform\Assets\Images\icon.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(VelopackSetupPath)' != ''">
+    <EmbeddedResource Include="$(VelopackSetupPath)" LogicalName="EGGtCSPlatform.EmbeddedVelopackSetup.exe" />
+  </ItemGroup>
+
+  <Target Name="ValidateEmbeddedVelopackSetup"
+          BeforeTargets="CoreCompile"
+          Condition="'$(RequireEmbeddedVelopackSetup)' == 'true'">
+    <Error Condition="'$(VelopackSetupPath)' == ''"
+           Text="VelopackSetupPath is required when building the distributable Windows setup." />
+    <Error Condition="!Exists('$(VelopackSetupPath)')"
+           Text="The Velopack setup to embed was not found: $(VelopackSetupPath)" />
+  </Target>
+</Project>

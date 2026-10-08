@@ -1,5 +1,5 @@
 export const MIN_DURATION_MS = 10;
-export const MAX_DURATION_MS = 60_000;
+export const MAX_DURATION_MS = 3_600_000;
 export const MIN_CYCLE_COUNT = 1;
 export const MAX_CYCLE_COUNT = 99;
 

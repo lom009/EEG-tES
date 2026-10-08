@@ -1,0 +1,108 @@
+<UserControl
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+  xmlns:vm="clr-namespace:EGGtCSPlatform.ViewModels"
+  x:Class="EGGtCSPlatform.Views.BatchDeleteResultDialogView"
+  x:DataType="vm:BatchDeleteResultDialogViewModel"
+  Width="600"
+  Height="470"
+  Background="Transparent"
+  mc:Ignorable="d"
+>
+  <Border
+    Width="560"
+    Height="430"
+    Margin="20"
+    Padding="24"
+    Background="White"
+    BoxShadow="0 8 20 0 #1A000000"
+    CornerRadius="8"
+  >
+    <Grid RowDefinitions="28,14,48,12,*,14,34">
+      <TextBlock
+        VerticalAlignment="Center"
+        FontFamily="{DynamicResource AlibabaPuHuiTi}"
+        FontWeight="Medium"
+        FontSize="{DynamicResource FontSize17}"
+        Text="批量删除完成"
+      />
+
+      <Border Grid.Row="2" Padding="14,9" Background="#F7F9FC" CornerRadius="6">
+        <TextBlock
+          VerticalAlignment="Center"
+          FontSize="{DynamicResource FontSize14}"
+          Foreground="#27364D"
+          Text="{Binding Summary}"
+        />
+      </Border>
+
+      <Grid Grid.Row="4">
+        <TextBlock
+          HorizontalAlignment="Center"
+          VerticalAlignment="Center"
+          FontSize="{DynamicResource FontSize13}"
+          Foreground="#4F8A63"
+          IsVisible="{Binding !HasFailures}"
+          Text="所有选中的运行记录均已成功删除。"
+        />
+        <Grid RowDefinitions="24,*" IsVisible="{Binding HasFailures}">
+          <TextBlock
+            FontSize="{DynamicResource FontSize13}"
+            Foreground="#E55252"
+            Text="失败明细（失败项已保留选择，可再次删除）"
+          />
+          <ScrollViewer
+            Grid.Row="1"
+            HorizontalScrollBarVisibility="Disabled"
+            VerticalScrollBarVisibility="Auto"
+          >
+            <ItemsControl ItemsSource="{Binding Failures}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:BatchDeleteFailureViewModel">
+                  <Border Margin="0,0,0,8" Padding="12,9" Background="#FFF6F6" CornerRadius="5">
+                    <Grid RowDefinitions="Auto,4,Auto" ColumnDefinitions="150,*">
+                      <TextBlock
+                        FontSize="{DynamicResource FontSize12}"
+                        FontWeight="Medium"
+                        Text="{Binding ExperimentId}"
+                      />
+                      <TextBlock
+                        Grid.Column="1"
+                        FontSize="{DynamicResource FontSize11}"
+                        Foreground="#7889A1"
+                        Text="{Binding StartedAt}"
+                      />
+                      <TextBlock
+                        Grid.Row="2"
+                        Grid.ColumnSpan="2"
+                        FontSize="{DynamicResource FontSize12}"
+                        Foreground="#B43D3D"
+                        Text="{Binding Message}"
+                        TextWrapping="Wrap"
+                      />
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </ScrollViewer>
+        </Grid>
+      </Grid>
+
+      <Button
+        Grid.Row="6"
+        MinWidth="72"
+        Height="34"
+        Padding="18,0"
+        HorizontalAlignment="Right"
+        Background="#3941B6"
+        Foreground="White"
+        CornerRadius="6"
+        Command="{Binding ConfirmCommand}"
+        Content="确认"
+      />
+    </Grid>
+  </Border>
+</UserControl>

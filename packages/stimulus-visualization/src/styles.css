@@ -1,0 +1,94 @@
+.stimulus-visualization {
+  --stimulus-accent: #9536f3;
+  position: relative;
+  box-sizing: border-box;
+  width: 177px;
+  height: 104px;
+  overflow: hidden;
+  border: 1px solid #fff;
+  border-radius: 8px;
+  background: linear-gradient(239.261deg, rgba(255, 255, 255, 0.3) 3.349%, rgba(243, 230, 255, 0.3) 99.129%);
+  box-shadow: 0 4px 12px rgba(174, 0, 180, 0.09);
+  color: var(--stimulus-accent);
+  font-family: "Alibaba PuHuiTi 3.0", "PingFang SC", Arial, sans-serif;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 400;
+  backdrop-filter: blur(2px);
+}
+
+.stimulus-visualization__graph {
+  position: absolute;
+  top: 23px;
+  left: 50%;
+  width: 131px;
+  height: 38px;
+  transform: translateX(-50%);
+}
+
+.stimulus-visualization__diagram {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 131px;
+  height: 38px;
+  overflow: visible;
+}
+
+.stimulus-visualization__diagram--tacs {
+  top: -3.7516px;
+  bottom: auto;
+  height: 42.7516px;
+}
+
+.stimulus-visualization__path--pending {
+  opacity: 0.24;
+}
+
+.stimulus-visualization__path--complete,
+.stimulus-visualization__point {
+  opacity: 1;
+}
+
+.stimulus-visualization__value {
+  position: absolute;
+  z-index: 2;
+  top: 44px;
+  left: 0;
+  right: 0;
+  display: block;
+  margin: 0;
+  color: var(--stimulus-accent);
+  font: inherit;
+  line-height: 12px;
+  text-align: center;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.stimulus-visualization__status {
+  position: absolute;
+  top: 77px;
+  left: 0;
+  right: 0;
+  margin: 0;
+  color: var(--stimulus-accent);
+  font: inherit;
+  line-height: 20px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.stimulus-visualization__status strong {
+  font-weight: 700;
+}
+
+.stimulus-visualization__status span {
+  font-weight: 400;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stimulus-visualization * {
+    transition: none !important;
+  }
+}

@@ -1,0 +1,35 @@
+<Window
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  x:Class="EGGtCSPlatform.Views.SingleInstanceWindow"
+  Title="EGGtCSPlatform"
+  Width="420"
+  Height="180"
+  MinWidth="420"
+  MinHeight="180"
+  CanResize="False"
+  Topmost="True"
+  WindowStartupLocation="CenterScreen"
+  Background="White"
+>
+  <Grid Margin="28,24" RowDefinitions="*,Auto">
+    <TextBlock
+      x:Name="MessageText"
+      HorizontalAlignment="Center"
+      VerticalAlignment="Center"
+      FontSize="{DynamicResource FontSize16}"
+      Foreground="#252C3A"
+      Text="程序已在运行，请勿重复启动。"
+      TextAlignment="Center"
+      TextWrapping="Wrap"
+    />
+    <Button
+      Grid.Row="1"
+      MinWidth="96"
+      Height="36"
+      HorizontalAlignment="Center"
+      Click="OnConfirmClick"
+      Content="确定"
+    />
+  </Grid>
+</Window>

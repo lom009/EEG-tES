@@ -1,0 +1,304 @@
+<ResourceDictionary
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  x:ClassModifier="internal"
+>
+  <Design.PreviewWith>
+    <!-- Add Controls for Previewer Here -->
+    <Border Padding="20" Background="#F2F3F5" Width="600">
+      <Grid ColumnDefinitions="*,*">
+        <StackPanel Spacing="15">
+          <Button Content="Normal" />
+          <Button Classes="small" Content="Small" />
+          <Button Classes="small" Content="+" />
+          <IconButton IconText="&#xe2c2;" />
+          <IconButton IconText="&#xe2c2;" Classes="icon-outline" />
+          <Button Classes="smaller" Content="Smaller" />
+          <Button Classes="smaller" Content="+" />
+          <Button Classes="subtle" Content="Subtle" />
+          <IconButton IconText="&#xe2c2;" Classes="subtle" Content="Icon Subtle" />
+          <IconButton IconText="&#xe2c2;" Classes="outline icon-outline" Content="Icon Outline" />
+          <Button Classes="outline" Content="Outline" />
+          <Button Classes="alert" Content="Alert" />
+          <Button Classes="outline alert" Content="Alert" />
+          <Button Classes="danger" Content="Danger" />
+          <Button Classes="outline danger" Content="Danger" />
+          <Button Classes="success" Content="Success" />
+          <Button Classes="outline success" Content="Success" />
+
+          <IconButton IconText="&#xe2c2;" Content="Icon Stretch" HorizontalAlignment="Stretch" />
+
+          <Button>
+            <Label Classes="icon-only" Content="&#xe272;"></Label>
+          </Button>
+
+          <Button Classes="transparent">
+            <Label Classes="icon-only" Content="&#xe272;"></Label>
+          </Button>
+        </StackPanel>
+
+        <StackPanel Grid.Column="1" Spacing="15">
+          <CheckBox></CheckBox>
+          <CheckBox>Has Content</CheckBox>
+        </StackPanel>
+      </Grid>
+    </Border>
+  </Design.PreviewWith>
+
+  <ControlTheme x:Key="{x:Type Button}" TargetType="Button">
+    <Setter Property="Background" Value="{DynamicResource ButtonBackground}" />
+    <Setter Property="Foreground" Value="{DynamicResource ButtonForeground}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource ButtonBorderBrush}" />
+    <Setter Property="BorderThickness" Value="{DynamicResource ButtonBorderThemeThickness}" />
+    <Setter Property="CornerRadius" Value="{DynamicResource ControlCornerRadius}" />
+    <Setter Property="Padding" Value="{DynamicResource ButtonPadding}" />
+    <Setter Property="HorizontalAlignment" Value="Left" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="RenderTransform" Value="none" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <TransformOperationsTransition Property="RenderTransform" Duration="0:0:.075" />
+      </Transitions>
+    </Setter>
+
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border
+          Background="{TemplateBinding Background}"
+          BorderBrush="{TemplateBinding BorderBrush}"
+          BorderThickness="{TemplateBinding BorderThickness}"
+          CornerRadius="{TemplateBinding CornerRadius}"
+          Padding="{TemplateBinding Padding}"
+        >
+          <StackPanel
+            HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+            VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+            Orientation="Horizontal"
+          >
+            <ContentPresenter
+              HorizontalAlignment="Center"
+              VerticalAlignment="Center"
+              HorizontalContentAlignment="Center"
+              VerticalContentAlignment="Center"
+              Content="{TemplateBinding Content}"
+            >
+              <ContentPresenter.ContentTemplate>
+                <DataTemplate DataType="x:Object">
+                  <ContentControl
+                    VerticalAlignment="Center"
+                    Foreground="{Binding $parent[Button].Foreground}"
+                    DataContext="{Binding $parent[Button].DataContext}"
+                    Content="{Binding $parent[Button].Content}"
+                  />
+                </DataTemplate>
+              </ContentPresenter.ContentTemplate>
+            </ContentPresenter>
+          </StackPanel>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+
+    <!-- Button Styles -->
+    <Style Selector="^:is(Button)">
+      <Setter Property="FontSize" Value="{DynamicResource FontSize14}"></Setter>
+      <Setter Property="CornerRadius" Value="4"></Setter>
+      <Setter Property="FontFamily" Value="{DynamicResource AlibabaPuHuiTi}"></Setter>
+      <Setter Property="Padding" Value="15 8"></Setter>
+      <Setter Property="BorderThickness" Value="1"></Setter>
+      <Setter Property="Effect" Value="{x:Null}" />
+    </Style>
+
+    <!-- Small button -->
+    <Style Selector="^:is(Button).small">
+      <Setter Property="FontSize" Value="{DynamicResource FontSize14}"></Setter>
+      <Setter Property="CornerRadius" Value="6"></Setter>
+      <Setter Property="Padding" Value="6 2 6 3"></Setter>
+    </Style>
+
+    <!-- Smaller button -->
+    <Style Selector="^:is(Button).smaller">
+      <Setter Property="FontSize" Value="{DynamicResource FontSize12}"></Setter>
+      <Setter Property="CornerRadius" Value="5"></Setter>
+      <Setter Property="Padding" Value="3 0 3 2"></Setter>
+    </Style>
+
+    <!-- Normal button -->
+    <Style Selector="^:is(Button):not(CheckBox)">
+      <Setter Property="Foreground" Value="#606266"></Setter>
+      <Setter Property="Background" Value="#FFFFFF"></Setter>
+      <Setter Property="BorderBrush" Value="#DCDFE6"></Setter>
+    </Style>
+
+    <!-- Normal button (hover) -->
+    <Style Selector="^:is(Button):not(CheckBox):pointerover">
+      <Setter Property="Foreground" Value="#409EFF"></Setter>
+      <Setter Property="Background" Value="#ECF5FF"></Setter>
+      <Setter Property="BorderBrush" Value="#C6E2FF"></Setter>
+    </Style>
+
+    <Style Selector="^:is(Button):not(CheckBox):pressed">
+      <Setter Property="Foreground" Value="#FFFFFF"></Setter>
+      <Setter Property="Background" Value="#409EFF"></Setter>
+      <Setter Property="BorderBrush" Value="#409EFF"></Setter>
+    </Style>
+
+    <!-- Normal button (disabled) -->
+    <Style Selector="^:is(Button):not(CheckBox):disabled">
+      <Setter Property="Foreground" Value="#C0C4CC"></Setter>
+      <Setter Property="Background" Value="#FFFFFF"></Setter>
+      <Setter Property="BorderBrush" Value="#EBEEF5"></Setter>
+    </Style>
+
+    <!-- Alert button -->
+    <Style Selector="^:is(Button).alert">
+      <Setter Property="Foreground" Value="#FFFFFF"></Setter>
+      <Setter Property="Background" Value="#E6A23C"></Setter>
+      <Setter Property="BorderBrush" Value="#E6A23C"></Setter>
+    </Style>
+
+    <!-- Alert button (hover) -->
+    <Style Selector="^:is(Button).alert:pointerover">
+      <Setter Property="Foreground" Value="#FFFFFF"></Setter>
+      <Setter Property="Background" Value="#EBB563"></Setter>
+      <Setter Property="BorderBrush" Value="#EBB563"></Setter>
+    </Style>
+
+    <!-- Danger button -->
+    <Style Selector="^:is(Button).danger">
+      <Setter Property="Foreground" Value="#FFFFFF"></Setter>
+      <Setter Property="Background" Value="#F56C6C"></Setter>
+      <Setter Property="BorderBrush" Value="#F56C6C"></Setter>
+    </Style>
+
+    <!-- Danger button (hover) -->
+    <Style Selector="^:is(Button).danger:pointerover">
+      <Setter Property="Foreground" Value="#FFFFFF"></Setter>
+      <Setter Property="Background" Value="#F78989"></Setter>
+      <Setter Property="BorderBrush" Value="#F78989"></Setter>
+    </Style>
+
+    <!-- Success button -->
+    <Style Selector="^:is(Button).success">
+      <Setter Property="Foreground" Value="#FFFFFF"></Setter>
+      <Setter Property="Background" Value="#67C23A"></Setter>
+      <Setter Property="BorderBrush" Value="#67C23A"></Setter>
+    </Style>
+
+    <!-- Success button (hover) -->
+    <Style Selector="^:is(Button).success:pointerover">
+      <Setter Property="Foreground" Value="#FFFFFF"></Setter>
+      <Setter Property="Background" Value="#85CE61"></Setter>
+      <Setter Property="BorderBrush" Value="#85CE61"></Setter>
+    </Style>
+
+    <!-- Subtle button -->
+    <Style Selector="^:is(Button).subtle">
+      <Setter Property="Foreground" Value="#606266"></Setter>
+      <Setter Property="Background" Value="Transparent"></Setter>
+    </Style>
+
+    <!-- Subtle button (hover) -->
+    <Style Selector="^:is(Button).subtle:pointerover">
+      <Setter Property="Foreground" Value="#409EFF"></Setter>
+      <Setter Property="Background" Value="#ECF5FF"></Setter>
+    </Style>
+
+    <!-- Outline button -->
+    <Style Selector="^:is(Button).outline">
+      <Setter Property="Foreground" Value="#409EFF"></Setter>
+      <Setter Property="Background" Value="#FFFFFF"></Setter>
+      <Setter Property="BorderBrush" Value="#409EFF"></Setter>
+
+      <!-- Alert -->
+      <Style Selector="^.alert">
+        <Setter Property="BorderBrush" Value="#E6A23C"></Setter>
+        <Setter Property="Foreground" Value="#E6A23C"></Setter>
+      </Style>
+
+      <!-- Danger -->
+      <Style Selector="^.danger">
+        <Setter Property="BorderBrush" Value="#F56C6C"></Setter>
+        <Setter Property="Foreground" Value="#F56C6C"></Setter>
+      </Style>
+
+      <!-- Success -->
+      <Style Selector="^.success">
+        <Setter Property="BorderBrush" Value="#67C23A"></Setter>
+        <Setter Property="Foreground" Value="#67C23A"></Setter>
+      </Style>
+    </Style>
+
+    <!-- Outline button (hover) -->
+    <Style Selector="^:is(Button).outline:pointerover">
+      <Setter Property="Foreground" Value="#409EFF"></Setter>
+      <Setter Property="Background" Value="#ECF5FF"></Setter>
+      <Setter Property="BorderBrush" Value="#C6E2FF"></Setter>
+    </Style>
+
+    <!-- Outline button (disabled) -->
+    <Style Selector="^:is(Button).outline:disabled">
+      <Setter Property="Foreground" Value="#C0C4CC"></Setter>
+      <Setter Property="Background" Value="#FFFFFF"></Setter>
+      <Setter Property="BorderBrush" Value="#EBEEF5"></Setter>
+    </Style>
+
+    <!-- Outline alert (hover) -->
+    <Style Selector="^:is(Button).outline.alert:pointerover">
+      <Setter Property="Background" Value="#FDF6EC"></Setter>
+      <Setter Property="Foreground" Value="#E6A23C"></Setter>
+      <Setter Property="BorderBrush" Value="#F5DAB1"></Setter>
+    </Style>
+
+    <!-- Outline danger (hover) -->
+    <Style Selector="^:is(Button).outline.danger:pointerover">
+      <Setter Property="Background" Value="#FEF0F0"></Setter>
+      <Setter Property="Foreground" Value="#F56C6C"></Setter>
+      <Setter Property="BorderBrush" Value="#FBC4C4"></Setter>
+    </Style>
+
+    <!-- Outline success (hover) -->
+    <Style Selector="^:is(Button).outline.success:pointerover">
+      <Setter Property="Background" Value="#F0F9EB"></Setter>
+      <Setter Property="Foreground" Value="#67C23A"></Setter>
+      <Setter Property="BorderBrush" Value="#C2E7B0"></Setter>
+    </Style>
+
+    <!-- Transparent button (hover) -->
+    <Style Selector="^:is(Button).transparent:pointerover">
+      <Setter Property="RenderTransform" Value="scale(1.2)"></Setter>
+      <Setter Property="Foreground" Value="#606266"></Setter>
+      <Setter Property="Background" Value="Transparent"></Setter>
+    </Style>
+
+    <!-- Transparent button animation -->
+    <Style Selector="^:is(Button)">
+      <Setter Property="Transitions">
+        <Transitions>
+          <BrushTransition Property="Foreground" Duration="0:0:0.1" />
+          <BrushTransition Property="Background" Duration="0:0:0.1" />
+          <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.1" />
+        </Transitions>
+      </Setter>
+    </Style>
+
+    <!-- Transparent button -->
+    <Style Selector="^:is(Button).transparent">
+      <Setter Property="Foreground" Value="#606266"></Setter>
+      <Setter Property="Background" Value="Transparent"></Setter>
+    </Style>
+    <!-- -->
+    <!-- ~1~ Transparent button icon only label @1@ -->
+    <!-- <Style Selector="^:is(Button).transparent Label.icon-only"> -->
+    <!--     <Setter Property="FontFamily" Value="{DynamicResource Phosphor}"></Setter> -->
+    <!-- </Style> -->
+
+    <!-- Active button -->
+    <Style Selector="^:is(Button).active">
+      <Setter Property="Background" Value="#409EFF"></Setter>
+      <Setter Property="Foreground" Value="#FFFFFF"></Setter>
+      <Setter Property="BorderBrush" Value="#409EFF"></Setter>
+    </Style>
+  </ControlTheme>
+</ResourceDictionary>

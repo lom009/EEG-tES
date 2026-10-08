@@ -1,0 +1,26 @@
+.tilted-surface {
+  perspective: 1200px;
+  perspective-origin: center;
+}
+
+.tilted-surface__inner {
+  --tilt-x: 0deg;
+  --tilt-y: 0deg;
+  --tilt-scale: 1;
+  width: 100%;
+  height: 100%;
+  transform: rotateX(var(--tilt-x)) rotateY(var(--tilt-y)) scale(var(--tilt-scale));
+  transform-style: preserve-3d;
+  transform-origin: center;
+  transition: transform 180ms cubic-bezier(.22, .61, .36, 1);
+  will-change: transform;
+}
+
+@media (pointer: coarse), (prefers-reduced-motion: reduce) {
+  .tilted-surface { perspective: none; }
+  .tilted-surface__inner {
+    transform: none !important;
+    transition: none;
+    will-change: auto;
+  }
+}

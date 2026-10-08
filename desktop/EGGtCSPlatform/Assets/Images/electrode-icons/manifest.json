@@ -1,0 +1,50 @@
+[
+  {
+    "name": "stimulus-idle",
+    "id": "648:6275"
+  },
+  {
+    "name": "stimulus-active",
+    "id": "648:7013"
+  },
+  {
+    "name": "acquisition-idle",
+    "id": "648:7017"
+  },
+  {
+    "name": "acquisition-active",
+    "id": "648:6279"
+  },
+  {
+    "name": "role-anode",
+    "id": "648:7029"
+  },
+  {
+    "name": "role-cathode",
+    "id": "648:7036"
+  },
+  {
+    "name": "role-checked",
+    "id": "648:7038"
+  },
+  {
+    "name": "refresh",
+    "id": "648:6999"
+  },
+  {
+    "name": "back",
+    "id": "648:7002"
+  },
+  {
+    "name": "confirm",
+    "id": "648:7071"
+  },
+  {
+    "name": "detect",
+    "id": "648:7058"
+  },
+  {
+    "name": "warning",
+    "id": "648:7025"
+  }
+]

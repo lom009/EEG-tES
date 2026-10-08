@@ -1,0 +1,80 @@
+<ResourceDictionary
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:controls="clr-namespace:EGGtCSPlatform.Controls"
+  xmlns:pages="clr-namespace:EGGtCSPlatform.ViewModels.Pages"
+  x:CompileBindings="False"
+>
+  <ControlTheme
+    x:Key="{x:Type controls:EegWaveformChannel}"
+    TargetType="controls:EegWaveformChannel"
+  >
+    <Setter Property="Height" Value="96" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Grid ColumnDefinitions="86,*" Background="{TemplateBinding ChannelBackground}">
+          <Border>
+            <StackPanel
+              Width="38"
+              HorizontalAlignment="Left"
+              VerticalAlignment="Center"
+              Spacing="4"
+            >
+              <TextBlock
+                FontFamily="{DynamicResource AlibabaPuHuiTi}"
+                FontWeight="Regular"
+                FontSize="{DynamicResource FontSize14}"
+                Foreground="#232B38"
+                HorizontalAlignment="Center"
+                Text="{TemplateBinding ChannelId}"
+              />
+              <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="False">
+                <Ellipse
+                  Width="6"
+                  Height="6"
+                  VerticalAlignment="Center"
+                  Fill="{TemplateBinding WaveformBrush}"
+                />
+                <TextBlock
+                  FontSize="{DynamicResource FontSize10}"
+                  Foreground="#91A0B4"
+                  Text="信号良好"
+                />
+              </StackPanel>
+            </StackPanel>
+          </Border>
+          <controls:WaveformAmplitudeAxis
+            Margin="38,8,0,8"
+            ZIndex="1"
+            IsHitTestVisible="False"
+            ShowUnit="{TemplateBinding ShowAmplitudeUnit}"
+            MaximumAmplitude="{TemplateBinding MaximumAmplitude}"
+          />
+          <Grid Grid.Column="1" Margin="0,8">
+            <controls:WaveformPlotSurface
+              x:Name="PART_WaveformSurface"
+              ContinuousStimulationOverlay="{TemplateBinding ContinuousStimulationOverlay}"
+              ChannelId="{TemplateBinding ChannelId}"
+              ClipToBounds="True"
+              GridBrush="#E2E8F2"
+              HoverState="{TemplateBinding HoverState}"
+              DataAvailableThrough="{TemplateBinding DataAvailableThrough}"
+              LiveValue="{TemplateBinding LiveValue}"
+              MaximumAmplitude="{TemplateBinding MaximumAmplitude}"
+              SampleLookup="{TemplateBinding SampleLookup}"
+              Samples="{TemplateBinding Samples}"
+              ShowXCursor="{TemplateBinding ShowXCursor}"
+              ShowYCursor="{TemplateBinding ShowYCursor}"
+              Stage="{TemplateBinding Stage}"
+              TimelineSegments="{TemplateBinding TimelineSegments}"
+              ViewEnd="{TemplateBinding ViewEnd}"
+              ViewStart="{TemplateBinding ViewStart}"
+              WaveformBrush="{TemplateBinding WaveformBrush}"
+              WaveformStrokeThickness="{TemplateBinding WaveformStrokeThickness}"
+            />
+          </Grid>
+        </Grid>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+</ResourceDictionary>

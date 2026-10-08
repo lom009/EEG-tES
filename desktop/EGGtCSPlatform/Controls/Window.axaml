@@ -1,0 +1,41 @@
+<ResourceDictionary
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  x:ClassModifier="internal"
+  x:CompileBindings="False"
+>
+  <!-- Template and base states from Avalonia.Themes.Fluent 12.1.1 (MIT); see Fluent.LICENSE.txt. -->
+  <ControlTheme x:Key="{x:Type Window}" TargetType="Window">
+    <Setter Property="Foreground" Value="#303133" />
+    <Setter Property="Background" Value="#F2F3F5" />
+    <Setter Property="FontFamily" Value="{DynamicResource AlibabaPuHuiTi}" />
+    <Setter
+      Property="TransparencyBackgroundFallback"
+      Value="{DynamicResource SystemControlBackgroundAltHighBrush}"
+    />
+    <Setter
+      Property="TopLevel.SystemBarColor"
+      Value="{DynamicResource SystemControlBackgroundAltHighBrush}"
+    />
+    <Setter Property="FontSize" Value="{DynamicResource ControlContentThemeFontSize}" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Panel>
+          <Border Name="PART_TransparencyFallback" IsHitTestVisible="False" />
+          <Border Background="{TemplateBinding Background}" IsHitTestVisible="False" />
+          <Panel Background="Transparent" Margin="{TemplateBinding WindowDecorationMargin}" />
+          <VisualLayerManager Name="PART_VisualLayerManager">
+            <ContentPresenter
+              Name="PART_ContentPresenter"
+              ContentTemplate="{TemplateBinding ContentTemplate}"
+              Content="{TemplateBinding Content}"
+              Margin="{TemplateBinding Padding}"
+              HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+              VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+            />
+          </VisualLayerManager>
+        </Panel>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+</ResourceDictionary>

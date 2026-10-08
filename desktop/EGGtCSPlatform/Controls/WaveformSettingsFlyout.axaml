@@ -1,0 +1,101 @@
+<ResourceDictionary
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:controls="clr-namespace:EGGtCSPlatform.Controls"
+  xmlns:pages="clr-namespace:EGGtCSPlatform.ViewModels.Pages"
+  x:CompileBindings="False"
+>
+  <ControlTheme
+    x:Key="{x:Type controls:WaveformSettingsFlyout}"
+    TargetType="controls:WaveformSettingsFlyout"
+  >
+    <Setter Property="Width" Value="54" />
+    <Setter Property="Height" Value="32" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Grid>
+          <Button
+            x:Name="PART_ToggleButton"
+            Content="设置"
+            Theme="{StaticResource ExperimentRunCompactButtonTheme}"
+          />
+          <Popup
+            IsLightDismissEnabled="True"
+            IsOpen="{TemplateBinding IsOpen}"
+            Placement="BottomEdgeAlignedRight"
+            PlacementTarget="{Binding #PART_ToggleButton}"
+          >
+            <Border
+              Width="296"
+              Margin="0,6,0,0"
+              Padding="16"
+              Background="White"
+              BorderBrush="#DDE5EF"
+              BorderThickness="1"
+              CornerRadius="10"
+              BoxShadow="0 8 24 0 #260C1B33"
+            >
+              <StackPanel Spacing="12">
+                <TextBlock
+                  FontFamily="{DynamicResource AlibabaPuHuiTi}"
+                  FontWeight="Medium"
+                  FontSize="{DynamicResource FontSize15}"
+                  Foreground="#26364E"
+                  Text="波形显示设置"
+                />
+                <Grid ColumnDefinitions="84,*">
+                  <TextBlock
+                    VerticalAlignment="Center"
+                    FontSize="{DynamicResource FontSize13}"
+                    Foreground="#7C8BA0"
+                    Text="导联布局"
+                  />
+                  <ComboBox
+                    Grid.Column="1"
+                    ItemsSource="{TemplateBinding LayoutOptions}"
+                    SelectedItem="{TemplateBinding SelectedLayout}"
+                    Theme="{StaticResource ExperimentRunCompactComboBoxTheme}"
+                  />
+                </Grid>
+                <Button
+                  Command="{TemplateBinding ShowAllChannelsCommand}"
+                  Content="查看全部 32 导"
+                  Theme="{StaticResource ExperimentRunCompactButtonTheme}"
+                />
+                <Border Height="1" Background="#EEF1F5" />
+                <TextBlock
+                  FontSize="{DynamicResource FontSize13}"
+                  Foreground="#7C8BA0"
+                  Text="异常详情"
+                />
+                <ItemsControl
+                  x:Name="ExceptionList"
+                  MaxHeight="116"
+                  ItemsSource="{TemplateBinding Exceptions}"
+                >
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                      <TextBlock
+                        Margin="0,2"
+                        FontSize="{DynamicResource FontSize12}"
+                        Foreground="#D15353"
+                        Text="{Binding DisplayText}"
+                        TextWrapping="Wrap"
+                      />
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <TextBlock
+                  FontSize="{DynamicResource FontSize12}"
+                  Foreground="#A2ADBB"
+                  IsVisible="{Binding !#ExceptionList.HasItems}"
+                  Text="暂无异常"
+                />
+              </StackPanel>
+            </Border>
+          </Popup>
+        </Grid>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+</ResourceDictionary>

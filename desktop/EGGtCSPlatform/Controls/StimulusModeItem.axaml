@@ -1,0 +1,62 @@
+<ResourceDictionary
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:controls="clr-namespace:EGGtCSPlatform.Controls"
+  xmlns:pages="clr-namespace:EGGtCSPlatform.ViewModels.Pages"
+  x:ClassModifier="internal"
+  x:CompileBindings="False"
+>
+  <ControlTheme x:Key="{x:Type controls:StimulusModeItem}" TargetType="controls:StimulusModeItem">
+    <Setter Property="Height" Value="62" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Button
+          Background="Transparent"
+          Command="{TemplateBinding Command}"
+          HorizontalContentAlignment="Center"
+          VerticalContentAlignment="Center"
+          Theme="{StaticResource StimulusFlatButtonTheme}"
+        >
+          <Grid>
+            <Border
+              x:Name="SelectionBackground"
+              Background="Transparent"
+              BorderBrush="Transparent"
+              BorderThickness="1"
+              CornerRadius="6"
+            />
+            <StackPanel Width="176" Margin="12,8" Spacing="2">
+              <TextBlock
+                x:Name="ModeTitle"
+                FontFamily="{DynamicResource AlibabaPuHuiTi}"
+                FontWeight="Normal"
+                FontSize="{DynamicResource FontSize16}"
+                Foreground="{DynamicResource ProductText}"
+                Text="{TemplateBinding Title}"
+              />
+              <TextBlock
+                FontFamily="{DynamicResource AlibabaPuHuiTi}"
+                FontWeight="Normal"
+                FontSize="{DynamicResource FontSize12}"
+                Foreground="{DynamicResource ProductTextMuted}"
+                Text="{TemplateBinding Subtitle}"
+              />
+            </StackPanel>
+          </Grid>
+        </Button>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:selected /template/ Border#SelectionBackground">
+      <Setter Property="Background" Value="#80FFFFFF" />
+      <Setter Property="BorderBrush" Value="White" />
+    </Style>
+    <Style Selector="^:selected /template/ TextBlock#ModeTitle">
+      <Setter Property="Foreground" Value="{DynamicResource ProductPrimary}" />
+      <Setter Property="FontFamily" Value="{DynamicResource AlibabaPuHuiTi}" />
+      <Setter Property="FontWeight" Value="Bold" />
+    </Style>
+    <Style Selector="^:pointerover /template/ Border#SelectionBackground">
+      <Setter Property="Background" Value="#F7F8FC" />
+    </Style>
+  </ControlTheme>
+</ResourceDictionary>

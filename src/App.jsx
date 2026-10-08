@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { CircleAlert, CircleArrowRight, CircleStop, Minus, Plus, RotateCcw, Settings, Square, Wifi, X } from "lucide-react";
 import {
   MAX_DURATION_MS,
@@ -31,6 +31,23 @@ import {
   markRoleMeasured,
   removePointAssignment,
 } from "./pointState.js";
+import { DeviceFlowLab } from "./components/DeviceFlowLab.jsx";
+import { EnvelopeTacsPrototype } from "./components/EnvelopeTacsPrototype.jsx";
+import { SingleStimulationDemo } from "./components/SingleStimulationDemo.jsx";
+import { ImportFolder } from "./components/ImportFolder.jsx";
+import { LoginScreen } from "./components/LoginScreen.jsx";
+import { UserMenu } from "./components/UserMenu.jsx";
+import { WorkflowPrototype } from "./components/WorkflowPrototype.jsx";
+const EEGHeadViewer = lazy(() => import("./components/EEGHeadViewer/index.jsx").then(module => ({ default: module.EEGHeadViewer })));
+import {
+  StimulusVisualization,
+  shamACRenderer,
+  shamDCRenderer,
+  tacsRenderer,
+  tdcsRenderer,
+  tpcsRenderer,
+  trnsRenderer,
+} from "../packages/stimulus-visualization/src/index.js";
 
 const headPoints = [
   ["FP1", 292, 540], ["FP2", 442, 540],
@@ -79,11 +96,12 @@ const stimModes = [
 ];
 
 const experimentSignals = [
-  ["Fz", "/assets/experiment-wave-fz.svg"],
-  ["Cz", "/assets/experiment-wave-cz.svg"],
-  ["Pz", "/assets/experiment-wave-pz.svg"],
-  ["Oz", "/assets/experiment-wave-oz.svg"],
-  ["F3", "/assets/experiment-wave-f3.svg"],
+  ["Fz", "/assets/experiment-live-wave-1.svg"],
+  ["CP4", "/assets/experiment-live-wave-2.svg"],
+  ["TP8", "/assets/experiment-live-wave-3.svg"],
+  ["FP2", "/assets/experiment-live-wave-4.svg"],
+  ["TP8", "/assets/experiment-live-wave-1.svg"],
+  ["FP2", "/assets/experiment-live-wave-5.svg"],
 ];
 
 const experimentPhases = {
@@ -97,6 +115,45 @@ const experimentPhases = {
   stopped: { label: "待机中", panelLabel: "待机中", activeIndex: -1, ring: 0 },
 };
 
+const stimulusRenderers = {
+  tDCS: tdcsRenderer,
+  tACS: tacsRenderer,
+  tPCS: tpcsRenderer,
+  tRNS: trnsRenderer,
+  Sham: shamDCRenderer,
+  ShamDC: shamDCRenderer,
+  ShamAC: shamACRenderer,
+};
+
+function LoopingStimulusVisualization({ renderer, config, paused = false }) {
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    if (paused) return undefined;
+    let animationFrame = 0;
+    let cycleStartedAt = null;
+    const cycleDurationMs = 2400;
+
+    const animate = (now) => {
+      if (cycleStartedAt === null) cycleStartedAt = now;
+      setProgress(((now - cycleStartedAt) % cycleDurationMs) / cycleDurationMs);
+      animationFrame = window.requestAnimationFrame(animate);
+    };
+
+    animationFrame = window.requestAnimationFrame(animate);
+    return () => window.cancelAnimationFrame(animationFrame);
+  }, [paused]);
+
+  return (
+    <StimulusVisualization
+      renderer={renderer}
+      progress={progress}
+      config={config}
+      precision={2}
+    />
+  );
+}
+
 const phaseOrder = ["acquisition", "blanking", "stimReady", "stimulation", "recovery", "finished"];
 
 const phaseAutoAdvance = {
@@ -108,10 +165,10 @@ const phaseAutoAdvance = {
 };
 
 const timelineStages = [
-  { id: "acquisition", label: "采集", duration: "1000", unit: "ms", bar: "10000 ms", unitSelectable: true },
-  { id: "blanking", label: "消隐", duration: "10", unit: "ms", bar: "500ms", unitSelectable: false },
-  { id: "stimulation", label: "刺激", duration: "10", unit: "ms", bar: "1200s", unitSelectable: true },
-  { id: "recovery", label: "恢复", duration: "10", unit: "ms", bar: "300s", unitSelectable: false },
+  { id: "acquisition", label: "采集", duration: "1000", unit: "s", bar: "1000s", unitSelectable: true },
+  { id: "blanking", label: "消隐", duration: "10", unit: "s", bar: "10s", unitSelectable: false },
+  { id: "stimulation", label: "刺激", duration: "10", unit: "s", bar: "10s", unitSelectable: true },
+  { id: "recovery", label: "恢复", duration: "10", unit: "s", bar: "10s", unitSelectable: false },
 ];
 
 const exportSummaryRows = [
@@ -211,7 +268,7 @@ function BrandHomeButton({ onHome }) {
   );
 }
 
-function AppHeader({ mode = "user", nextLabel = "下一步：耐受测试", canGoNext = false, onNext, onHome, demoAllPassed = false, onDemoAllPassedChange }) {
+function AppHeader({ mode = "user", nextLabel = "下一步：耐受测试", canGoNext = false, onNext, onHome, onLogout, demoAllPassed = false, onDemoAllPassedChange }) {
   return (
     <header className="topbar">
       <BrandHomeButton onHome={onHome} />
@@ -237,63 +294,52 @@ function AppHeader({ mode = "user", nextLabel = "下一步：耐受测试", canG
           </button>
         </div>
       ) : (
-        <div className="avatar" aria-label="当前用户 TA"><span>TA</span><i /></div>
+        <UserMenu triggerClassName="avatar" onLogout={onLogout} />
       )}
     </header>
   );
 }
 
-function HomeScreen({ onNewExperiment, onExperimentHistory }) {
+function HomeScreen({ onNewExperiment, onExperimentHistory, onDeviceFlowLab, onWorkflowPrototype, onLogout }) {
   const homeCards = [
     {
       id: "new",
-      title: "新建实验",
+      title: "开始实验",
       description: "创建并配置新的脑机实验",
-      image: "/assets/home-new-experiment.png",
+      image: "/assets/home-start-experiment.png",
       onClick: onNewExperiment,
     },
     {
       id: "history",
       title: "实验记录",
       description: "查看历史实验记录",
-      image: "/assets/home-records.png",
+      image: "/assets/home-experiment-records.png",
       onClick: onExperimentHistory,
     },
     {
-      id: "placeholder-one",
-      title: "占位",
-      description: "占位占位占位占位",
-      image: "/assets/home-records.png",
-      disabled: true,
+      id: "device-flow-lab",
+      title: "串口与下位机",
+      description: "已连接",
+      descriptionTone: "success",
+      image: "/assets/home-device-connection.png",
+      onClick: onDeviceFlowLab,
     },
     {
-      id: "placeholder-two",
-      title: "占位",
-      description: "占位占位占位占位",
-      image: "/assets/home-records.png",
-      disabled: true,
+      id: "workflow-prototype",
+      title: "耐受度测试",
+      description: "耐受度",
+      image: "/assets/home-tolerance-test.png",
+      onClick: onWorkflowPrototype,
     },
   ];
 
   return (
     <main className="home-shell">
-      <video
-        className="home-background-video"
-        poster="/assets/neural-lines.png"
-        muted
-        loop
-        autoPlay
-        playsInline
-        aria-hidden="true"
-        data-video-slot="home-background"
-      >
-        <source src="/assets/home-background.mp4" type="video/mp4" />
-      </video>
-      <div className="home-background-wash" aria-hidden="true" />
+      <img className="home-background-image" src="/assets/neural-lines.png" alt="" aria-hidden="true" />
 
       <header className="home-header">
         <img src="/assets/home-header-logo.svg" alt="EEG-tES" />
-        <div className="home-avatar" aria-label="当前用户 TA"><span>TA</span><i /></div>
+        <UserMenu triggerClassName="home-avatar" onLogout={onLogout} />
       </header>
 
       <section className="home-welcome" aria-labelledby="home-title">
@@ -312,7 +358,12 @@ function HomeScreen({ onNewExperiment, onExperimentHistory }) {
               <img className="home-card-image" src={card.image} alt="" aria-hidden="true" />
               <span className="home-card-copy">
                 <strong>{card.title}</strong>
-                <small>{card.description}</small>
+                <small className={card.descriptionTone === "success" ? "is-success" : ""}>
+                  {card.descriptionTone === "success" ? (
+                    <img className="home-device-connected-icon" src="/assets/home-device-connected.svg" alt="" aria-hidden="true" />
+                  ) : null}
+                  {card.description}
+                </small>
               </span>
             </>
           );
@@ -333,9 +384,10 @@ function HomeScreen({ onNewExperiment, onExperimentHistory }) {
   );
 }
 
-function ExperimentSetup({ subjectId, setSubjectId, note, setNote, importedFile, setImportedFile, initialTab, onNext, onHome }) {
+function ExperimentSetup({ subjectId, setSubjectId, note, setNote, importedFile, setImportedFile, initialTab, onNext, onHome, onLogout }) {
   const [showError, setShowError] = useState(false);
   const [activeTab, setActiveTab] = useState(initialTab);
+  const importInputRef = useRef(null);
 
   function continueToElectrodes() {
     if (!subjectId.trim()) {
@@ -349,10 +401,9 @@ function ExperimentSetup({ subjectId, setSubjectId, note, setNote, importedFile,
   return (
     <main className="app-shell setup-shell">
       <AppHeader
-        mode={activeTab === "history" ? "plain" : "setup"}
-        nextLabel="下一步：电极配置"
-        onNext={continueToElectrodes}
+        mode="user"
         onHome={onHome}
+        onLogout={onLogout}
       />
       <section className="setup-workspace">
         <div className="setup-card">
@@ -391,14 +442,21 @@ function ExperimentSetup({ subjectId, setSubjectId, note, setNote, importedFile,
 
               <section className="setup-section import-section">
                 <h2><img src="/assets/icon-package.svg" alt="" />导入实验参数包</h2>
-                <div className="upload-zone">
-                  <img className="upload-illustration" src="/assets/upload-illustration.png" alt="" />
-                  <div>
-                    <label className="file-button">
+                <div className={`upload-zone${importedFile ? " has-file" : ""}`}>
+                  <ImportFolder hasFile={Boolean(importedFile)} onActivate={() => importInputRef.current?.click()} />
+                  <div className="upload-zone__content">
+                    <button className="file-button" type="button" onClick={() => importInputRef.current?.click()}>
                       <img src="/assets/icon-upload.svg" alt="" />
                       <span>{importedFile ? importedFile.name : "选择文件"}</span>
-                      <input type="file" accept=".expp" onChange={(event) => setImportedFile(event.target.files?.[0] || null)} />
-                    </label>
+                    </button>
+                    <input
+                      ref={importInputRef}
+                      className="upload-file-input"
+                      type="file"
+                      accept=".expp"
+                      aria-label="导入实验参数包"
+                      onChange={(event) => setImportedFile(event.target.files?.[0] || null)}
+                    />
                     <p>支持导入.expp 文件，快速复用已有实验配置</p>
                   </div>
                 </div>
@@ -426,18 +484,27 @@ function ExperimentSetup({ subjectId, setSubjectId, note, setNote, importedFile,
               ))}
             </div>
           )}
+
+          {activeTab === "new" ? (
+            <div className="setup-actions">
+              <button className="setup-primary-action" type="button" onClick={continueToElectrodes}>
+                <img src="/assets/check-double-line.svg" alt="" />
+                <span>进入刺激方案配置</span>
+              </button>
+            </div>
+          ) : null}
         </div>
       </section>
     </main>
   );
 }
 
-function ExperimentRun({ onBack, onHome }) {
+function ExperimentRun({ onBack, onHome, onLogout, stimMode = "tDCS", stimulusConfig }) {
   const [runMode, setRunMode] = useState("manual");
   const [phase, setPhase] = useState("standby");
   const [isExportPanelOpen, setIsExportPanelOpen] = useState(false);
-  const [phaseDurationMs, setPhaseDurationMs] = useState({ acquisition: 1000, stimulation: 10 });
-  const [phaseUnits, setPhaseUnits] = useState({ acquisition: "ms", stimulation: "ms" });
+  const [phaseDurationMs, setPhaseDurationMs] = useState({ acquisition: 1_000_000, stimulation: 10_000 });
+  const [phaseUnits, setPhaseUnits] = useState({ acquisition: "s", stimulation: "s" });
   const [durationDrafts, setDurationDrafts] = useState({ acquisition: "1000", stimulation: "10" });
   const [openUnitMenu, setOpenUnitMenu] = useState(null);
   const [elapsedMs, setElapsedMs] = useState(0);
@@ -459,10 +526,78 @@ function ExperimentRun({ onBack, onHome }) {
   const isRunningIndicator = isActiveRuntimePhase && !isPhasePaused;
   const isAutoMode = runMode === "auto";
   const canAutoStart = isAutoMode && phase === "standby";
+  const canManualStart = !isAutoMode && (phase === "standby" || phase === "stimReady");
   const canEditCycleCount = isAutoMode && (phase === "standby" || phase === "stopped");
   const canEmergencyStop = !isPhasePaused && (
     isAutoMode ? isActiveRuntimePhase : canPauseExperimentPhase(runMode, phase)
   );
+  const showLiveSignals = phase !== "standby";
+  const timelineStageMetrics = timelineStages.map((stage) => ({
+    ...stage,
+    durationMs: stage.unitSelectable
+      ? phaseDurationMs[stage.id]
+      : toMilliseconds(stage.duration, stage.unit),
+  }));
+  const overviewStageMetrics = timelineStageMetrics.filter((stage) => ["acquisition", "stimulation"].includes(stage.id));
+  const acquisitionTimelineMs = overviewStageMetrics.find((stage) => stage.id === "acquisition")?.durationMs ?? 0;
+  const stimulationTimelineMs = overviewStageMetrics.find((stage) => stage.id === "stimulation")?.durationMs ?? 0;
+  const totalTimelineDurationMs = acquisitionTimelineMs + stimulationTimelineMs;
+  const activePhaseDurationMs = getPhaseDelayMs(phase, phaseDurationMs);
+  const activePhaseElapsedMs = activePhaseDurationMs === null
+    ? 0
+    : phaseRemainingMs !== null
+      ? Math.max(0, activePhaseDurationMs - phaseRemainingMs)
+      : phaseStartedAtRef.current
+        ? Math.min(activePhaseDurationMs, Date.now() - phaseStartedAtRef.current)
+        : 0;
+  const activePhaseProgress = activePhaseDurationMs
+    ? Math.min(1, activePhaseElapsedMs / activePhaseDurationMs)
+    : 0;
+  const acquisitionRevealPercent = phase === "acquisition"
+    ? activePhaseProgress * 100
+    : phase === "stopped" && stoppedPhase === "acquisition"
+      ? Math.min(100, elapsedMs / phaseDurationMs.acquisition * 100)
+      : ["blanking", "stimReady", "stimulation", "recovery", "finished"].includes(phase)
+        || phase === "stopped" && ["blanking", "stimulation", "recovery"].includes(stoppedPhase)
+        ? 100
+        : 0;
+  const completedTimelineMs = phase === "finished"
+    ? totalTimelineDurationMs
+    : phase === "acquisition"
+      ? acquisitionTimelineMs * activePhaseProgress
+      : ["blanking", "stimReady"].includes(phase)
+        ? acquisitionTimelineMs
+        : phase === "stimulation"
+          ? acquisitionTimelineMs + stimulationTimelineMs * activePhaseProgress
+          : phase === "recovery"
+            ? totalTimelineDurationMs
+            : phase === "stopped" && stoppedPhase === "acquisition"
+              ? acquisitionTimelineMs * Math.min(1, elapsedMs / Math.max(1, acquisitionTimelineMs))
+              : phase === "stopped" && ["blanking", "stimulation", "recovery"].includes(stoppedPhase)
+                ? acquisitionTimelineMs
+                : 0;
+  const timelineProgressPercent = totalTimelineDurationMs
+    ? Math.min(100, completedTimelineMs / totalTimelineDurationMs * 100)
+    : 0;
+  const acquisitionSpanPercent = totalTimelineDurationMs
+    ? acquisitionTimelineMs / totalTimelineDurationMs * 100
+    : 0;
+  const timelineUsesMinutes = totalTimelineDurationMs >= 60_000;
+  const timelineAxisTicks = Array.from({ length: 9 }, (_, index) => {
+    const remainingMs = totalTimelineDurationMs * (8 - index) / 8;
+    if (!timelineUsesMinutes) return String(Math.round(remainingMs / 1000));
+    const minutes = remainingMs / 60_000;
+    return totalTimelineDurationMs < 600_000
+      ? minutes.toFixed(1).replace(/\.0$/, "")
+      : String(Math.round(minutes));
+  });
+  const formatRangeTime = (durationMs) => {
+    const totalSeconds = Math.max(0, Math.round(durationMs / 1000));
+    return `${Math.floor(totalSeconds / 60)}分${String(totalSeconds % 60).padStart(2, "0")}秒`;
+  };
+  const rangeStartLabel = formatRangeTime(totalTimelineDurationMs * 0.965);
+  const rangeEndLabel = formatRangeTime(totalTimelineDurationMs * 0.196);
+  const activeStimulusRenderer = stimulusRenderers[stimMode] || tdcsRenderer;
 
   useEffect(() => {
     if (isPhasePaused) return undefined;
@@ -704,49 +839,133 @@ function ExperimentRun({ onBack, onHome }) {
   return (
     <main className="app-shell experiment-shell">
       <header className="experiment-topbar">
-        <BrandHomeButton onHome={onHome} />
-        <div className="experiment-mode-switch" role="tablist" aria-label="实验控制模式">
-          <button type="button" className={runMode === "manual" ? "is-active" : ""} onClick={() => changeRunMode("manual")}>手动模式</button>
-          <button type="button" className={runMode === "auto" ? "is-active" : ""} onClick={() => changeRunMode("auto")}>自动模式</button>
+        <button className="experiment-brand" type="button" onClick={onHome} aria-label="返回首页">
+          <img src="/assets/experiment-header-logo-mark.svg" alt="" aria-hidden="true" />
+          <img src="/assets/experiment-header-logo-text.svg" alt="EEG-tES" />
+        </button>
+        <div className="experiment-header-status" aria-label="设备连接状态">
+          <img src="/assets/experiment-header-battery-charge.svg" alt="电源供电正常" />
+          <img src="/assets/experiment-header-battery-low.svg" alt="电池状态" />
+          <span className="is-offline"><img src="/assets/experiment-header-station-offline.svg" alt="" aria-hidden="true" />未连接</span>
+          <span className="is-online"><img src="/assets/experiment-header-station-online.svg" alt="" aria-hidden="true" />已连接</span>
+          <UserMenu triggerClassName="avatar" onLogout={onLogout} />
         </div>
       </header>
 
       <section className="experiment-workspace" aria-label="实验中">
-        <div className="experiment-status-row" aria-label="设备状态">
+        <div className="experiment-status-row" aria-label="实验信息">
           <button className="experiment-back" type="button" onClick={onBack}>
-            <img src="/assets/arrow-left.svg" alt="" aria-hidden="true" />
-            <span>返回电极配置</span>
+            <img src="/assets/experiment-back-arrow.svg" alt="" aria-hidden="true" />
+            <span>返回/时序与运行</span>
           </button>
-          {["通信链路正常", "USB 设备已连接", "电量 84%", "LSL 在线"].map((item) => (
-            <span className="experiment-status-pill" key={item}><i />{item}</span>
-          ))}
-          <span className="experiment-status-pill is-limit">安全上限：0.04 mA</span>
+          <span className="experiment-status-pill">患者ID：EXP-20260707-001</span>
+          <span className="experiment-status-pill">实验ID：EXP-20260707-001</span>
         </div>
 
-        <section className="signal-card" aria-label="实时信号监测">
-          <header>
-            <h2>实时信号监测</h2>
-            <label className="interpolation-toggle">
-              <input type="checkbox" defaultChecked />
-              <span />
-              在线插值预览
-            </label>
+        <div className="experiment-mode-switch" role="tablist" aria-label="实验控制模式">
+          <button type="button" className={runMode === "manual" ? "is-active" : ""} onClick={() => changeRunMode("manual")}>手动模式</button>
+          <button type="button" className={runMode === "auto" ? "is-active" : ""} onClick={() => changeRunMode("auto")}>自动模式</button>
+        </div>
+
+        <section
+          className={`signal-card ${showLiveSignals ? "has-live-data" : "is-standby"}`}
+          style={{
+            "--wave-reveal": `${acquisitionRevealPercent}%`,
+            "--acquisition-span": `${acquisitionSpanPercent}%`,
+          }}
+          aria-label="实时信号监测"
+        >
+          <header className="signal-toolbar">
+            <div className="signal-toolbar-controls">
+              {[
+                ["灵敏度", "1mm/100 μV"],
+                ["纸速", "30 mm/s"],
+                ["高通", "0.5Hz"],
+                ["低通", "关闭"],
+              ].map(([label, value]) => (
+                <button className="signal-toolbar-select" type="button" key={label}>
+                  <span>{label}</span>
+                  <strong>{value}</strong>
+                  <img src="/assets/experiment-signal-chevron.svg" alt="" aria-hidden="true" />
+                </button>
+              ))}
+              <button className="signal-notch-toggle" type="button"><i />陷波</button>
+            </div>
+            <div className="signal-cursor-tools"><button type="button">X光标</button><i /><button className="is-active" type="button">Y光标</button></div>
           </header>
-          <div className="signal-chart">
-            <div className="signal-cursor"><span>Cz：3.3 μV</span></div>
-            {experimentSignals.map(([label, src]) => (
-              <div className="signal-row" key={label}>
+          <div className="signal-chart-scroll">
+            <div className="signal-chart">
+            {experimentSignals.map(([label, src], index) => (
+              <div className="signal-row" key={`${label}-${index}`}>
                 <strong>{label}</strong>
-                <img src={src} alt="" aria-hidden="true" />
+                <div className="signal-axis-unit">mV</div>
+                <div className="signal-axis-labels" aria-hidden="true">
+                  {[300, 200, 100, 0, -100, -200, -300].map((value) => <span key={value}>{value}</span>)}
+                </div>
+                <div className="signal-plot">
+                  {showLiveSignals && <img className="signal-live-wave" src={src} alt="" aria-hidden="true" />}
+                </div>
               </div>
             ))}
-          </div>
-          <div className="timeline-bar" aria-label="时序概览">
-            <div className="timeline-label-row">
-              {timelineStages.map((stage) => <strong className={`timeline-cell segment-${stage.id}`} key={`${stage.id}-label`}>{stage.label}</strong>)}
+              {phase === "stimulation" && (
+                <div className="signal-stimulation-layer" aria-label={`${activeStimulusRenderer.label} 刺激状态`}>
+                  <span aria-hidden="true" />
+                  <div className="signal-stimulation-track">
+                    <div
+                      className="signal-stimulation-region"
+                      style={{ left: `${acquisitionSpanPercent}%`, width: `${100 - acquisitionSpanPercent}%` }}
+                      aria-hidden="true"
+                    />
+                    <div
+                      className="signal-stimulus-visualization"
+                      style={{ left: `${Math.min(90, Math.max(10, acquisitionSpanPercent + (100 - acquisitionSpanPercent) / 2))}%` }}
+                    >
+                      <LoopingStimulusVisualization
+                        renderer={activeStimulusRenderer}
+                        config={stimulusConfig}
+                        paused={isPhasePaused}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
-            <div className="timeline-duration-row">
-              {timelineStages.map((stage) => <span className={`timeline-cell duration-${stage.id}`} key={`${stage.id}-duration`}>{timelineDuration(stage)}</span>)}
+            <div className="signal-vertical-scroll" aria-hidden="true"><span /></div>
+          </div>
+          <div className="signal-overview" aria-label="信号缩略轴">
+            <div className="signal-phase-strip">
+              {overviewStageMetrics.map((stage) => (
+                <span
+                  className={`is-${stage.id}`}
+                  style={{ flexGrow: stage.durationMs }}
+                  title={`${stage.label} ${timelineDuration(stage)}`}
+                  aria-label={`${stage.label} ${timelineDuration(stage)}`}
+                  key={stage.id}
+                >
+                  {stage.label}&nbsp;&nbsp;{timelineDuration(stage)}
+                </span>
+              ))}
+              {showLiveSignals && (
+                <i
+                  className={`signal-phase-playhead ${phase === "stimulation" ? "is-stimulation" : "is-acquisition"}`}
+                  role="progressbar"
+                  aria-label="实验时间轴当前进度"
+                  aria-valuemin="0"
+                  aria-valuemax="100"
+                  aria-valuenow={Math.round(timelineProgressPercent)}
+                  style={{ left: `${timelineProgressPercent}%` }}
+                />
+              )}
+            </div>
+            <div className="signal-time-axis">
+              <small>{`时间（${timelineUsesMinutes ? "min" : "s"}）`}</small>
+              {timelineAxisTicks.map((value, index) => <span key={`${value}-${index}`}>{value}</span>)}
+            </div>
+            <div className="signal-range-track">
+              <span className="signal-range-selection" />
+              <span className="signal-range-handle is-start"><img src="/assets/experiment-signal-range-handle.svg" alt="" aria-hidden="true" /></span>
+              <span className="signal-range-handle is-end"><img src="/assets/experiment-signal-range-handle.svg" alt="" aria-hidden="true" /></span>
+              <small className="is-start-label">{rangeStartLabel}</small><small className="is-end-label">{rangeEndLabel}</small>
             </div>
           </div>
         </section>
@@ -815,16 +1034,15 @@ function ExperimentRun({ onBack, onHome }) {
 
               <section className="run-params-card">
                 <h2>刺激参数配置</h2>
-                <div className="experiment-tags"><span>tDCS</span><span>1.5mA</span><span>30s 缓升</span><span>10min</span></div>
+                <div className="experiment-tags"><span>tDCS</span><span>1.5mA</span><span>30s 缓升</span></div>
               </section>
 
               <section className="run-sequence-card">
                 <h2>时序控制</h2>
                 <div className="sequence-table">
-                  <div className="sequence-head"><span>阶段</span><span>时长</span><span>{!isAutoMode && (phase === "standby" || phase === "stimReady" || isPhasePaused) ? "操作" : "状态"}</span></div>
+                  <div className="sequence-head"><span>阶段</span><span>时长</span><span>状态</span></div>
                   {timelineStages.map((stage, index) => {
                     const status = stageStatus(index);
-                    const canStart = !isAutoMode && ((phase === "standby" && index === 0) || (phase === "stimReady" && index === 2));
                     const isPausedStage = isPhasePaused && currentPhase.activeIndex === index;
                     const isRunning = !isPhasePaused && currentPhase.activeIndex === index && !["standby", "stimReady", "finished", "stopped"].includes(phase);
                     const isConfigurable = stage.unitSelectable;
@@ -846,7 +1064,7 @@ function ExperimentRun({ onBack, onHome }) {
                             disabled={!canEditDuration}
                             inputMode={displayedUnit === "s" ? "decimal" : "numeric"}
                             min={displayedUnit === "s" ? 0.01 : MIN_DURATION_MS}
-                            max={displayedUnit === "s" ? 60 : MAX_DURATION_MS}
+                            max={displayedUnit === "s" ? MAX_DURATION_MS / 1000 : MAX_DURATION_MS}
                             onChange={(event) => updateDurationDraft(stage.id, event.target.value)}
                             onBlur={() => isConfigurable && commitDuration(stage.id)}
                             onKeyDown={(event) => {
@@ -859,7 +1077,7 @@ function ExperimentRun({ onBack, onHome }) {
                                 event.currentTarget.blur();
                               }
                             }}
-                            aria-label={`${stage.label}时长，范围 10 毫秒到 60 秒`}
+                            aria-label={`${stage.label}时长，范围 10 毫秒到 60 分钟`}
                           />
                           <button
                             type="button"
@@ -892,8 +1110,6 @@ function ExperimentRun({ onBack, onHome }) {
                         </div>
                         {isPausedStage ? (
                           <button className="sequence-resume" type="button" onClick={resumeCurrentPhase}>继续 <img src="/assets/icon-sequence-play-fill.svg" alt="" aria-hidden="true" /></button>
-                        ) : canStart ? (
-                          <button className="sequence-start" type="button" onClick={advancePhase}>开始 <img src="/assets/icon-sequence-play-fill.svg" alt="" aria-hidden="true" /></button>
                         ) : (
                           <span className={`sequence-status status-${status}`}>
                             {status === "进行中" ? (
@@ -971,10 +1187,10 @@ function ExperimentRun({ onBack, onHome }) {
                   <button className="restart-experiment-button" type="button" onClick={resetExperiment}><RotateCcw size={18} />重新进入待机</button>
                 ) : (
                   <>
-                    <button className="emergency-stop-button" type="button" disabled={!canEmergencyStop} onClick={handleEmergencyStop}><Square size={16} fill="currentColor" />紧急停止刺激</button>
-                    {canAutoStart && (
+                    <button className="emergency-stop-button" type="button" disabled={!canEmergencyStop} onClick={handleEmergencyStop}><Square size={16} fill="currentColor" />紧急停止</button>
+                    {(canAutoStart || canManualStart) && (
                       <button className="auto-start-button" type="button" onClick={advancePhase}>
-                        <span>开始</span>
+                        <span>{canManualStart ? phase === "stimReady" ? "开始刺激" : "开始采集" : "开始"}</span>
                         <img src="/assets/icon-sequence-play-fill.svg" alt="" aria-hidden="true" />
                       </button>
                     )}
@@ -993,16 +1209,21 @@ function ExperimentRun({ onBack, onHome }) {
 export function App() {
   const [screen, setScreen] = useState(() => {
     const requestedScreen = new URLSearchParams(window.location.search).get("screen");
-    if (["home", "setup", "electrodes", "experiment"].includes(requestedScreen)) return requestedScreen;
+    if (["login", "home", "setup", "electrodes", "experiment", "device-lab", "workflow-prototype", "envelope-tacs-prototype", "single-stimulation-demo"].includes(requestedScreen)) return requestedScreen;
 
     const requestedPath = window.location.pathname.replace(/\/+$/, "") || "/";
     const pathScreen = {
       "/": "home",
+      "/login": "login",
       "/home": "home",
       "/setup": "setup",
       "/history": "setup",
       "/electrodes": "electrodes",
       "/experiment": "experiment",
+      "/device-lab": "device-lab",
+      "/workflow-prototype": "workflow-prototype",
+      "/envelope-tacs-prototype": "envelope-tacs-prototype",
+      "/single-stimulation-demo": "single-stimulation-demo",
     }[requestedPath];
 
     return pathScreen || "home";
@@ -1130,6 +1351,15 @@ export function App() {
   const envelopeCurrent = usesTiDesignDefaults ? 1.5 : Math.min(carrierCurrentA, carrierCurrentB);
   const activeStimMode = stimModes.find((mode) => mode.id === stimMode) || stimModes[0];
 
+  function logout() {
+    setImportedFile(null);
+    setScreen("login");
+  }
+
+  if (screen === "login") {
+    return <LoginScreen onLogin={() => setScreen("home")} />;
+  }
+
   if (screen === "home") {
     return (
       <HomeScreen
@@ -1141,8 +1371,26 @@ export function App() {
           setSetupInitialTab("history");
           setScreen("setup");
         }}
+        onDeviceFlowLab={() => setScreen("device-lab")}
+        onWorkflowPrototype={() => setScreen("workflow-prototype")}
+        onLogout={logout}
       />
     );
+  }
+
+  if (screen === "device-lab") {
+    return <DeviceFlowLab onHome={() => setScreen("home")} />;
+  }
+
+  if (screen === "workflow-prototype") {
+    return <WorkflowPrototype onHome={() => setScreen("home")} />;
+  }
+
+  if (screen === "envelope-tacs-prototype") {
+    return <EnvelopeTacsPrototype onHome={() => setScreen("home")} />;
+  }
+  if (screen === "single-stimulation-demo") {
+    return <SingleStimulationDemo onHome={() => setScreen("home")} />;
   }
 
   if (screen === "setup") {
@@ -1157,12 +1405,28 @@ export function App() {
         initialTab={setupInitialTab}
         onNext={startNewExperiment}
         onHome={() => setScreen("home")}
+        onLogout={logout}
       />
     );
   }
 
   if (screen === "experiment") {
-    return <ExperimentRun onBack={() => setScreen("electrodes")} onHome={() => setScreen("home")} />;
+    return (
+      <ExperimentRun
+        onBack={() => setScreen("electrodes")}
+        onHome={() => setScreen("home")}
+        onLogout={logout}
+        stimMode={stimMode}
+        stimulusConfig={{
+          targetCurrent,
+          peakCurrent: tacsCurrent,
+          pulseCurrent: targetCurrent,
+          noiseAmplitude: targetCurrent,
+          shamCurrent: targetCurrent,
+          shamPeakCurrent: tacsCurrent,
+        }}
+      />
+    );
   }
 
   return (
@@ -1200,36 +1464,11 @@ export function App() {
           </label>
         </div>
         <div id="head-model-stage" className="static-head-stage" aria-label="头模点位配置区域">
-          <img className="static-head-image" src="/assets/head-static.png" alt="俯视头部模型" />
-          {headPoints.map(([label, x, y]) => {
-            const assignment = effectivePointAssignments[label];
-            const isRoleMuted = assignment
-              && (assignment.role === "acquisition" ? !showAcquisition : !showStimulation);
-            const showPolarity = assignment?.role === "stimulation";
-            const hasDistanceError = distanceConflict && label === "P4";
-            const effectiveState = getPointVisualState(assignment, { hasError: hasDistanceError });
-            return (
-              <button
-                className={`electrode-point point-${effectiveState} ${isRoleMuted ? "is-role-muted" : ""}`}
-                style={{ left: x, top: y }}
-                type="button"
-                key={label}
-                aria-label={`${getPointDisplayLabel(label, assignment)} ${effectiveState}`}
-                onClick={() => {
-                  setDemoAllPassed(false);
-                  setPointAssignments((current) => applyPointClick(current, {
-                    label,
-                    role,
-                    polarity,
-                    result: POINT_RESULTS[label],
-                  }));
-                }}
-              >
-                <span>{label}</span>
-                {showPolarity && <><i /><small>{assignment.polarity}</small></>}
-              </button>
-            );
-          })}
+          <Suspense fallback={<div role="status">正在准备三维视图…</div>}><EEGHeadViewer assignments={effectivePointAssignments} showAcquisition={showAcquisition} showStimulation={showStimulation} distanceConflict={distanceConflict} checking={checking} checkingRole={role}
+            onPointClick={(label) => {
+              setDemoAllPassed(false);
+              setPointAssignments((current) => applyPointClick(current, { label, role, polarity, result: POINT_RESULTS[label] }));
+            }} /></Suspense>
 
           {distanceConflict && (
             <div className="distance-warning" role="alert">

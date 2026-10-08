@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EEG-tES 产品主流程 V2.0</title>
+  <style>
+    :root {
+      --c-bg: #f8fafc;
+      --c-canvas: #ffffff;
+      --c-border: #cbd5e1;
+      --c-border-dark: #94a3b8;
+      --c-text-main: #0f172a;
+      --c-text-sub: #64748b;
+      --c-muted: #f1f5f9;
+      --c-accent: #3545c4;
+      --c-accent-soft: #eef0ff;
+      --font-ui: Inter, "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+      --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-width: 1720px;
+      background: var(--c-bg);
+      color: var(--c-text-main);
+      font-family: var(--font-ui);
+      padding: 32px;
+    }
+
+    .diagram-container {
+      width: 1656px;
+      margin: 0 auto;
+    }
+
+    .diagram-canvas {
+      background: var(--c-canvas);
+      border: 1px solid var(--c-border);
+      padding: 28px 30px 30px;
+    }
+
+    .diagram-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding-bottom: 18px;
+      margin-bottom: 18px;
+      border-bottom: 2px solid var(--c-text-main);
+    }
+
+    .diagram-title {
+      font-size: 26px;
+      line-height: 1.2;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .diagram-subtitle {
+      margin-top: 7px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--c-text-sub);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .header-meta {
+      display: grid;
+      grid-template-columns: auto auto;
+      gap: 5px 16px;
+      text-align: right;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      line-height: 1.5;
+    }
+
+    .header-meta .key { color: var(--c-text-sub); }
+
+    .legend {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      margin-bottom: 18px;
+      padding: 10px 12px;
+      border: 1px solid var(--c-border);
+      background: var(--c-muted);
+      font-size: 11px;
+      color: var(--c-text-sub);
+    }
+
+    .legend-title {
+      font-family: var(--font-mono);
+      color: var(--c-text-main);
+      font-weight: 700;
+    }
+
+    .legend-item { display: flex; align-items: center; gap: 7px; }
+    .swatch { width: 18px; height: 10px; border: 1px solid var(--c-border-dark); background: var(--c-canvas); }
+    .swatch.gate { border-color: var(--c-accent); background: var(--c-accent-soft); }
+    .swatch.command { border-color: var(--c-text-main); background: var(--c-text-main); }
+
+    .stage {
+      display: grid;
+      grid-template-columns: 112px 1fr;
+      border-top: 1px solid var(--c-border);
+    }
+
+    .stage:first-of-type { border-top: 0; }
+
+    .stage-label {
+      padding: 18px 12px 16px 0;
+      border-right: 1px solid var(--c-border);
+    }
+
+    .stage-index {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--c-accent);
+      font-weight: 700;
+      letter-spacing: 0.08em;
+    }
+
+    .stage-name {
+      margin-top: 5px;
+      font-size: 14px;
+      line-height: 1.35;
+      font-weight: 700;
+    }
+
+    .stage-body {
+      padding: 16px 0 16px 22px;
+    }
+
+    .flow-row {
+      display: flex;
+      align-items: stretch;
+      min-height: 82px;
+    }
+
+    .node {
+      position: relative;
+      width: 190px;
+      min-height: 80px;
+      padding: 12px 13px;
+      border: 1px solid var(--c-border-dark);
+      background: var(--c-canvas);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .node.wide { width: 224px; }
+    .node.xwide { width: 258px; }
+    .node.compact { width: 154px; }
+    .node.gate { border: 2px solid var(--c-accent); background: var(--c-accent-soft); }
+    .node.command { border-color: var(--c-text-main); background: var(--c-text-main); color: var(--c-canvas); }
+    .node.muted { background: var(--c-muted); }
+
+    .node-id {
+      margin-bottom: 5px;
+      font-family: var(--font-mono);
+      font-size: 9px;
+      line-height: 1;
+      color: var(--c-text-sub);
+      letter-spacing: 0.08em;
+    }
+
+    .node.gate .node-id { color: var(--c-accent); }
+    .node.command .node-id { color: var(--c-border); }
+
+    .node-title {
+      font-size: 14px;
+      line-height: 1.35;
+      font-weight: 700;
+    }
+
+    .node-sub {
+      margin-top: 5px;
+      color: var(--c-text-sub);
+      font-size: 10px;
+      line-height: 1.45;
+    }
+
+    .node.command .node-sub { color: var(--c-border); }
+
+    .connector-h {
+      position: relative;
+      flex: 0 0 40px;
+      min-width: 40px;
+    }
+
+    .connector-h::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 7px;
+      top: 50%;
+      height: 1px;
+      background: var(--c-border-dark);
+    }
+
+    .connector-h::after {
+      content: "";
+      position: absolute;
+      right: 1px;
+      top: calc(50% - 4px);
+      border-left: 7px solid var(--c-border-dark);
+      border-top: 4px solid transparent;
+      border-bottom: 4px solid transparent;
+    }
+
+    .connector-v {
+      position: relative;
+      height: 28px;
+      width: 2px;
+      margin: 0 auto;
+      background: var(--c-border-dark);
+    }
+
+    .connector-v::after {
+      content: "";
+      position: absolute;
+      bottom: -1px;
+      left: -3px;
+      border-top: 7px solid var(--c-border-dark);
+      border-left: 4px solid transparent;
+      border-right: 4px solid transparent;
+    }
+
+    .fork-note {
+      margin-top: 10px;
+      padding: 8px 10px;
+      border-left: 3px solid var(--c-accent);
+      background: var(--c-accent-soft);
+      color: var(--c-text-sub);
+      font-size: 10px;
+      line-height: 1.45;
+    }
+
+    .split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      margin-top: 12px;
+    }
+
+    .lane {
+      border: 1px solid var(--c-border);
+      background: var(--c-muted);
+      padding: 12px;
+    }
+
+    .lane-header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--c-border);
+    }
+
+    .lane-title { font-size: 13px; font-weight: 700; }
+    .lane-meta { font-family: var(--font-mono); font-size: 9px; color: var(--c-text-sub); }
+
+    .lane-flow {
+      display: flex;
+      align-items: stretch;
+    }
+
+    .lane .node {
+      width: 112px;
+      min-height: 74px;
+      padding: 9px;
+      background: var(--c-canvas);
+    }
+
+    .lane .node.wide { width: 144px; }
+    .lane .node-title { font-size: 11px; }
+    .lane .node-sub { font-size: 9px; }
+    .lane .connector-h { flex-basis: 21px; min-width: 21px; }
+
+    .merge-row {
+      display: grid;
+      grid-template-columns: 1fr 40px 1fr 40px 1fr;
+      align-items: stretch;
+      margin-top: 12px;
+    }
+
+    .merge-row .node { width: 100%; }
+
+    .safety-rail {
+      margin-top: 14px;
+      display: grid;
+      grid-template-columns: 220px 40px 1fr 40px 250px;
+      align-items: stretch;
+      padding: 12px;
+      border: 1px dashed var(--c-border-dark);
+    }
+
+    .safety-label {
+      align-self: center;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--c-text-sub);
+      line-height: 1.5;
+    }
+
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      margin-top: 18px;
+      padding-top: 14px;
+      border-top: 1px solid var(--c-border);
+      color: var(--c-text-sub);
+      font-size: 10px;
+      line-height: 1.5;
+    }
+
+    .footer strong { color: var(--c-text-main); }
+    .mono { font-family: var(--font-mono); }
+  </style>
+</head>
+<body>
+  <main class="diagram-container">
+    <section class="diagram-canvas">
+      <header class="diagram-header">
+        <div>
+          <div class="diagram-title">EEG-tES 脑机实验系统｜产品主流程</div>
+          <div class="diagram-subtitle">RECOMMENDED END-TO-END FLOW / V2.0 / PRE-RUN SAFETY GATES INCLUDED</div>
+        </div>
+        <div class="header-meta">
+          <span class="key">DOC</span><span>PRODUCT INTERACTION SPEC</span>
+          <span class="key">DATE</span><span>2026-08-18</span>
+          <span class="key">SCOPE</span><span>EEG ACQUISITION + tES</span>
+        </div>
+      </header>
+
+      <div class="legend">
+        <span class="legend-title">LEGEND</span>
+        <span class="legend-item"><span class="swatch"></span>常规页面 / 操作</span>
+        <span class="legend-item"><span class="swatch gate"></span>必须通过的门禁</span>
+        <span class="legend-item"><span class="swatch command"></span>设备控制命令</span>
+        <span class="legend-item"><span class="mono">RUN</span> 运行后所有配置锁定并生成独立轮次</span>
+      </div>
+
+      <section class="stage">
+        <div class="stage-label">
+          <div class="stage-index">STAGE 01</div>
+          <div class="stage-name">会话与设备准备</div>
+        </div>
+        <div class="stage-body">
+          <div class="flow-row">
+            <div class="node compact"><div class="node-id">01.01</div><div class="node-title">操作者登录</div><div class="node-sub">身份验证与操作会话</div></div>
+            <div class="connector-h"></div>
+            <div class="node compact"><div class="node-id">01.02</div><div class="node-title">进入首页</div><div class="node-sub">实验 / 历史 / 设备 / 耐受度</div></div>
+            <div class="connector-h"></div>
+            <div class="node gate xwide"><div class="node-id">GATE 01</div><div class="node-title">刺激设备 + 采集设备均就绪</div><div class="node-sub">分别校验连接、空闲、能力与故障状态</div></div>
+            <div class="connector-h"></div>
+            <div class="node wide"><div class="node-id">SIDE FLOW</div><div class="node-title">患者耐受度测试 / 历史</div><div class="node-sub">首页独立完成；新实验只引用适用记录</div></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="stage">
+        <div class="stage-label">
+          <div class="stage-index">STAGE 02</div>
+          <div class="stage-name">实验草稿与刺激方案</div>
+        </div>
+        <div class="stage-body">
+          <div class="flow-row">
+            <div class="node wide"><div class="node-id">02.01</div><div class="node-title">新建实验</div><div class="node-sub">患者 ID、实验 ID、备注、导入来源</div></div>
+            <div class="connector-h"></div>
+            <div class="node gate wide"><div class="node-id">GATE 02</div><div class="node-title">绑定适用耐受记录</div><div class="node-sub">患者、范式、完成状态匹配</div></div>
+            <div class="connector-h"></div>
+            <div class="node xwide"><div class="node-id">02.03</div><div class="node-title">独立刺激方案配置</div><div class="node-sub">范式、阵列、模式、通道参数、波形预览</div></div>
+            <div class="connector-h"></div>
+            <div class="node gate xwide"><div class="node-id">GATE 03</div><div class="node-title">方案校验并保存草稿</div><div class="node-sub">设备 capability、协议范围、电流守恒</div></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="stage">
+        <div class="stage-label">
+          <div class="stage-index">STAGE 03</div>
+          <div class="stage-name">电极映射与双阻抗</div>
+        </div>
+        <div class="stage-body">
+          <div class="flow-row">
+            <div class="node xwide"><div class="node-id">03.01</div><div class="node-title">刺激 / 采集电极映射</div><div class="node-sub">固定头模坐标、极性、REF/GND、物理通道</div></div>
+            <div class="connector-h"></div>
+            <div class="node wide"><div class="node-id">03.02A</div><div class="node-title">刺激阻抗检测</div><div class="node-sub">保留 ·A / ·C，逐通道显示结果</div></div>
+            <div class="connector-h"></div>
+            <div class="node wide"><div class="node-id">03.02B</div><div class="node-title">采集阻抗检测</div><div class="node-sub">逐点结果、列表与头模同步</div></div>
+            <div class="connector-h"></div>
+            <div class="node gate xwide"><div class="node-id">GATE 04</div><div class="node-title">刺激与采集阻抗均通过</div><div class="node-sub">结果必须与当前配置版本一致</div></div>
+          </div>
+          <div class="fork-note"><strong>执行约束：</strong>刺激与采集阻抗检测顺序不限，但不可并发；编辑哪一类配置，只使对应检测结果失效。</div>
+        </div>
+      </section>
+
+      <section class="stage">
+        <div class="stage-label">
+          <div class="stage-index">STAGE 04</div>
+          <div class="stage-name">时序、剂量与最终确认</div>
+        </div>
+        <div class="stage-body">
+          <div class="flow-row">
+            <div class="node xwide"><div class="node-id">04.01</div><div class="node-title">时序配置</div><div class="node-sub">手动 / 自动、采集时长、刺激时长、循环次数</div></div>
+            <div class="connector-h"></div>
+            <div class="node gate xwide"><div class="node-id">GATE 05</div><div class="node-title">总剂量与完整配置校验</div><div class="node-sub">电流 × 时长 × 循环；设备与耐受记录复核</div></div>
+            <div class="connector-h"></div>
+            <div class="node gate xwide"><div class="node-id">GATE 06</div><div class="node-title">实验配置最终确认</div><div class="node-sub">患者、方案、电极、阻抗、时序、总剂量</div></div>
+            <div class="connector-h"></div>
+            <div class="node command xwide"><div class="node-id">DEVICE HANDSHAKE</div><div class="node-title">PREPARE → ARM → READY</div><div class="node-sub">全部确认后才开放 START</div></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="stage">
+        <div class="stage-label">
+          <div class="stage-index">STAGE 05</div>
+          <div class="stage-name">实验运行</div>
+        </div>
+        <div class="stage-body">
+          <div class="node gate" style="width:100%; min-height:58px; text-align:center;">
+            <div class="node-id">MODE SELECT / BEFORE START ONLY</div>
+            <div class="node-title">选择手动模式或自动模式｜启动后锁定模式、时长与循环次数</div>
+          </div>
+
+          <div class="split">
+            <div class="lane">
+              <div class="lane-header"><span class="lane-title">手动模式</span><span class="lane-meta">OPERATOR STARTS ACQUISITION + STIMULATION</span></div>
+              <div class="lane-flow">
+                <div class="node"><div class="node-id">M1</div><div class="node-title">开始采集</div><div class="node-sub">持续 EEG</div></div>
+                <div class="connector-h"></div>
+                <div class="node"><div class="node-id">M2</div><div class="node-title">消隐</div><div class="node-sub">自动推进</div></div>
+                <div class="connector-h"></div>
+                <div class="node wide gate"><div class="node-id">M3 / RE-CHECK</div><div class="node-title">待刺激并再次校验</div><div class="node-sub">设备、阻抗、方案版本</div></div>
+                <div class="connector-h"></div>
+                <div class="node"><div class="node-id">M4</div><div class="node-title">开始刺激</div><div class="node-sub">操作者触发</div></div>
+                <div class="connector-h"></div>
+                <div class="node"><div class="node-id">M5</div><div class="node-title">恢复</div><div class="node-sub">自动完成</div></div>
+              </div>
+            </div>
+
+            <div class="lane">
+              <div class="lane-header"><span class="lane-title">自动模式</span><span class="lane-meta">ONE START / DEVICE-EVENT DRIVEN / N CYCLES</span></div>
+              <div class="lane-flow">
+                <div class="node wide"><div class="node-id">A1</div><div class="node-title">开始实验</div><div class="node-sub">一次确认启动</div></div>
+                <div class="connector-h"></div>
+                <div class="node wide"><div class="node-id">A2</div><div class="node-title">采集 → 消隐</div><div class="node-sub">自动推进</div></div>
+                <div class="connector-h"></div>
+                <div class="node wide"><div class="node-id">A3</div><div class="node-title">刺激 → 恢复</div><div class="node-sub">自动推进</div></div>
+                <div class="connector-h"></div>
+                <div class="node wide gate"><div class="node-id">A4</div><div class="node-title">循环计数</div><div class="node-sub">未达到 N 返回 A2</div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="merge-row">
+            <div class="node"><div class="node-id">RUNNING</div><div class="node-title">实时 EEG + 运行监控</div><div class="node-sub">设备时间、当前阶段、电流、阻抗、异常事件</div></div>
+            <div class="connector-h"></div>
+            <div class="node gate"><div class="node-id">END STATE</div><div class="node-title">完成 / 已停止 / 异常</div><div class="node-sub">任何终态都必须形成可追踪记录</div></div>
+            <div class="connector-h"></div>
+            <div class="node"><div class="node-id">PERSIST</div><div class="node-title">持续保存运行数据</div><div class="node-sub">数据包、阶段事件和异常实时落盘</div></div>
+          </div>
+
+          <div class="safety-rail">
+            <div class="safety-label"><strong>GLOBAL SAFETY RAIL</strong><br/>任一运行阶段均可触发</div>
+            <div class="connector-h"></div>
+            <div class="node command"><div class="node-id">ABORT</div><div class="node-title">紧急停止 → 等待设备确认</div><div class="node-sub">未确认前不得显示“已安全停止”</div></div>
+            <div class="connector-h"></div>
+            <div class="node"><div class="node-id">NEW RUN</div><div class="node-title">重新实验创建新轮次</div><div class="node-sub">自动模式从第一循环开始，不覆盖旧记录</div></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="stage">
+        <div class="stage-label">
+          <div class="stage-index">STAGE 06</div>
+          <div class="stage-name">结果与历史闭环</div>
+        </div>
+        <div class="stage-body">
+          <div class="flow-row">
+            <div class="node xwide"><div class="node-id">06.01</div><div class="node-title">封存 Experiment Run</div><div class="node-sub">配置快照、阶段时间线、设备事件、停止原因</div></div>
+            <div class="connector-h"></div>
+            <div class="node xwide"><div class="node-id">06.02</div><div class="node-title">实验结果</div><div class="node-sub">波形、异常、轮次、数据质量与统计摘要</div></div>
+            <div class="connector-h"></div>
+            <div class="node xwide"><div class="node-id">06.03</div><div class="node-title">导出数据</div><div class="node-sub">EDF、CSV、参数、完整结果包</div></div>
+            <div class="connector-h"></div>
+            <div class="node gate xwide"><div class="node-id">LOOP BACK</div><div class="node-title">历史记录 / 复制配置</div><div class="node-sub">创建新草稿；不继承阻抗、ARM 和运行结果</div></div>
+          </div>
+        </div>
+      </section>
+
+      <footer class="footer">
+        <div><strong>关键修正：</strong>时序与循环次数在最终确认之前完成；总剂量通过后才允许设备 ARM。</div>
+        <div class="mono">SOURCE: EEG-tES PRODUCT INTERACTION SPEC V2.0</div>
+      </footer>
+    </section>
+  </main>
+</body>
+</html>

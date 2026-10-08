@@ -1,0 +1,38 @@
+<ResourceDictionary
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:controls="clr-namespace:EGGtCSPlatform.Controls"
+  xmlns:pages="clr-namespace:EGGtCSPlatform.ViewModels.Pages"
+  x:CompileBindings="False"
+>
+  <ControlTheme x:Key="RunPagePrimaryButtonTheme" TargetType="Button">
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="Height" Value="44" />
+    <Setter Property="Padding" Value="16,0" />
+    <Setter Property="Background" Value="#7357DA" />
+    <Setter Property="Foreground" Value="White" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="FontFamily" Value="{DynamicResource AlibabaPuHuiTi}" />
+    <Setter Property="FontSize" Value="{DynamicResource FontSize14}" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border
+          Padding="{TemplateBinding Padding}"
+          Background="{TemplateBinding Background}"
+          CornerRadius="{TemplateBinding CornerRadius}"
+        >
+          <ContentPresenter
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            Content="{TemplateBinding Content}"
+          />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:disabled /template/ Border">
+      <Setter Property="Background" Value="#CCD2DC" />
+    </Style>
+  </ControlTheme>
+</ResourceDictionary>

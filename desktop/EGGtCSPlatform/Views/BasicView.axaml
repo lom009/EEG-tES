@@ -1,0 +1,317 @@
+<UserControl
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+  xmlns:vm="clr-namespace:EGGtCSPlatform.ViewModels"
+  xmlns:pages="clr-namespace:EGGtCSPlatform.ViewModels.Pages"
+  xmlns:controls="clr-namespace:EGGtCSPlatform.Controls"
+  x:Class="EGGtCSPlatform.Views.BasicView"
+  x:DataType="vm:BasicViewModel"
+  mc:Ignorable="d"
+  d:DesignWidth="1440"
+  d:DesignHeight="900"
+>
+  <UserControl.Styles>
+    <Style Selector="TransitioningContentControl.navigation-animation-enabled">
+      <Setter Property="PageTransition">
+        <PageSlide Duration="0:0:0.3" Orientation="Horizontal">
+          <PageSlide.SlideInEasing>
+            <CubicEaseInOut />
+          </PageSlide.SlideInEasing>
+          <PageSlide.SlideOutEasing>
+            <CubicEaseInOut />
+          </PageSlide.SlideOutEasing>
+        </PageSlide>
+      </Setter>
+    </Style>
+  </UserControl.Styles>
+
+  <Grid RowDefinitions="64,68,*">
+    <Grid.Background>
+      <LinearGradientBrush StartPoint="0%,100%" EndPoint="100%,0%">
+        <GradientStop Offset="0" Color="#EDF0F9" />
+        <GradientStop Offset="1" Color="#F5F5FA" />
+      </LinearGradientBrush>
+    </Grid.Background>
+
+    <Border x:Name="Banner" Grid.Row="0" Background="White">
+      <Grid Margin="24,0" ColumnDefinitions="Auto,*">
+        <Image
+          Width="182"
+          Height="36"
+          HorizontalAlignment="Left"
+          VerticalAlignment="Center"
+          Source="{SvgImage /Assets/Images/eeg_tes.svg}"
+          Stretch="Uniform"
+        />
+
+        <StackPanel
+          Grid.Column="1"
+          HorizontalAlignment="Right"
+          VerticalAlignment="Center"
+          Orientation="Horizontal"
+          Spacing="12"
+        >
+          <StackPanel VerticalAlignment="Center" Orientation="Horizontal" Spacing="4">
+            <Viewbox Width="24" Height="24" Stretch="Uniform">
+              <Canvas Width="24" Height="24">
+                <Border
+                  Canvas.Left="3"
+                  Canvas.Top="7"
+                  Width="16"
+                  Height="10"
+                  Background="#E8EDF4"
+                  CornerRadius="2.5"
+                />
+                <Border
+                  Canvas.Left="3"
+                  Canvas.Top="7"
+                  Width="{Binding DeviceConnection.BatteryPercent, Converter={StaticResource BatteryPercentToWidthConverter}}"
+                  Height="10"
+                  Background="{Binding DeviceConnection.BatteryPercent, Converter={StaticResource BatteryPercentToBrushConverter}}"
+                  CornerRadius="2.5"
+                />
+                <Border
+                  Canvas.Left="1"
+                  Canvas.Top="5"
+                  Width="20"
+                  Height="14"
+                  Background="Transparent"
+                  BorderBrush="{Binding DeviceConnection.BatteryPercent, Converter={StaticResource BatteryPercentToBrushConverter}}"
+                  BorderThickness="1.5"
+                  CornerRadius="4"
+                />
+                <Border
+                  Canvas.Left="22"
+                  Canvas.Top="9"
+                  Width="2"
+                  Height="6"
+                  Background="{Binding DeviceConnection.BatteryPercent, Converter={StaticResource BatteryPercentToBrushConverter}}"
+                  CornerRadius="1"
+                />
+              </Canvas>
+            </Viewbox>
+            <TextBlock
+              VerticalAlignment="Center"
+              FontFamily="{DynamicResource AlibabaPuHuiTi}"
+              FontWeight="Medium"
+              FontSize="{DynamicResource FontSize12}"
+              Foreground="{Binding DeviceConnection.BatteryPercent, Converter={StaticResource BatteryPercentToBrushConverter}}"
+              Text="{Binding DeviceConnection.BatteryPercentText}"
+            />
+          </StackPanel>
+
+          <Border
+            Width="82"
+            Height="24"
+            Background="#F5F7FA"
+            CornerRadius="12"
+            IsVisible="{Binding !DeviceConnection.IsConnected}"
+          >
+            <StackPanel
+              HorizontalAlignment="Center"
+              VerticalAlignment="Center"
+              Orientation="Horizontal"
+              Spacing="4"
+            >
+              <Image
+                Width="20"
+                Height="20"
+                Source="{SvgImage /Assets/Images/radar-disconnected.svg}"
+                Stretch="Uniform"
+              />
+              <TextBlock
+                VerticalAlignment="Center"
+                FontFamily="{DynamicResource AlibabaPuHuiTi}"
+                FontWeight="Normal"
+                FontSize="{DynamicResource FontSize14}"
+                Foreground="#6B7D99"
+                Text="{Binding DeviceConnection.ConnectionStatusText}"
+              />
+            </StackPanel>
+          </Border>
+
+          <Border
+            Width="82"
+            Height="24"
+            Background="#1A38A169"
+            CornerRadius="12"
+            IsVisible="{Binding DeviceConnection.IsConnected}"
+          >
+            <StackPanel
+              HorizontalAlignment="Center"
+              VerticalAlignment="Center"
+              Orientation="Horizontal"
+              Spacing="4"
+            >
+              <Image
+                Width="20"
+                Height="20"
+                Source="{SvgImage /Assets/Images/radar.svg}"
+                Stretch="Uniform"
+              />
+              <TextBlock
+                VerticalAlignment="Center"
+                FontFamily="{DynamicResource AlibabaPuHuiTi}"
+                FontWeight="Normal"
+                FontSize="{DynamicResource FontSize14}"
+                Foreground="#38A169"
+                Text="{Binding DeviceConnection.ConnectionStatusText}"
+              />
+            </StackPanel>
+          </Border>
+
+          <Grid Width="34" Height="34" Margin="12,0,0,0">
+            <Border
+              Width="32"
+              Height="32"
+              HorizontalAlignment="Right"
+              VerticalAlignment="Top"
+              Background="#2F86FF"
+              CornerRadius="16"
+            >
+              <TextBlock
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                FontFamily="{DynamicResource AlibabaPuHuiTi}"
+                FontWeight="Normal"
+                FontSize="{DynamicResource FontSize13}"
+                Foreground="White"
+                Text="TA"
+              />
+            </Border>
+            <Ellipse
+              Width="10"
+              Height="10"
+              HorizontalAlignment="Right"
+              VerticalAlignment="Bottom"
+              Fill="#38A169"
+              Stroke="White"
+              StrokeThickness="2"
+            />
+          </Grid>
+        </StackPanel>
+      </Grid>
+    </Border>
+
+    <Grid Grid.Row="1" Margin="24,0">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="Auto" />
+        <ColumnDefinition Width="*" />
+        <ColumnDefinition Width="Auto" />
+        <ColumnDefinition Width="3*" MaxWidth="400" />
+      </Grid.ColumnDefinitions>
+
+      <StackPanel
+        x:Name="HeaderNavigationAndStatusPanel"
+        Grid.Column="0"
+        VerticalAlignment="Center"
+        Orientation="Horizontal"
+        Spacing="8"
+      >
+        <Button
+          Height="36"
+          Padding="12,0"
+          VerticalAlignment="Center"
+          Background="#80FFFFFF"
+          BorderBrush="White"
+          BorderThickness="1"
+          Command="{Binding GoBackCommand}"
+          IsEnabled="{Binding CurrentPage.CanGoBack}"
+          CornerRadius="18"
+          Cursor="Hand"
+          Effect="{x:Null}"
+          ToolTip.Tip="返回"
+        >
+          <StackPanel Orientation="Horizontal" Spacing="4">
+            <Image
+              Width="20"
+              Height="20"
+              Source="{SvgImage /Assets/Images/electrode-icons/back.svg}"
+              Stretch="Uniform"
+            />
+            <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
+              <TextBlock
+                FontFamily="{DynamicResource AlibabaPuHuiTi}"
+                FontWeight="Normal"
+                FontSize="{DynamicResource FontSize16}"
+                Foreground="#232B38"
+                Text="返回/"
+              />
+              <TextBlock
+                FontFamily="{DynamicResource AlibabaPuHuiTi}"
+                FontWeight="Normal"
+                FontSize="{DynamicResource FontSize16}"
+                Foreground="#232B38"
+                Text="{Binding CurrentPage.PageTitle}"
+              />
+            </StackPanel>
+          </StackPanel>
+        </Button>
+
+        <ItemsControl
+          x:Name="HeaderStatusItems"
+          VerticalAlignment="Center"
+          ItemsSource="{Binding CurrentPage.HeaderBadges}"
+        >
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <StackPanel Orientation="Horizontal" Spacing="8" />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="pages:PageHeaderBadgeViewModel">
+              <Border
+                Height="34"
+                Padding="12,0"
+                Background="#80FFFFFF"
+                BorderBrush="White"
+                BorderThickness="1"
+                CornerRadius="17"
+              >
+                <TextBlock
+                  VerticalAlignment="Center"
+                  FontFamily="{DynamicResource AlibabaPuHuiTi}"
+                  FontWeight="Normal"
+                  FontSize="{DynamicResource FontSize13}"
+                  Foreground="#7A8BA8"
+                  Text="{Binding DisplayText}"
+                />
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
+
+      <ContentControl
+        x:Name="HeaderAction"
+        Grid.Column="2"
+        VerticalAlignment="Center"
+        Content="{Binding CurrentPage.HeaderAction}"
+      >
+        <ContentControl.DataTemplates>
+          <DataTemplate x:DataType="pages:ExperimentRunPageViewModel">
+            <controls:RunModeSelector
+              IsLocked="{Binding IsModeLocked}"
+              SelectCommand="{Binding SelectModeCommand}"
+              SelectedMode="{Binding SelectedMode, Mode=TwoWay}"
+            />
+          </DataTemplate>
+        </ContentControl.DataTemplates>
+      </ContentControl>
+    </Grid>
+
+    <TransitioningContentControl
+      Grid.Row="{Binding PageContentRow}"
+      Grid.RowSpan="2"
+      Margin="{Binding PageContentMargin}"
+      HorizontalContentAlignment="Stretch"
+      VerticalContentAlignment="Stretch"
+      ClipToBounds="True"
+      Classes.navigation-animation-enabled="{Binding IsNavigationAnimationEnabled}"
+      Content="{Binding CurrentPage}"
+      IsTransitionReversed="{Binding IsTransitionReversed}"
+    />
+  </Grid>
+</UserControl>

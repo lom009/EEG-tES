@@ -1,0 +1,150 @@
+<ResourceDictionary
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:controls="clr-namespace:EGGtCSPlatform.Controls"
+  xmlns:pages="clr-namespace:EGGtCSPlatform.ViewModels.Pages"
+  xmlns:converters="clr-namespace:EGGtCSPlatform.ValueConverters"
+  x:ClassModifier="internal"
+  x:CompileBindings="False"
+>
+  <converters:HasTextConverter x:Key="HasTextConverter" />
+  <ControlTheme
+    x:Key="{x:Type controls:StimulusParameterEditor}"
+    TargetType="controls:StimulusParameterEditor"
+  >
+    <Setter Property="Height" Value="88" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Padding="16,12" Background="{DynamicResource ProductStimulusTile}" CornerRadius="8">
+          <Grid RowDefinitions="20,12,32">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+              <TextBlock
+                VerticalAlignment="Center"
+                FontFamily="{DynamicResource AlibabaPuHuiTi}"
+                FontWeight="Medium"
+                FontSize="{DynamicResource FontSize14}"
+                Foreground="{DynamicResource ProductText}"
+                Text="{TemplateBinding Title}"
+              />
+              <StackPanel
+                Grid.Column="1"
+                Margin="12,0,0,0"
+                VerticalAlignment="Center"
+                Orientation="Horizontal"
+                Spacing="6"
+              >
+                <Image
+                  Width="16"
+                  Height="16"
+                  Source="{SvgImage /Assets/Images/stimulus-figma/info.svg}"
+                  IsVisible="{Binding InfoText, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource HasTextConverter}}"
+                />
+                <TextBlock
+                  VerticalAlignment="Center"
+                  FontSize="{DynamicResource FontSize12}"
+                  Foreground="{DynamicResource ProductTextMuted}"
+                  Text="{TemplateBinding InfoText}"
+                  TextTrimming="CharacterEllipsis"
+                  ToolTip.Tip="{TemplateBinding InfoText}"
+                />
+              </StackPanel>
+              <Border
+                x:Name="ParameterStatusBadge"
+                Grid.Column="2"
+                Padding="6,0"
+                Background="{DynamicResource ProductFeedbackSuccessSurface}"
+                CornerRadius="999"
+                IsVisible="{Binding StatusText, RelativeSource={RelativeSource TemplatedParent}, Converter={x:Static ObjectConverters.IsNotNull}}"
+              >
+                <StackPanel Orientation="Horizontal" Spacing="4">
+                <Image
+                  Width="16"
+                  Height="16"
+                  IsVisible="{Binding IsError, RelativeSource={RelativeSource TemplatedParent}}"
+                  Source="{SvgImage /Assets/Images/stimulus-figma/status-circle.svg}"
+                />
+                <Image
+                  Width="16"
+                  Height="16"
+                  IsVisible="{Binding !IsError, RelativeSource={RelativeSource TemplatedParent}}"
+                  Source="{SvgImage /Assets/Images/stimulus-figma/check-circle-green.svg}"
+                />
+                  <TextBlock
+                    x:Name="ParameterStatusText"
+                    MaxWidth="120"
+                    VerticalAlignment="Center"
+                    FontFamily="{DynamicResource AlibabaPuHuiTi}"
+                    FontSize="{DynamicResource FontSize12}"
+                    FontWeight="Medium"
+                    Foreground="{DynamicResource ProductExcellent}"
+                    TextTrimming="CharacterEllipsis"
+                    Text="{TemplateBinding StatusText}"
+                    ToolTip.Tip="{TemplateBinding StatusText}"
+                  />
+                </StackPanel>
+              </Border>
+            </Grid>
+
+            <Grid Grid.Row="2" ColumnDefinitions="Auto,*,Auto,12,Auto">
+              <TextBlock
+                MinWidth="20"
+                VerticalAlignment="Center"
+                FontSize="{DynamicResource FontSize12}"
+                Foreground="{DynamicResource ProductTextMuted}"
+                Text="{TemplateBinding Minimum}"
+              />
+              <Slider
+                Grid.Column="1"
+                Margin="4,0"
+                VerticalAlignment="Center"
+                Background="{TemplateBinding InactiveTrackBrush}"
+                Foreground="{TemplateBinding ActiveTrackBrush}"
+                Maximum="{TemplateBinding Maximum}"
+                Minimum="{TemplateBinding Minimum}"
+                IsSnapToTickEnabled="True"
+                Theme="{StaticResource StimulusSliderTheme}"
+                TickFrequency="{TemplateBinding Increment}"
+                Value="{Binding Value, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+              />
+              <TextBlock
+                Grid.Column="2"
+                MinWidth="22"
+                VerticalAlignment="Center"
+                Foreground="{DynamicResource ProductTextMuted}"
+                FontSize="{DynamicResource FontSize14}"
+                Text="{TemplateBinding Maximum}"
+              />
+              <controls:StimulusNumericInput
+                Grid.Column="4"
+                Width="{DynamicResource ProductStimulusNumericWidth}"
+                Padding="{DynamicResource ProductStimulusNumericPadding}"
+                Height="{DynamicResource ProductStimulusNumericHeight}"
+                Background="{DynamicResource ProductSurface}"
+                BorderBrush="{DynamicResource ProductStimulusInputBorder}"
+                BorderThickness="1"
+                CornerRadius="6"
+                DecimalPlaces="{TemplateBinding DecimalPlaces}"
+                Foreground="{DynamicResource ProductText}"
+                Increment="{TemplateBinding Increment}"
+                Maximum="{TemplateBinding Maximum}"
+                Minimum="{TemplateBinding Minimum}"
+                ShowButtonSpinner="False"
+                Unit="{TemplateBinding Unit}"
+                Value="{Binding Value, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+              />
+            </Grid>
+          </Grid>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:allocated">
+      <Setter Property="ActiveTrackBrush" Value="{DynamicResource ProductExcellent}" />
+    </Style>
+    <Style Selector="^:error /template/ Border#ParameterStatusBadge">
+      <Setter Property="Background" Value="{DynamicResource ProductFeedbackErrorSurface}" />
+    </Style>
+    <Style Selector="^:error /template/ TextBlock#ParameterStatusText">
+      <Setter Property="Foreground" Value="{DynamicResource ProductFeedbackError}" />
+    </Style>
+  </ControlTheme>
+</ResourceDictionary>

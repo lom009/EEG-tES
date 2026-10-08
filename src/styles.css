@@ -44,6 +44,11 @@ button { font: inherit; }
   grid-template-rows:64px minmax(0, 1fr);
 }
 
+.setup-shell .avatar {
+  color:#fff;
+  background:#2f86ff;
+}
+
 .topbar {
   display: flex;
   align-items: center;
@@ -342,11 +347,15 @@ button { font: inherit; }
   border:1px dashed #cfd8e5;
   border-radius:4px;
   background:#fafbfc;
+  transition:border-color .18s ease, background-color .18s ease;
 }
-.upload-illustration { width:149px; height:103px; object-fit:contain; }
-.upload-zone > div { display:flex; flex-direction:column; align-items:flex-start; justify-content:center; gap:12px; }
+.upload-zone:hover,
+.upload-zone:focus-within { border-color:#aeb9ec; background:#f8f9ff; }
+.upload-zone.has-file { border-color:#bdc6f3; background:#f8f9ff; }
+.upload-zone__content { display:flex; flex-direction:column; align-items:flex-start; justify-content:center; gap:12px; }
 .file-button {
-  width:140px;
+  max-width:260px;
+  min-width:140px;
   height:40px;
   display:flex;
   align-items:center;
@@ -363,7 +372,19 @@ button { font: inherit; }
 }
 .file-button img { width:24px; height:24px; flex:0 0 24px; }
 .file-button span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.file-button input { display:none; }
+.file-button:hover { border-color:#bcc5ef; color:#3038a6; background:#f8f9ff; }
+.file-button:focus-visible { outline:2px solid #4148d0; outline-offset:2px; }
+.upload-file-input {
+  position:absolute;
+  width:1px;
+  height:1px;
+  padding:0;
+  margin:-1px;
+  overflow:hidden;
+  clip:rect(0, 0, 0, 0);
+  white-space:nowrap;
+  border:0;
+}
 .upload-zone p { margin:0; color:#6b7d99; font-size:14px; line-height:20px; }
 .setup-next {
   height:40px;
@@ -381,6 +402,38 @@ button { font: inherit; }
   box-shadow:0 4px 8px rgba(57,65,182,.18);
 }
 .setup-next img { width:20px; height:20px; transform:scaleX(-1); }
+
+.setup-actions {
+  min-height:32px;
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  margin-top:auto;
+}
+
+.setup-primary-action {
+  width:171px;
+  height:32px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  padding:6px 16px;
+  border:0;
+  border-radius:6px;
+  color:#fff;
+  background:#3941b6;
+  font:600 14px/20px "Alibaba PuHuiTi 3.0", "PingFang SC", Arial, sans-serif;
+  cursor:pointer;
+  box-shadow:0 4px 8px rgba(57,65,182,.18);
+}
+
+.setup-primary-action:hover { background:#3038a6; }
+.setup-primary-action:focus-visible {
+  outline:3px solid rgba(57,65,182,.24);
+  outline-offset:2px;
+}
+.setup-primary-action img { width:20px; height:20px; }
 
 .history-table {
   width:100%;
@@ -470,13 +523,6 @@ button { font: inherit; }
   object-position: center;
   pointer-events: none;
   user-select: none;
-}
-
-.model-stage {
-  z-index: 1;
-  min-width: 0;
-  min-height: 0;
-  position: relative;
 }
 
 .static-head-stage {
@@ -587,53 +633,9 @@ button { font: inherit; }
 .distance-warning strong { font-weight:700; }
 .distance-caret { position:absolute; left:20px; top:0; width:12px; height:8px; }
 
-.head-model {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  cursor: grab;
-}
-
-.head-model:active { cursor: grabbing; }
-.head-model canvas { display: block; width: 100%; height: 100%; }
-
-.model-status {
-  position: absolute;
-  z-index: 2;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  padding: 8px 12px;
-  border-radius: 8px;
-  color: var(--muted);
-  background: rgba(255, 255, 255, 0.82);
-  box-shadow: 0 4px 16px rgba(104, 133, 179, 0.14);
-  font-size: 13px;
-  pointer-events: none;
-}
-
-.model-status.is-error { color: var(--bad); }
-
-.model-hint {
-  position: absolute;
-  z-index: 2;
-  left: 50%;
-  bottom: 16px;
-  transform: translateX(-50%);
-  padding: 6px 12px;
-  border: 1px solid rgba(86, 95, 224, 0.12);
-  border-radius: 999px;
-  color: rgba(54, 68, 89, 0.68);
-  background: rgba(255, 255, 255, 0.64);
-  backdrop-filter: blur(8px);
-  font-size: 12px;
-  white-space: nowrap;
-  pointer-events: none;
-}
-
 .control-panel {
   position: relative;
-  z-index: 2;
+  z-index: 5;
   grid-column:2;
   width: 400px;
   height: 788px;
@@ -3466,27 +3468,14 @@ button:focus-visible { outline: 3px solid rgba(86, 95, 224, 0.28); outline-offse
   isolation:isolate;
 }
 
-.home-background-video {
+.home-background-image {
   position:absolute;
   z-index:-3;
   inset:0;
   width:100%;
   height:100%;
-  border:0;
   object-fit:cover;
   object-position:center;
-  opacity:1;
-  filter:brightness(1.1);
-}
-
-.home-background-wash {
-  display:none;
-  position:absolute;
-  z-index:-2;
-  inset:0;
-  background:
-    radial-gradient(circle at 50% 41%, rgba(255,255,255,.82) 0 22%, rgba(255,255,255,.2) 58%, transparent 78%),
-    linear-gradient(180deg, rgba(240,244,252,.14), rgba(242,246,255,.34));
   pointer-events:none;
 }
 
@@ -3588,10 +3577,10 @@ button:focus-visible { outline: 3px solid rgba(86, 95, 224, 0.28); outline-offse
   align-items:center;
   justify-content:space-between;
   padding:53px 16px;
-  border:4px solid #fff;
+  border:1px solid #fff;
   border-radius:8px;
   color:#232b38;
-  background:rgba(255,255,255,.8);
+  background:#fff;
   box-shadow:0 4px 12px rgba(104,133,179,.2);
   font:inherit;
   text-align:center;
@@ -3614,10 +3603,10 @@ button.home-entry-card:focus-visible {
 }
 
 .home-card-image {
-  width:200px;
-  height:200px;
+  width:240px;
+  height:240px;
   display:block;
-  object-fit:cover;
+  object-fit:contain;
 }
 
 .home-card-copy {
@@ -3636,6 +3625,21 @@ button.home-entry-card:focus-visible {
   color:#6b7d99;
   font:400 20px/1.25 "Alibaba PuHuiTi 3.0", "PingFang SC", sans-serif;
   white-space:nowrap;
+}
+
+.home-card-copy small.is-success {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  color:#38a169;
+}
+
+.home-device-connected-icon {
+  display:block;
+  width:20px;
+  height:20px;
+  flex:0 0 20px;
 }
 
 .home-entry-card.is-disabled {
@@ -3681,7 +3685,6 @@ button.home-entry-card:focus-visible {
   .topbar { min-height: 72px; flex-wrap: wrap; padding-block: 10px; }
   .workspace { grid-template-columns: 1fr; padding: 16px; }
   .neural-background { top: 0; width: 100%; height: 320px; object-fit: cover; }
-  .model-stage { min-height: 280px; }
   .control-panel { width: 100%; }
   .actionbar { position: sticky; bottom: 0; }
 }
@@ -3696,3 +3699,421 @@ button.home-entry-card:focus-visible {
   .secondary-action span { display: none; }
   .primary-action { flex: 1; }
 }
+
+/* Figma 301:4595 — experiment workspace refresh */
+.experiment-topbar {
+  height:64px;
+  padding:0 24px;
+}
+
+.experiment-brand {
+  display:inline-flex;
+  align-items:center;
+  gap:12px;
+  padding:0;
+  border:0;
+  background:transparent;
+  cursor:pointer;
+}
+
+.experiment-brand img:first-child { width:36px; height:36px; }
+.experiment-brand img:last-child { width:133.562px; height:24px; }
+
+.experiment-header-status {
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+
+.experiment-header-status > img {
+  width:24px;
+  height:24px;
+  display:block;
+}
+
+.experiment-header-status > span {
+  height:24px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:4px;
+  padding:4px 8px;
+  border-radius:32px;
+  color:#6b7d99;
+  background:#f5f7fa;
+  font:500 14px/16px "Alibaba PuHuiTi 3.0", "PingFang SC", sans-serif;
+}
+
+.experiment-header-status > span img { width:20px; height:20px; }
+.experiment-header-status > span.is-online { color:#38a169; background:rgba(56,161,105,.1); }
+.experiment-header-status .avatar { color:#fff; background:#2f86ff; }
+
+.experiment-workspace {
+  padding:0;
+  background:linear-gradient(57deg, #edf0f9 6%, #f5f5fa 90%);
+}
+
+.experiment-status-row {
+  left:24px;
+  top:16px;
+  gap:6px;
+}
+
+.experiment-back,
+.experiment-status-pill {
+  height:36px;
+  border:1px solid #fff;
+  border-radius:40px;
+  background:rgba(255,255,255,.5);
+}
+
+.experiment-back {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:4px;
+  padding:8px 10px;
+  color:#232b38;
+  font:400 16px/20px "Alibaba PuHuiTi 3.0", "PingFang SC", sans-serif;
+}
+
+.experiment-back img { width:20px; height:20px; }
+
+.experiment-status-pill {
+  padding:8px 10px;
+  color:#6b7d99;
+  font:400 12px/16px "Alibaba PuHuiTi 3.0", "PingFang SC", sans-serif;
+}
+
+.experiment-mode-switch {
+  position:absolute;
+  right:440px;
+  top:16px;
+  z-index:3;
+  width:180px;
+  height:32px;
+  padding:2px;
+  background:#fff;
+}
+
+.experiment-mode-switch button { height:28px; padding:0 12px; }
+
+.signal-card {
+  left:24px;
+  top:61px;
+  width:calc(100vw - 464px);
+  height:calc(100vh - 149px);
+  min-width:760px;
+  gap:0;
+  padding:0 0 16px;
+  border-radius:8px;
+  overflow:hidden;
+}
+
+.signal-card .signal-toolbar {
+  height:56px;
+  flex:0 0 56px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:12px 16px;
+  border-bottom:1px solid #e2e8f2;
+  background:#fafbfc;
+}
+
+.signal-toolbar-controls,
+.signal-cursor-tools {
+  display:flex;
+  align-items:center;
+}
+
+.signal-toolbar-controls { gap:8px; }
+
+.signal-toolbar-select {
+  position:relative;
+  height:24px;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:0 9px 0 0;
+  border:0;
+  border-right:1px solid #d6dfeb;
+  color:#6b7d99;
+  background:transparent;
+  font:400 14px/22px "Alibaba PuHuiTi 3.0", "PingFang SC", sans-serif;
+  cursor:pointer;
+}
+
+.signal-toolbar-select strong {
+  color:#232b38;
+  font-weight:400;
+  white-space:nowrap;
+}
+
+.signal-toolbar-select img { width:20px; height:20px; margin-left:-6px; }
+
+.signal-notch-toggle {
+  height:24px;
+  display:inline-flex;
+  align-items:center;
+  gap:2px;
+  padding:2px 8px 2px 4px;
+  border:0;
+  border-radius:24px;
+  color:#fff;
+  background:#acb7c8;
+  font:500 12px/20px "Alibaba PuHuiTi 3.0", "PingFang SC", sans-serif;
+}
+
+.signal-notch-toggle i {
+  width:16px;
+  height:16px;
+  border:4px solid #fff;
+  border-radius:50%;
+}
+
+.signal-cursor-tools { gap:16px; }
+.signal-cursor-tools i { width:1px; height:15px; background:#d6dfeb; }
+.signal-cursor-tools button {
+  padding:0;
+  border:0;
+  color:#232b38;
+  background:transparent;
+  font:400 14px/20px "Alibaba PuHuiTi 3.0", "PingFang SC", sans-serif;
+}
+.signal-cursor-tools button.is-active { color:#38a169; font-weight:500; }
+
+.signal-chart-scroll {
+  position:relative;
+  flex:1 1 auto;
+  min-height:0;
+  overflow:hidden;
+  padding:0 16px;
+}
+
+.signal-chart {
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  min-height:600px;
+}
+
+.signal-row {
+  position:relative;
+  flex:0 0 100px;
+  min-height:100px;
+  display:grid;
+  grid-template-columns:40px 42px minmax(0,1fr);
+  gap:0;
+  align-items:center;
+  padding:4px 16px;
+  border:0;
+}
+
+.signal-row:nth-child(even) { background:#f5f7fa; }
+
+.signal-row > strong {
+  color:#232b38;
+  font:400 14px/22px "PingFang SC", sans-serif;
+}
+
+.signal-axis-unit {
+  position:absolute;
+  left:50px;
+  top:7px;
+  color:#acb7c8;
+  font:400 10px/14px "PingFang SC", sans-serif;
+  transform:rotate(-90deg);
+  transform-origin:center;
+}
+
+.signal-axis-labels {
+  height:80px;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  justify-content:space-between;
+  padding-right:4px;
+  color:#acb7c8;
+  font:400 11px/11px "PingFang SC", sans-serif;
+}
+
+.signal-plot {
+  position:relative;
+  width:100%;
+  height:80px;
+  border-left:1px solid #dfe7f2;
+  background-image:
+    repeating-linear-gradient(to right, transparent 0, transparent calc(11.111% - 1px), #dfe7f2 calc(11.111% - 1px), #dfe7f2 11.111%),
+    repeating-linear-gradient(to bottom, transparent 0, transparent calc(16.666% - 1px), #dfe7f2 calc(16.666% - 1px), #dfe7f2 16.666%);
+}
+
+.signal-row img.signal-live-wave {
+  position:absolute;
+  left:0;
+  top:50%;
+  width:var(--acquisition-span, 50%);
+  height:31.5px;
+  display:block;
+  transform:translateY(-50%);
+  clip-path:inset(0 calc(100% - var(--wave-reveal, 0%)) 0 0);
+  transition:clip-path .28s linear;
+}
+
+.signal-stimulation-layer {
+  position:absolute;
+  inset:0 16px;
+  z-index:2;
+  display:grid;
+  grid-template-columns:82px minmax(0,1fr);
+  pointer-events:none;
+}
+
+.signal-stimulation-track {
+  position:relative;
+  min-width:0;
+}
+
+.signal-stimulation-region {
+  position:absolute;
+  top:0;
+  bottom:0;
+  background:rgba(149,54,243,.045);
+  border-left:1px solid rgba(149,54,243,.08);
+}
+
+.signal-stimulus-visualization {
+  position:absolute;
+  top:50%;
+  z-index:1;
+  width:177px;
+  height:104px;
+  transform:translate(-50%,-50%);
+}
+
+.signal-vertical-scroll {
+  position:absolute;
+  right:4px;
+  top:14px;
+  bottom:14px;
+  width:8px;
+  border-radius:999px;
+  background:#f5f7fa;
+}
+
+.signal-vertical-scroll span {
+  display:block;
+  width:8px;
+  height:193px;
+  border-radius:999px;
+  background:#acb7c8;
+}
+
+.signal-overview {
+  flex:0 0 70px;
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  margin:0 16px 0 103px;
+}
+
+.signal-phase-strip {
+  position:relative;
+  height:24px;
+  display:flex;
+  gap:1px;
+}
+
+.signal-phase-strip > span {
+  flex-basis:0;
+  min-width:4px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+  white-space:nowrap;
+  font:400 12px/20px "Alibaba PuHuiTi 3.0", "PingFang SC", sans-serif;
+}
+
+.signal-phase-strip .is-acquisition { color:#5797ff; background:#ecf3ff; }
+.signal-phase-strip .is-blanking { color:#fd5b38; background:#fff2ef; }
+.signal-phase-strip .is-stimulation { color:#9536f3; background:#f8f1ff; }
+.signal-phase-strip .is-recovery { color:#38a169; background:#eef8f2; }
+
+.signal-phase-playhead {
+  position:absolute;
+  left:0;
+  top:0;
+  width:4px;
+  height:24px;
+  transform:translateX(-50%);
+  border-left:1px solid #3675f3;
+  background:rgba(54,117,243,.2);
+  transition:left .28s linear;
+}
+
+.signal-phase-playhead.is-stimulation {
+  border-left:0;
+  background:linear-gradient(90deg, #9536f3 0%, #d557ff 100%);
+  box-shadow:none;
+}
+
+.signal-time-axis {
+  position:relative;
+  height:17px;
+  display:grid;
+  grid-template-columns:repeat(9,1fr);
+  align-items:start;
+  border-top:1px solid #e2e8f2;
+  color:#6b7d99;
+  font:400 12px/16px Inter, sans-serif;
+}
+
+.signal-time-axis span { position:relative; text-align:right; }
+.signal-time-axis span::before { content:""; position:absolute; right:0; top:-4px; width:1px; height:4px; background:#e2e8f2; }
+.signal-time-axis small { position:absolute; right:calc(100% + 12px); top:0; width:76px; color:#acb7c8; font:400 11px/16px "PingFang SC",sans-serif; }
+
+.signal-range-track {
+  position:relative;
+  height:12px;
+  background:#ecf2f8;
+}
+
+.signal-range-selection {
+  position:absolute;
+  left:4%;
+  top:0;
+  width:77%;
+  height:12px;
+  background:rgba(54,134,255,.2);
+}
+
+.signal-range-handle {
+  position:absolute;
+  top:-4px;
+  width:20px;
+  height:20px;
+  transform:translateX(-50%);
+}
+
+.signal-range-handle img { width:100%; height:100%; display:block; }
+.signal-range-handle.is-start { left:4%; }
+.signal-range-handle.is-end { left:81%; }
+.signal-range-track small { position:absolute; top:0; color:#6b7d99; font:400 10px/12px "Alibaba PuHuiTi 3.0",sans-serif; transform:translate(-50%,-1px); }
+.signal-range-track .is-start-label { left:-2%; }
+.signal-range-track .is-end-label { left:86%; }
+
+.run-panel {
+  top:16px;
+  right:24px;
+  height:calc(100vh - 104px);
+  min-height:0;
+  border-radius:8px;
+}
+
+.run-monitor-card,
+.run-params-card { border-bottom:1px dashed #cfd8e5; }
+
+.run-panel-actions { gap:16px; }
+
+.run-panel-actions .emergency-stop-button:only-child { width:100%; }

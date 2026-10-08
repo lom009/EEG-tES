@@ -1,0 +1,50 @@
+# .NET build outputs (apply to every current and future project)
+[Bb]in/
+[Oo]bj/
+[Aa]rtifacts/
+[Pp]ublish/
+
+# IDE and editor-local state
+.vs/
+.idea/
+.vscode/
+*.suo
+*.user
+*.rsuser
+*.userosscache
+*.sln.docstates
+*.DotSettings.user
+
+# Test, benchmark, and coverage outputs
+[Tt]est[Rr]esults/
+[Tt]est[Aa]rtifacts/
+[Bb]enchmarkDotNet.Artifacts/
+[Cc]overage/
+.coverage/
+*.coverage
+*.coveragexml
+coverage*.json
+coverage*.xml
+coverage*.lcov
+
+# Generated packages
+*.nupkg
+*.snupkg
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+*.bak
+*.swp
+*~
+
+# Local environment files (keep a safe template in source control)
+.env
+.env.*
+!.env.example
+
+# Operating-system metadata
+.DS_Store
+Thumbs.db
+Desktop.ini

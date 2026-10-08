@@ -1,0 +1,23 @@
+<ResourceDictionary
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:controls="clr-namespace:EGGtCSPlatform.Controls"
+  xmlns:pages="clr-namespace:EGGtCSPlatform.ViewModels.Pages"
+  x:CompileBindings="False"
+>
+  <ControlTheme
+    x:Key="ExperimentRunInlineComboBoxTheme"
+    TargetType="ComboBox"
+    BasedOn="{StaticResource ExperimentRunCompactComboBoxTheme}"
+  >
+    <Setter Property="Height" Value="28" />
+    <Setter Property="MinWidth" Value="54" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="3" />
+    <Setter Property="FontSize" Value="{DynamicResource FontSize14}" />
+    <Setter Property="HorizontalContentAlignment" Value="Left" />
+  </ControlTheme>
+</ResourceDictionary>

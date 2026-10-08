@@ -1,0 +1,40 @@
+<UserControl
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+  xmlns:design="clr-namespace:EGGtCSPlatform.Design"
+  xmlns:pages="clr-namespace:EGGtCSPlatform.ViewModels.Pages"
+  x:Class="EGGtCSPlatform.Views.Pages.MainView"
+  x:DataType="pages:MainViewModel"
+  mc:Ignorable="d"
+  d:DesignWidth="1400"
+  d:DesignHeight="900"
+  d:DataContext="{x:Static design:DesignData.MainViewModel}"
+>
+  <UserControl.Styles>
+    <Style Selector="TransitioningContentControl.navigation-animation-enabled">
+      <Setter Property="PageTransition">
+        <PageSlide Duration="0:0:0.3" Orientation="Horizontal">
+          <PageSlide.SlideInEasing>
+            <CubicEaseInOut />
+          </PageSlide.SlideInEasing>
+          <PageSlide.SlideOutEasing>
+            <CubicEaseInOut />
+          </PageSlide.SlideOutEasing>
+        </PageSlide>
+      </Setter>
+    </Style>
+  </UserControl.Styles>
+
+  <Grid x:Name="DialogAdornedRoot">
+    <TransitioningContentControl
+      HorizontalContentAlignment="Stretch"
+      VerticalContentAlignment="Stretch"
+      ClipToBounds="True"
+      Classes.navigation-animation-enabled="{Binding IsNavigationAnimationEnabled}"
+      Content="{Binding CurrentView}"
+      IsTransitionReversed="{Binding IsTransitionReversed}"
+    />
+  </Grid>
+</UserControl>

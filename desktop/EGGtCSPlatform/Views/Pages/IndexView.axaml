@@ -1,0 +1,183 @@
+<UserControl
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+  xmlns:controls="clr-namespace:EGGtCSPlatform.Controls"
+  xmlns:pages="clr-namespace:EGGtCSPlatform.ViewModels.Pages"
+  x:Class="EGGtCSPlatform.Views.Pages.IndexView"
+  x:DataType="pages:IndexViewModel"
+  mc:Ignorable="d"
+  d:DesignWidth="1440"
+  d:DesignHeight="900"
+>
+  <Grid>
+    <Grid x:Name="StaticHome">
+    <Image Source="{SvgImage /Assets/Images/index-background.svg}" Stretch="Fill" />
+    <Image
+      Width="133.56"
+      Height="24.8"
+      Margin="37,39.92,0,0"
+      HorizontalAlignment="Left"
+      VerticalAlignment="Top"
+      Source="{SvgImage /Assets/Images/header-logo.svg}"
+      Stretch="Uniform"
+    />
+
+    <Grid
+      Width="34"
+      Height="34"
+      Margin="0,35,36,0"
+      HorizontalAlignment="Right"
+      VerticalAlignment="Top"
+    >
+      <Border
+        Width="32"
+        Height="32"
+        HorizontalAlignment="Left"
+        VerticalAlignment="Top"
+        Background="#3787ED"
+        CornerRadius="16"
+      >
+        <TextBlock
+          HorizontalAlignment="Center"
+          VerticalAlignment="Center"
+          FontFamily="{DynamicResource AlibabaPuHuiTi}"
+          FontWeight="Normal"
+          FontSize="{DynamicResource FontSize13}"
+          Foreground="White"
+          Text="TA"
+        />
+      </Border>
+      <Ellipse
+        Width="10"
+        Height="10"
+        HorizontalAlignment="Right"
+        VerticalAlignment="Bottom"
+        Fill="#38A169"
+        Stroke="White"
+        StrokeThickness="2"
+      />
+    </Grid>
+
+    <StackPanel
+      Margin="0,127,0,0"
+      HorizontalAlignment="Center"
+      VerticalAlignment="Top"
+      Orientation="Horizontal"
+      Spacing="18"
+    >
+      <TextBlock
+        VerticalAlignment="Center"
+        FontFamily="{DynamicResource AlibabaPuHuiTi}"
+        FontWeight="ExtraBlack"
+        FontSize="{DynamicResource FontSize43}"
+        FontStyle="Italic"
+        ClipToBounds="False"
+        Foreground="#232B38"
+        Text="欢迎使用"
+      />
+      <Image
+        Width="197.26"
+        Height="36.62"
+        VerticalAlignment="Center"
+        Source="{SvgImage /Assets/Images/title-logo.svg}"
+        Stretch="Uniform"
+      />
+      <TextBlock
+        VerticalAlignment="Center"
+        FontFamily="{DynamicResource AlibabaPuHuiTi}"
+        FontWeight="ExtraBlack"
+        FontSize="{DynamicResource FontSize43}"
+        FontStyle="Italic"
+        ClipToBounds="False"
+        Foreground="#232B38"
+        Text="脑机实验系统"
+      />
+    </StackPanel>
+
+    <TextBlock
+      Margin="0,207,0,0"
+      HorizontalAlignment="Center"
+      VerticalAlignment="Top"
+      FontFamily="{DynamicResource AlibabaPuHuiTi}"
+      FontWeight="Normal"
+      FontSize="{DynamicResource FontSize14}"
+      Foreground="#6B7D99"
+      Text="一体化脑电与经颅电刺激科研平台"
+    />
+
+    <StackPanel
+      Margin="0,283,0,0"
+      HorizontalAlignment="Center"
+      VerticalAlignment="Top"
+      Orientation="Horizontal"
+      Spacing="-15"
+    >
+      <controls:IndexFeatureCard
+        Command="{Binding StartExperimentCommand}"
+        IsEnabled="{Binding CanStartExperiment}"
+        ImageSource="/Assets/Images/start-experiment.png"
+        Title="开始实验"
+        Subtitle="{Binding StartExperimentSubtitle}"
+        ToolTip.Tip="{Binding StartExperimentUnavailableReason}"
+      />
+      <controls:IndexFeatureCard
+        Command="{Binding ShowExperimentRecordsCommand}"
+        ImageSource="/Assets/Images/experiment-record.png"
+        Title="实验记录"
+        Subtitle="查看历史实验记录"
+      />
+      <controls:IndexFeatureCard
+        Command="{Binding OpenDeviceConnectionCommand}"
+        ImageSource="/Assets/Images/serial-device.png"
+        Title="串口与下位机"
+        Subtitle="{Binding DeviceConnection.ConnectionStatusText}"
+        StatusIconSource="{SvgImage /Assets/Images/radar.svg}"
+        SubtitleBrush="#38A169"
+        IsVisible="{Binding DeviceConnection.IsConnected}"
+      />
+      <controls:IndexFeatureCard
+        Command="{Binding OpenDeviceConnectionCommand}"
+        ImageSource="/Assets/Images/serial-device.png"
+        Title="串口与下位机"
+        Subtitle="{Binding DeviceConnection.ConnectionStatusText}"
+        StatusIconSource="{SvgImage /Assets/Images/radar-disconnected.svg}"
+        SubtitleBrush="#6B7D99"
+        IsVisible="{Binding !DeviceConnection.IsConnected}"
+      />
+      <controls:IndexFeatureCard
+        Command="{Binding StartToleranceTestCommand}"
+        IsEnabled="{Binding CanStartToleranceTest}"
+        ImageSource="/Assets/Images/tolerance-test.png"
+        Title="耐受度测试"
+        Subtitle="{Binding ToleranceSubtitle}"
+        ToolTip.Tip="{Binding ToleranceUnavailableReason}"
+      />
+    </StackPanel>
+
+    <TextBlock
+      Margin="0,0,0,25"
+      HorizontalAlignment="Center"
+      VerticalAlignment="Bottom"
+      FontFamily="{DynamicResource AlibabaPuHuiTi}"
+      FontWeight="Normal"
+      FontSize="{DynamicResource FontSize14}"
+      Foreground="#6B7D99"
+      Text="杭州南粟科技有限公司"
+    />
+
+    <TextBlock
+      Margin="0,0,0,25"
+      HorizontalAlignment="Right"
+      VerticalAlignment="Bottom"
+      FontFamily="{DynamicResource AlibabaPuHuiTi}"
+      FontWeight="Normal"
+      FontSize="{DynamicResource FontSize13}"
+      Foreground="#B6C2D3"
+      Text="Brain  ·  Science ·  Integration"
+    />
+    </Grid>
+    <controls:HomeMotionView x:Name="MotionHome" />
+  </Grid>
+</UserControl>

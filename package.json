@@ -5,18 +5,27 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
-    "build": "vite build && node scripts/create-static-routes.mjs",
+    "build": "vite build && node scripts/create-static-routes.mjs && node scripts/write-build-info.mjs",
     "preview": "vite preview --host 127.0.0.1",
-    "test": "node scripts/verify-point-state.mjs && node scripts/verify-new-experiment-state.mjs && node scripts/verify-auto-mode.mjs && node scripts/verify-experiment-timing.mjs && node scripts/verify-home-screen.mjs && node scripts/verify-local-assets.mjs && node scripts/verify-control-panel-layout.mjs",
+    "test": "node scripts/verify-head-test-interaction.mjs && node scripts/verify-point-state.mjs && node scripts/verify-new-experiment-state.mjs && node scripts/verify-auto-mode.mjs && node scripts/verify-experiment-timing.mjs && node scripts/verify-home-screen.mjs && node scripts/verify-local-assets.mjs && node scripts/verify-control-panel-layout.mjs && node scripts/verify-device-protocol.mjs && node scripts/verify-virtual-signal-model.mjs && node scripts/verify-signal-processing.mjs && node scripts/verify-virtual-device.mjs && node scripts/verify-virtual-device-faults.mjs && node scripts/verify-run-bundle.mjs && node scripts/verify-workflow-device-bridge.mjs && node scripts/verify-device-flow.mjs && node scripts/verify-workflow-prototype.mjs",
     "test:point-state": "node scripts/verify-point-state.mjs",
-    "test:timing": "node scripts/verify-experiment-timing.mjs"
+    "test:timing": "node scripts/verify-experiment-timing.mjs",
+    "test:device-flow": "node scripts/verify-device-flow.mjs",
+    "test:device-protocol": "node scripts/verify-device-protocol.mjs",
+    "test:virtual-signal": "node scripts/verify-virtual-signal-model.mjs",
+    "test:signal-processing": "node scripts/verify-signal-processing.mjs",
+    "test:virtual-device": "node scripts/verify-virtual-device.mjs",
+    "test:virtual-device-faults": "node scripts/verify-virtual-device-faults.mjs",
+    "test:run-bundle": "node scripts/verify-run-bundle.mjs",
+    "test:workflow-device-bridge": "node scripts/verify-workflow-device-bridge.mjs",
+    "test:workflow-prototype": "node scripts/verify-workflow-prototype.mjs"
   },
   "dependencies": {
     "@vitejs/plugin-react": "5.0.4",
     "lucide-react": "^1.24.0",
     "react": "19.2.0",
     "react-dom": "19.2.0",
-    "three": "^0.185.1",
+    "three": "0.180.0",
     "vite": "6.4.2"
   }
 }

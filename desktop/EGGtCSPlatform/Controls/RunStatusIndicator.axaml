@@ -1,0 +1,65 @@
+<ResourceDictionary
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:controls="clr-namespace:EGGtCSPlatform.Controls"
+  xmlns:pages="clr-namespace:EGGtCSPlatform.ViewModels.Pages"
+  x:CompileBindings="False"
+>
+  <ControlTheme
+    x:Key="{x:Type controls:RunStatusIndicator}"
+    TargetType="controls:RunStatusIndicator"
+  >
+    <Setter Property="Width" Value="124" />
+    <Setter Property="Height" Value="124" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Grid>
+          <controls:RunStatusRingSurface
+            Progress="{TemplateBinding Progress}"
+            State="{TemplateBinding State}"
+          />
+          <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="3">
+            <TextBlock
+              x:Name="PART_StatusIcon"
+              HorizontalAlignment="Center"
+              FontFamily="{DynamicResource Icon-FontFamily}"
+              FontSize="25"
+              Foreground="#788AA1"
+              Text="&#xe600;"
+            />
+            <TextBlock
+              x:Name="PART_StatusText"
+              MaxWidth="86"
+              HorizontalAlignment="Center"
+              FontFamily="{DynamicResource AlibabaPuHuiTi}"
+              FontWeight="Medium"
+              FontSize="{DynamicResource FontSize11}"
+              Foreground="#60738B"
+              Text="{TemplateBinding Text}"
+              TextAlignment="Center"
+              TextWrapping="Wrap"
+            />
+          </StackPanel>
+        </Grid>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:active /template/ TextBlock#PART_StatusIcon">
+      <Setter Property="Foreground" Value="#36A66F" />
+    </Style>
+    <Style Selector="^:active /template/ TextBlock#PART_StatusText">
+      <Setter Property="Foreground" Value="#36A66F" />
+    </Style>
+    <Style Selector="^:completed /template/ TextBlock#PART_StatusIcon">
+      <Setter Property="Foreground" Value="#36A86A" />
+    </Style>
+    <Style Selector="^:completed /template/ TextBlock#PART_StatusText">
+      <Setter Property="Foreground" Value="#36A86A" />
+    </Style>
+    <Style Selector="^:danger /template/ TextBlock#PART_StatusIcon">
+      <Setter Property="Foreground" Value="#E65058" />
+    </Style>
+    <Style Selector="^:danger /template/ TextBlock#PART_StatusText">
+      <Setter Property="Foreground" Value="#E65058" />
+    </Style>
+  </ControlTheme>
+</ResourceDictionary>

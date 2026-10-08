@@ -1,0 +1,150 @@
+<ResourceDictionary
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:controls="clr-namespace:EGGtCSPlatform.Controls"
+  xmlns:pages="clr-namespace:EGGtCSPlatform.ViewModels.Pages"
+>
+  <ControlTheme
+    x:Key="{x:Type controls:ImpedanceStatusItem}"
+    TargetType="controls:ImpedanceStatusItem"
+  >
+    <Setter Property="MinHeight" Value="52" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <StackPanel Margin="10,8">
+          <Border
+            x:Name="ItemSurface"
+            Height="48"
+            Padding="12,0"
+            Background="{DynamicResource ProductSurface}"
+            BorderThickness="0"
+            BoxShadow="4 4 10 0 #1A2B4166"
+            CornerRadius="12"
+          >
+            <Grid ColumnDefinitions="12,60,*,52,52" ColumnSpacing="7">
+              <Ellipse x:Name="QualityDot" Width="11" Height="11" Fill="#C6CDDA" />
+              <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="1">
+                <TextBlock
+                  FontFamily="{DynamicResource AlibabaPuHuiTi}"
+                  FontWeight="Bold"
+                  FontSize="{DynamicResource FontSize13}"
+                  Foreground="{DynamicResource ProductText}"
+                  Text="{TemplateBinding Label}"
+                />
+                <TextBlock
+                  x:Name="RoleLabel"
+                  FontSize="{DynamicResource FontSize9}"
+                  Foreground="{DynamicResource ProductTextMuted}"
+                  Text="{TemplateBinding RoleText}"
+                  TextTrimming="CharacterEllipsis"
+                />
+              </StackPanel>
+              <ComboBox
+                x:Name="StimulationChannelSelector"
+                Classes="stimulation-channel"
+                Grid.Column="2"
+                HorizontalAlignment="Stretch"
+                Height="26"
+                VerticalAlignment="Center"
+                Padding="0"
+                Background="{DynamicResource ProductTabSurface}"
+                BorderBrush="{DynamicResource ProductTextMuted}"
+                BorderThickness="0"
+                CornerRadius="13"
+                FontSize="{DynamicResource FontSize11_5}"
+                Foreground="{DynamicResource ProductTextMuted}"
+                IsVisible="{TemplateBinding ShowStimulationChannel}"
+                ItemsSource="{TemplateBinding StimulationChannels}"
+                SelectedItem="{Binding SelectedStimulationChannel, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+              >
+                <ComboBox.ItemTemplate>
+                  <DataTemplate x:DataType="pages:StimulationChannelOptionViewModel">
+                    <TextBlock Text="{Binding Label}" />
+                  </DataTemplate>
+                </ComboBox.ItemTemplate>
+              </ComboBox>
+              <TextBlock
+                Grid.Column="3"
+                ClipToBounds="False"
+                VerticalAlignment="Center"
+                Margin="7,0,0,0"
+                FontSize="{DynamicResource FontSize13}"
+                Foreground="{DynamicResource ProductText}"
+                Text="{TemplateBinding ImpedanceText}"
+                TextAlignment="Center"
+              />
+              <TextBlock
+                x:Name="QualityLabel"
+                Grid.Column="4"
+                VerticalAlignment="Center"
+                FontSize="{DynamicResource FontSize13}"
+                Foreground="{DynamicResource ProductTextMuted}"
+                Text="{TemplateBinding QualityText}"
+                TextAlignment="Right"
+              />
+            </Grid>
+          </Border>
+          <Border
+            x:Name="ChannelConflictSurface"
+            Margin="0,-4,8,0"
+            Padding="9,4"
+            HorizontalAlignment="Right"
+            Background="{DynamicResource ProductDangerSurface}"
+            CornerRadius="10"
+            IsVisible="{TemplateBinding HasChannelConflict}"
+          >
+            <TextBlock
+              FontSize="{DynamicResource FontSize11}"
+              Foreground="{DynamicResource ProductBad}"
+              Text="{TemplateBinding ChannelConflictText}"
+            />
+          </Border>
+        </StackPanel>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:selected /template/ Border#ItemSurface">
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ProductPrimary}" />
+    </Style>
+    <Style Selector="^:channel-conflict /template/ ComboBox#StimulationChannelSelector">
+      <Setter Property="BorderBrush" Value="{DynamicResource ProductBad}" />
+      <Setter Property="Foreground" Value="{DynamicResource ProductBad}" />
+    </Style>
+    <Style Selector="^:red-stimulus /template/ TextBlock#RoleLabel">
+      <Setter Property="Foreground" Value="{DynamicResource ProductBad}" />
+    </Style>
+    <Style Selector="^:blue-stimulus /template/ TextBlock#RoleLabel">
+      <Setter Property="Foreground" Value="{DynamicResource ProductSelected}" />
+    </Style>
+    <Style Selector="^:excellent /template/ Ellipse#QualityDot">
+      <Setter Property="Fill" Value="{DynamicResource ProductExcellent}" />
+    </Style>
+    <Style Selector="^:excellent /template/ TextBlock#QualityLabel">
+      <Setter Property="Foreground" Value="{DynamicResource ProductExcellent}" />
+    </Style>
+    <Style Selector="^:good /template/ Ellipse#QualityDot">
+      <Setter Property="Fill" Value="{DynamicResource ProductGood}" />
+    </Style>
+    <Style Selector="^:good /template/ TextBlock#QualityLabel">
+      <Setter Property="Foreground" Value="{DynamicResource ProductGood}" />
+    </Style>
+    <Style Selector="^:medium /template/ Ellipse#QualityDot">
+      <Setter Property="Fill" Value="{DynamicResource ProductMedium}" />
+    </Style>
+    <Style Selector="^:medium /template/ TextBlock#QualityLabel">
+      <Setter Property="Foreground" Value="{DynamicResource ProductMedium}" />
+    </Style>
+    <Style Selector="^:poor /template/ Ellipse#QualityDot">
+      <Setter Property="Fill" Value="{DynamicResource ProductPoor}" />
+    </Style>
+    <Style Selector="^:poor /template/ TextBlock#QualityLabel">
+      <Setter Property="Foreground" Value="{DynamicResource ProductPoor}" />
+    </Style>
+    <Style Selector="^:bad /template/ Ellipse#QualityDot">
+      <Setter Property="Fill" Value="{DynamicResource ProductBad}" />
+    </Style>
+    <Style Selector="^:bad /template/ TextBlock#QualityLabel">
+      <Setter Property="Foreground" Value="{DynamicResource ProductBad}" />
+    </Style>
+  </ControlTheme>
+</ResourceDictionary>

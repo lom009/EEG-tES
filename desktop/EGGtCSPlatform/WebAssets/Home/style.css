@@ -1,0 +1,238 @@
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;font-family:"Alibaba PuHuiTi 3.0","PingFang SC",sans-serif}button{font:inherit}.home-shell {
+  position:relative;
+  width:100%;
+  min-width:1024px;
+  min-height:720px;
+  height:100vh;
+  overflow:hidden;
+  color:#232b38;
+  background:linear-gradient(240.56deg, #f4f4ff .8%, #fefeff 28.1%, #fbfcfe 72.8%, #ebeffc 100%);
+  isolation:isolate;
+}
+
+.home-background-image {
+  position:absolute;
+  z-index:-3;
+  inset:0;
+  width:100%;
+  height:100%;
+  border:0;
+  object-fit:fill;
+  object-position:center;
+  opacity:1;
+}
+
+.home-background-wash {
+  display:none;
+  position:absolute;
+  z-index:-2;
+  inset:0;
+  background:
+    radial-gradient(circle at 50% 41%, rgba(255,255,255,.82) 0 22%, rgba(255,255,255,.2) 58%, transparent 78%),
+    linear-gradient(180deg, rgba(240,244,252,.14), rgba(242,246,255,.34));
+  pointer-events:none;
+}
+
+.home-header {
+  position:absolute;
+  top:36px;
+  left:50%;
+  width:calc(100% - 74px);
+  max-width:1366px;
+  height:32px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  transform:translateX(-50%);
+}
+
+.home-header > img {
+  width:134px;
+  height:24px;
+  display:block;
+}
+
+.home-avatar {
+  position:relative;
+  width:32px;
+  height:32px;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  color:#fff;
+  background:#2f86ff;
+  font:500 12px/1 Inter, Arial, sans-serif;
+}
+
+.home-avatar i {
+  position:absolute;
+  right:2px;
+  bottom:0;
+  width:8px;
+  height:8px;
+  border:2px solid #fff;
+  border-radius:50%;
+  background:#38a169;
+}
+
+.home-welcome {
+  position:absolute;
+  top:120px;
+  left:50%;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:19px;
+  transform:translateX(-50%);
+  white-space:nowrap;
+}
+
+.home-title {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:20px;
+}
+
+.home-title strong {
+  color:#232b38;
+  font:400 49px/1 "YouSheBiaoTiHei", "Alibaba PuHuiTi 3.0", "PingFang SC", sans-serif;
+  letter-spacing:.2px;
+}
+
+.home-title img {
+  width:197px;
+  height:36px;
+  display:block;
+}
+
+.home-welcome p {
+  margin:0;
+  color:#6b7d99;
+  font:500 14px/20px "Alibaba PuHuiTi 3.0", "PingFang SC", sans-serif;
+}
+
+.home-entry-grid {
+  position:absolute;
+  top:295px;
+  left:50%;
+  width:1143px;
+  display:grid;
+  grid-template-columns:repeat(4, 270px);
+  gap:21px;
+  transform:translateX(-50%);
+}
+
+.home-entry-card {
+  width:270px;
+  height:434px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:space-between;
+  padding:53px 16px;
+  border:1px solid #fff;
+  border-radius:8px;
+  color:#232b38;
+  background:#fff;
+  box-shadow:0 4px 12px rgba(104,133,179,.2);
+  font:inherit;
+  text-align:center;
+}
+
+button.home-entry-card {
+  cursor:pointer;
+  transition:transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+}
+
+button.home-entry-card:hover {
+  transform:translateY(-4px);
+  border-color:rgba(255,255,255,.98);
+  box-shadow:0 10px 24px rgba(83,112,158,.24);
+}
+
+button.home-entry-card:focus-visible {
+  outline:3px solid rgba(47,134,255,.34);
+  outline-offset:3px;
+}
+
+.home-card-image {
+  width:240px;
+  height:240px;
+  display:block;
+  object-fit:contain;
+}
+
+.home-card-copy {
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:10px;
+}
+
+.home-card-copy strong {
+  color:#232b38;
+  font:400 24px/1.25 "Alibaba PuHuiTi 3.0", "PingFang SC", sans-serif;
+}
+
+.home-card-copy small {
+  color:#6b7d99;
+  font:400 20px/1.25 "Alibaba PuHuiTi 3.0", "PingFang SC", sans-serif;
+  white-space:nowrap;
+}
+
+.home-card-copy small.is-success {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  color:#38a169;
+}
+
+.home-device-connected-icon {
+  display:block;
+  width:20px;
+  height:20px;
+  flex:0 0 20px;
+}
+
+.home-entry-card.is-disabled {
+  cursor:not-allowed;
+}
+
+.home-entry-card.is-disabled .home-card-image {
+  opacity:.5;
+}
+
+.home-footer {
+  position:absolute;
+  left:50%;
+  bottom:30px;
+  width:calc(100% - 140px);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transform:translateX(-50%);
+  color:#6b7d99;
+  font:400 14px/20px "Alibaba PuHuiTi 3.0", "PingFang SC", sans-serif;
+}
+
+.home-footer span:last-child {
+  position:absolute;
+  right:0;
+  color:#acb7c8;
+}
+
+@media (max-height: 820px) {
+  .home-welcome { top:86px; }
+  .home-entry-grid { top:230px; transform:translateX(-50%) scale(.88); transform-origin:top center; }
+  .home-footer { bottom:20px; }
+}
+
+
+.home-entry-card:disabled{cursor:not-allowed;transform:none;box-shadow:0 4px 12px rgba(104,133,179,.2)}
+.home-entry-card:disabled .home-card-image{opacity:.5}
+.home-card-copy small{white-space:normal;max-width:250px}
+@media (prefers-reduced-motion:reduce){button.home-entry-card{transition:none}button.home-entry-card:hover{transform:none}}
+
+@media (max-width:1200px){.home-entry-grid{transform:translateX(-50%) scale(.88);transform-origin:top center}}

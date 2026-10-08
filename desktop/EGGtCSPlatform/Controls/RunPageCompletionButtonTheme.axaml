@@ -1,0 +1,18 @@
+<ResourceDictionary
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:controls="clr-namespace:EGGtCSPlatform.Controls"
+  xmlns:pages="clr-namespace:EGGtCSPlatform.ViewModels.Pages"
+  x:CompileBindings="False"
+>
+  <ControlTheme
+    x:Key="RunPageCompletionButtonTheme"
+    TargetType="Button"
+    BasedOn="{StaticResource RunPagePrimaryButtonTheme}"
+  >
+    <Setter Property="Height" Value="32" />
+    <Setter Property="Background" Value="#4146C5" />
+    <Setter Property="CornerRadius" Value="5" />
+    <Setter Property="FontSize" Value="{DynamicResource FontSize13}" />
+  </ControlTheme>
+</ResourceDictionary>

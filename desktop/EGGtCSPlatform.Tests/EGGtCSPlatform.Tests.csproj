@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.5.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.5.3">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\EGGtCSPlatform\EGGtCSPlatform.csproj" />
+    <ProjectReference Include="..\EGGtCSPlatform.Communication.Core\EGGtCSPlatform.Communication.Core.csproj" />
+    <ProjectReference Include="..\EGGtCSPlatform.Communication.Udp\EGGtCSPlatform.Communication.Udp.csproj" />
+    <ProjectReference Include="..\EGGtCSPlatform.DeviceSdk\EGGtCSPlatform.DeviceSdk.csproj" />
+    <ProjectReference Include="..\EGGtCSPlatform.Protocol.EggtCs.Gen1\EGGtCSPlatform.Protocol.EggtCs.Gen1.csproj" />
+  </ItemGroup>
+</Project>

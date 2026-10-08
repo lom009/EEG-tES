@@ -1,0 +1,99 @@
+<ResourceDictionary
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:controls="clr-namespace:EGGtCSPlatform.Controls"
+  xmlns:pages="clr-namespace:EGGtCSPlatform.ViewModels.Pages"
+>
+  <ControlTheme x:Key="{x:Type controls:ImpedanceLegend}" TargetType="controls:ImpedanceLegend">
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Width="150" Padding="12" Background="{DynamicResource ProductSurfaceSubtle}" CornerRadius="8">
+          <StackPanel Spacing="8">
+            <TextBlock
+              FontFamily="{DynamicResource AlibabaPuHuiTi}"
+              FontWeight="Bold"
+              FontSize="{DynamicResource FontSize14}"
+              Foreground="{DynamicResource ProductText}"
+              Text="阻抗图例"
+            />
+            <Grid ColumnDefinitions="12,*,Auto">
+              <Ellipse Width="10" Height="10" Fill="{DynamicResource ProductExcellent}" />
+              <TextBlock
+                Grid.Column="1"
+                FontSize="{DynamicResource FontSize14}"
+                Foreground="{DynamicResource ProductTextMuted}"
+                Text="≤10 kΩ"
+              />
+              <TextBlock
+                Grid.Column="2"
+                FontSize="{DynamicResource FontSize14}"
+                Foreground="{DynamicResource ProductTextMuted}"
+                Text="优"
+              />
+            </Grid>
+            <Grid ColumnDefinitions="12,*,Auto">
+              <Ellipse Width="10" Height="10" Fill="{DynamicResource ProductGood}" />
+              <TextBlock
+                Grid.Column="1"
+                FontSize="{DynamicResource FontSize14}"
+                Foreground="{DynamicResource ProductTextMuted}"
+                Text="10–20 kΩ"
+              />
+              <TextBlock
+                Grid.Column="2"
+                FontSize="{DynamicResource FontSize14}"
+                Foreground="{DynamicResource ProductTextMuted}"
+                Text="良"
+              />
+            </Grid>
+            <Grid ColumnDefinitions="12,*,Auto">
+              <Ellipse Width="10" Height="10" Fill="{DynamicResource ProductMedium}" />
+              <TextBlock
+                Grid.Column="1"
+                FontSize="{DynamicResource FontSize14}"
+                Foreground="{DynamicResource ProductTextMuted}"
+                Text="20–30 kΩ"
+              />
+              <TextBlock
+                Grid.Column="2"
+                FontSize="{DynamicResource FontSize14}"
+                Foreground="{DynamicResource ProductTextMuted}"
+                Text="中"
+              />
+            </Grid>
+            <Grid ColumnDefinitions="12,*,Auto">
+              <Ellipse Width="10" Height="10" Fill="{DynamicResource ProductPoor}" />
+              <TextBlock
+                Grid.Column="1"
+                FontSize="{DynamicResource FontSize14}"
+                Foreground="{DynamicResource ProductTextMuted}"
+                Text="30–40 kΩ"
+              />
+              <TextBlock
+                Grid.Column="2"
+                FontSize="{DynamicResource FontSize14}"
+                Foreground="{DynamicResource ProductTextMuted}"
+                Text="差"
+              />
+            </Grid>
+            <Grid ColumnDefinitions="12,*,Auto">
+              <Ellipse Width="10" Height="10" Fill="{DynamicResource ProductBad}" />
+              <TextBlock
+                Grid.Column="1"
+                FontSize="{DynamicResource FontSize14}"
+                Foreground="{DynamicResource ProductTextMuted}"
+                Text=">40 kΩ"
+              />
+              <TextBlock
+                Grid.Column="2"
+                FontSize="{DynamicResource FontSize14}"
+                Foreground="{DynamicResource ProductTextMuted}"
+                Text="不良"
+              />
+            </Grid>
+          </StackPanel>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+</ResourceDictionary>

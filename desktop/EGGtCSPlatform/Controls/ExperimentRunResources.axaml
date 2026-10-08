@@ -1,0 +1,12 @@
+<ResourceDictionary
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:controls="clr-namespace:EGGtCSPlatform.Controls"
+  xmlns:pages="clr-namespace:EGGtCSPlatform.ViewModels.Pages"
+  x:CompileBindings="False"
+>
+  <SolidColorBrush x:Key="ExperimentDurationDisabledBackground">#ECF2F8</SolidColorBrush>
+  <SolidColorBrush x:Key="ExperimentDurationDisabledBorder">#E2E8F2</SolidColorBrush>
+  <SolidColorBrush x:Key="ExperimentDurationDisabledForeground">#232B38</SolidColorBrush>
+  <SolidColorBrush x:Key="ExperimentDurationDisabledArrow">#6B7D99</SolidColorBrush>
+</ResourceDictionary>

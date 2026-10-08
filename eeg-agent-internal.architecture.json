@@ -6,7 +6,16 @@
     "locale": "zh-CN",
     "output": "eeg-agent-internal.architecture.html",
     "quality_profile": "showcase",
-    "viewBox": [1340, 820]
+    "repository": {
+      "url": "https://github.com/iewug/CerebraGloss.git",
+      "revision": "0d47617d5502a5260533d6aceb36eb29acf66377"
+    },
+    "viewBox": [1340, 840],
+    "views": [
+      { "id": "evidence-base", "label": "DataEngine 与确定性证据", "focus": ["qc", "prep", "eeg_tools", "compare"], "note": "DataEngine 类工具先检测波形、背景节律和伪迹；产品再完成指标计算与 Pre/Post 可比性判断。" },
+      { "id": "cerebragloss-layer", "label": "CerebraGloss-3B 解释层", "focus": ["compare", "eeg_interpreter", "fusion", "report"], "note": "输入标准波形图片、结构化证据和问题，输出描述与多轮问答草稿，不直接判断康复疗效。" },
+      { "id": "clinical-boundary", "label": "临床证据与边界", "focus": ["treatment_tools", "compare", "eeg_interpreter", "fusion", "report"], "note": "训练结果为主、EEG 为辅；假阳性、领域差异和低可比性必须在报告中明确。" }
+    ]
   },
   "components": [
     { "id": "request", "type": "external", "label": "医生分析请求", "sublabel": "是否改善？数据是否可信？", "pos": [30, 300], "size": [150, 80] },
@@ -15,15 +24,15 @@
     { "id": "router", "type": "messagebus", "label": "工具注册与路由", "sublabel": "按条件选择确定性工具", "pos": [470, 300], "size": [180, 90] },
     { "id": "qc", "type": "security", "label": "采集质控工具", "sublabel": "阻抗、掉线、坏通道、伪迹", "pos": [250, 560], "size": [170, 90] },
     { "id": "prep", "type": "backend", "label": "预处理工具", "sublabel": "滤波、参考、坏段、分段", "pos": [470, 560], "size": [170, 90] },
-    { "id": "eeg_tools", "type": "backend", "label": "EEG 指标工具", "sublabel": "频带、脑区、稳定性、连接", "pos": [670, 560], "size": [170, 90] },
+    { "id": "eeg_tools", "type": "backend", "label": "确定性 EEG 工具", "sublabel": "波形、背景、伪迹与产品指标", "tag": "DataEngine 类", "pos": [670, 560], "size": [170, 90], "sources": [{ "path": "DataEngine/dataEngine_demo.py", "line": 14, "end_line": 110, "label": "数据引擎主流程" }] },
     { "id": "compare", "type": "security", "label": "可比性工具", "sublabel": "共同通道、协议与质量差异", "pos": [870, 560], "size": [170, 90] },
     { "id": "treatment_tools", "type": "backend", "label": "康复业务工具", "sublabel": "训练结果分析 + 刺激执行核对", "pos": [870, 70], "size": [210, 90] },
     { "id": "fusion", "type": "cloud", "label": "证据融合与约束", "sublabel": "训练为主、EEG为辅、保留不确定性", "tag": "禁止越界诊断", "pos": [870, 300], "size": [210, 100] },
     { "id": "report", "type": "frontend", "label": "结构化辅助报告", "sublabel": "结论、依据、可信度、限制与趋势", "tag": "医生最终复核", "pos": [1105, 300], "size": [210, 100] },
-    { "id": "audit", "type": "database", "label": "分析审计记录", "sublabel": "工具版本、参数、输入输出、异常", "pos": [1120, 560], "size": [180, 90] }
+    { "id": "eeg_interpreter", "type": "cloud", "label": "CerebraGloss-3B", "sublabel": "波形图片 + 问题 → 描述/问答", "tag": "生成式 · 仅草稿", "pos": [1125, 580], "size": [190, 100], "sources": [{ "path": "CerebraGloss/CerebraGloss_cli.py", "line": 44, "end_line": 96, "label": "模型加载与推理" }] }
   ],
   "boundaries": [
-    { "kind": "region", "label": "确定性 EEG 工具链", "wraps": ["qc", "prep", "eeg_tools", "compare"], "pad": 24 },
+    { "kind": "region", "label": "确定性 EEG 工具链 · DataEngine 可作为技术参考", "wraps": ["qc", "prep", "eeg_tools", "compare"], "pad": 24 },
     { "kind": "security-group", "label": "临床解释边界", "wraps": ["fusion", "report"], "pad": 24 }
   ],
   "connections": [
@@ -34,15 +43,16 @@
     { "id": "qc_prep", "from": "qc", "to": "prep", "label": "质控通过", "variant": "security", "labelAt": [445, 680] },
     { "id": "prep_eeg", "from": "prep", "to": "eeg_tools", "variant": "emphasis" },
     { "id": "eeg_compare", "from": "eeg_tools", "to": "compare", "label": "Pre/Post指标", "variant": "emphasis", "labelAt": [855, 680] },
-    { "id": "compare_fusion", "from": "compare", "to": "fusion", "label": "可信 EEG 变化", "variant": "security", "fromSide": "top", "toSide": "bottom", "labelAt": [985, 470] },
+    { "id": "compare_fusion", "from": "compare", "to": "fusion", "label": "可信 EEG 变化", "variant": "security", "fromSide": "top", "toSide": "bottom", "labelAt": [920, 470] },
+    { "id": "compare_interpreter", "from": "compare", "to": "eeg_interpreter", "label": "波形图 + 证据 JSON", "variant": "emphasis", "route": "orthogonal-h", "labelAt": [1083, 694] },
+    { "id": "interpreter_fusion", "from": "eeg_interpreter", "to": "fusion", "label": "描述 / 问答草稿", "variant": "security", "fromSide": "top", "toSide": "bottom" },
     { "id": "router_treatment", "from": "router", "to": "treatment_tools", "label": "调用业务分析", "fromSide": "top", "toSide": "bottom", "labelAt": [720, 210] },
     { "id": "treatment_fusion", "from": "treatment_tools", "to": "fusion", "label": "主要疗效 + 执行证据", "variant": "emphasis", "fromSide": "bottom", "toSide": "top", "labelAt": [1100, 220] },
-    { "id": "fusion_report", "from": "fusion", "to": "report", "label": "结构化结论与限制", "variant": "security", "labelAt": [1085, 420] },
-    { "id": "report_audit", "from": "report", "to": "audit", "label": "记录本次分析", "variant": "dashed", "fromSide": "bottom", "toSide": "top", "labelAt": [1300, 480] }
+    { "id": "fusion_report", "from": "fusion", "to": "report", "label": "结构化结论与限制", "variant": "security", "labelAt": [1085, 282] }
   ],
   "cards": [
-    { "dot": "cyan", "title": "Agent负责", "items": ["理解问题、选择工具、编排步骤、融合结果", "把结构化证据转成可读报告"] },
-    { "dot": "emerald", "title": "确定性工具负责", "items": ["处理信号、计算指标、执行质控和可比性规则", "每个工具必须有版本、输入、输出与验证记录"] },
-    { "dot": "rose", "title": "临床安全边界", "items": ["不让大模型直接凭原始波形自由诊断", "低质量或低可比数据必须降级、禁用或建议补采"] }
+    { "dot": "cyan", "title": "仓库已经开放什么", "items": ["DataEngine：.npy → 波形事件、背景节律、伪迹和规则报告", "CerebraGloss-3B：波形图片 + 提问 → 描述、选择题与多轮问答"] },
+    { "dot": "emerald", "title": "接入本产品的正确方式", "items": ["适配通道、参考、采样率与窗口，先生成标准波形图和证据 JSON", "确定性结果与生成式解释分开保存，再交给证据融合和医生复核"] },
+    { "dot": "rose", "title": "当前限制", "items": ["Demo 默认约 19 导、200 Hz、2000 点；需要适配本产品数据协议", "Bench 仅 90 例且偏癫痫/睡眠，不能证明失语症康复疗效"] }
   ]
 }

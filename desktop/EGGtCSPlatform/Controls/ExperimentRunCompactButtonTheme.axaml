@@ -1,0 +1,40 @@
+<ResourceDictionary
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:controls="clr-namespace:EGGtCSPlatform.Controls"
+  xmlns:pages="clr-namespace:EGGtCSPlatform.ViewModels.Pages"
+  x:CompileBindings="False"
+>
+  <ControlTheme x:Key="ExperimentRunCompactButtonTheme" TargetType="Button">
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="Height" Value="32" />
+    <Setter Property="Padding" Value="12,0" />
+    <Setter Property="Background" Value="#F5F7FB" />
+    <Setter Property="Foreground" Value="#53627A" />
+    <Setter Property="BorderBrush" Value="#E5EAF2" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="6" />
+    <Setter Property="FontSize" Value="{DynamicResource FontSize13}" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border
+          Padding="{TemplateBinding Padding}"
+          Background="{TemplateBinding Background}"
+          BorderBrush="{TemplateBinding BorderBrush}"
+          BorderThickness="{TemplateBinding BorderThickness}"
+          CornerRadius="{TemplateBinding CornerRadius}"
+        >
+          <ContentPresenter
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            Content="{TemplateBinding Content}"
+          />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:pointerover /template/ Border">
+      <Setter Property="Background" Value="#EEF3FA" />
+    </Style>
+  </ControlTheme>
+</ResourceDictionary>

@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.5.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.5.3"><PrivateAssets>all</PrivateAssets></PackageReference>
+    <ProjectReference Include="..\EGGtCSPlatform.Protocol.EggtCs.Gen1\EGGtCSPlatform.Protocol.EggtCs.Gen1.csproj" />
+    <ProjectReference Include="..\EGGtCSPlatform.DeviceRuntime\EGGtCSPlatform.DeviceRuntime.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\EGGtCSPlatform.DeviceRuntime.Tests\TestProtocolModule.cs" Link="Protocols\TestProtocolModule.cs" />
+    <Compile Include="..\EGGtCSPlatform.Tests\DeviceSessionTests.cs" Link="Compatibility\DeviceSessionTests.cs" />
+    <Compile Include="..\EGGtCSPlatform.Tests\V101FrameCodecTests.cs" Link="Compatibility\V101FrameCodecTests.cs" />
+    <Compile Include="..\EGGtCSPlatform.Tests\V101ProtocolProfileTests.cs" Link="Compatibility\V101ProtocolProfileTests.cs" />
+    <Compile Include="..\EGGtCSPlatform.Tests\V101DeviceDiscoveryTests.cs" Link="Compatibility\V101DeviceDiscoveryTests.cs" />
+    <Compile Include="..\EGGtCSPlatform.Tests\UdpTransportTests.cs" Link="Compatibility\UdpTransportTests.cs" />
+  </ItemGroup>
+</Project>

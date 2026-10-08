@@ -1,0 +1,123 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <ControlTheme x:Key="ElectrodeModeTabTheme" TargetType="RadioButton">
+      <Setter Property="Height" Value="{StaticResource ProductModeTabHeight}" />
+      <Setter Property="ClipToBounds" Value="false" />
+      <Setter Property="Background" Value="{DynamicResource ProductTabSurface}" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="Foreground" Value="{DynamicResource ProductPrimary}" />
+      <Setter Property="FontFamily" Value="{DynamicResource AlibabaPuHuiTi}" />
+      <Setter Property="FontSize" Value="{DynamicResource FontSize16}" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Border
+            x:Name="TabSurface"
+            Background="{TemplateBinding Background}"
+            BoxShadow="0 0 0 0 Transparent"
+            CornerRadius="{TemplateBinding CornerRadius}"
+          >
+            <ContentPresenter
+              Content="{TemplateBinding Content}"
+              HorizontalContentAlignment="Center"
+              VerticalContentAlignment="Center"
+            />
+          </Border>
+        </ControlTemplate>
+      </Setter>
+      <Style Selector="^:checked /template/ Border#TabSurface">
+        <Setter Property="Background" Value="{DynamicResource ProductPrimary}" />
+        <Setter Property="BoxShadow" Value="0 4 4 0 #400018CC" />
+      </Style>
+      <Style Selector="^:checked">
+        <Setter Property="Foreground" Value="{DynamicResource ProductSurface}" />
+      </Style>
+    </ControlTheme>
+
+    <ControlTheme x:Key="ElectrodeRoleButtonTheme" TargetType="RadioButton">
+      <Setter Property="FontSize" Value="{DynamicResource FontSize14}" />
+      <Setter Property="Height" Value="{StaticResource ProductRoleButtonHeight}" />
+      <Setter Property="Background" Value="{DynamicResource ProductSurfaceSubtle}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ProductBorder}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="{StaticResource ProductControlRadius}" />
+      <Setter Property="Foreground" Value="{DynamicResource ProductTextMuted}" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Border
+            x:Name="RoleSurface"
+            Background="{TemplateBinding Background}"
+            BorderBrush="{TemplateBinding BorderBrush}"
+            BorderThickness="{TemplateBinding BorderThickness}"
+            CornerRadius="{TemplateBinding CornerRadius}"
+          >
+            <Grid>
+            <ContentPresenter
+              Content="{TemplateBinding Content}"
+              HorizontalContentAlignment="Center"
+              VerticalContentAlignment="Center"
+            />
+            <Image Width="14" Height="14" Source="{SvgImage /Assets/Images/electrode-icons/role-checked.svg}" x:Name="SelectedCheck" IsVisible="False" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,1,2,0" />
+            </Grid>
+          </Border>
+        </ControlTemplate>
+      </Setter>
+      <Style Selector="^:checked /template/ Image#SelectedCheck">
+        <Setter Property="IsVisible" Value="True" />
+      </Style>
+      <Style Selector="^:checked /template/ Border#RoleSurface">
+        <Setter Property="Background" Value="{DynamicResource ProductTabSurface}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource ProductPrimary}" />
+      </Style>
+      <Style Selector="^:checked">
+        <Setter Property="Foreground" Value="{DynamicResource ProductPrimary}" />
+      </Style>
+      <Style Selector="^.red">
+        <Setter Property="Foreground" Value="{DynamicResource ProductText}" />
+      </Style>
+      <Style Selector="^.red:checked /template/ Border#RoleSurface">
+        <Setter Property="Background" Value="{DynamicResource ProductRoleSelected}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource ProductTextMuted}" />
+      </Style>
+      <Style Selector="^.red:checked">
+        <Setter Property="Foreground" Value="{DynamicResource ProductText}" />
+      </Style>
+      <Style Selector="^.blue">
+        <Setter Property="Foreground" Value="{DynamicResource ProductAnode}" />
+      </Style>
+      <Style Selector="^.blue:checked /template/ Border#RoleSurface">
+        <Setter Property="Background" Value="{DynamicResource ProductAnodeSurface}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource ProductAnode}" />
+      </Style>
+      <Style Selector="^.blue:checked">
+        <Setter Property="Foreground" Value="{DynamicResource ProductAnode}" />
+      </Style>
+    </ControlTheme>
+
+    <ControlTheme x:Key="ElectrodeSmallButtonTheme" TargetType="Button">
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="Height" Value="30" />
+      <Setter Property="Padding" Value="10,0" />
+      <Setter Property="Background" Value="{DynamicResource ProductSurfaceSubtle}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ProductBorder}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="{StaticResource ProductControlRadius}" />
+      <Setter Property="Foreground" Value="{DynamicResource ProductTextMuted}" />
+      <Setter Property="FontSize" Value="{DynamicResource FontSize12}" />
+    </ControlTheme>
+
+    <ControlTheme x:Key="ElectrodePrimaryButtonTheme" TargetType="Button">
+      <Setter Property="Height" Value="{StaticResource ProductRoleButtonHeight}" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="Background" Value="{DynamicResource ProductPrimary}" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="Foreground" Value="{DynamicResource ProductSurface}" />
+      <Setter Property="FontFamily" Value="{DynamicResource AlibabaPuHuiTi}" />
+      <Style Selector="^:disabled">
+        <Setter Property="Background" Value="{DynamicResource ProductDisabled}" />
+        <Setter Property="Foreground" Value="{DynamicResource ProductSurfaceSubtle}" />
+      </Style>
+    </ControlTheme>
+</ResourceDictionary>

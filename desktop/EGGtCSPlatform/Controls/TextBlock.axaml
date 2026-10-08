@@ -1,0 +1,46 @@
+<ResourceDictionary
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  x:CompileBindings="False"
+>
+  <Design.PreviewWith>
+    <Border Padding="20" Background="#F2F3F5">
+      <!-- Add Controls for Previewer Here -->
+      <StackPanel Spacing="10">
+        <TextBlock>Some text</TextBlock>
+        <TextBlock Classes="sub1">Sub 1 text block</TextBlock>
+      </StackPanel>
+    </Border>
+  </Design.PreviewWith>
+  <ControlTheme TargetType="TextBlock" x:Key="{x:Type TextBlock}">
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="FontSize" Value="{DynamicResource FontSize14}" />
+    <Style Selector="^.sub1">
+      <Setter Property="FontSize" Value="{DynamicResource FontSize13}" />
+      <Setter Property="FontFamily" Value="{DynamicResource AlibabaPuHuiTi}" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="Margin" Value="0 -5 0 0" />
+      <Setter Property="Foreground" Value="#F56C6C" />
+    </Style>
+    <Style Selector="^.success">
+      <Setter Property="Foreground" Value="#67C23A" />
+    </Style>
+    <Style Selector="^.info">
+      <Setter Property="Foreground" Value="#409EFF" />
+    </Style>
+    <Style Selector="^.warning">
+      <Setter Property="Foreground" Value="#E6A23C" />
+    </Style>
+    <Style Selector="^.alert, ^.danger, ^.error">
+      <Setter Property="Foreground" Value="#F56C6C" />
+    </Style>
+    <Style Selector="^:disabled:not(.experimentRunAction)">
+      <Setter Property="Foreground" Value="#C0C4CC" />
+      <Setter Property="Opacity" Value="1" />
+    </Style>
+    <Style Selector="^.icon-outline">
+      <Setter Property="FontFamily" Value="{DynamicResource Phosphor}" />
+      <Setter Property="FontSize" Value="14" />
+    </Style>
+  </ControlTheme>
+</ResourceDictionary>

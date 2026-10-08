@@ -1,0 +1,55 @@
+<ResourceDictionary
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:controls="clr-namespace:EGGtCSPlatform.Controls"
+  xmlns:pages="clr-namespace:EGGtCSPlatform.ViewModels.Pages"
+  x:ClassModifier="internal"
+  x:CompileBindings="False"
+>
+  <ControlTheme
+    x:Key="{x:Type controls:StimulusOptionSelector}"
+    TargetType="controls:StimulusOptionSelector"
+  >
+    <Setter Property="Template">
+      <ControlTemplate>
+        <StackPanel Orientation="Horizontal" Spacing="8">
+          <TextBlock
+            MinWidth="56"
+            VerticalAlignment="Center"
+            FontSize="{DynamicResource FontSize14}"
+            Foreground="{DynamicResource ProductTextMuted}"
+            Text="{TemplateBinding Label}"
+          />
+          <ListBox
+            x:Name="PART_Selector"
+            Padding="0"
+            Background="Transparent"
+            BorderThickness="0"
+            ItemContainerTheme="{StaticResource StimulusOptionItemTheme}"
+            ItemsSource="{TemplateBinding ItemsSource}"
+            SelectedItem="{Binding SelectedItem, RelativeSource={RelativeSource TemplatedParent}, Mode=OneWay}"
+          >
+            <ListBox.ItemsPanel>
+              <ItemsPanelTemplate>
+                <StackPanel Orientation="Horizontal" />
+              </ItemsPanelTemplate>
+            </ListBox.ItemsPanel>
+            <ListBox.ItemTemplate>
+              <DataTemplate>
+                <TextBlock
+                  VerticalAlignment="Center"
+                  FontFamily="{DynamicResource AlibabaPuHuiTi}"
+                  FontWeight="{Binding $parent[ListBoxItem].FontWeight}"
+                  FontSize="{DynamicResource FontSize14}"
+                  Foreground="{Binding $parent[ListBoxItem].Foreground}"
+                  IsVisible="{Binding IsVisible}"
+                  Text="{Binding Label}"
+                />
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+        </StackPanel>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+</ResourceDictionary>

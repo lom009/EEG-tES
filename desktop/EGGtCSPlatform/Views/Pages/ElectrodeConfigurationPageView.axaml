@@ -1,0 +1,439 @@
+<UserControl
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+  xmlns:controls="clr-namespace:EGGtCSPlatform.Controls"
+  xmlns:pages="clr-namespace:EGGtCSPlatform.ViewModels.Pages"
+  x:Class="EGGtCSPlatform.Views.Pages.ElectrodeConfigurationPageView"
+  x:DataType="pages:ElectrodeConfigurationPageViewModel"
+  FontFamily="{DynamicResource AlibabaPuHuiTi}"
+  FontWeight="Normal"
+  Foreground="{DynamicResource ProductText}"
+  mc:Ignorable="d"
+  d:DesignWidth="1440"
+  d:DesignHeight="768"
+>
+
+
+  <Grid>
+    <Image Margin="0,44,0,0" Source="{SvgImage /Assets/Images/electrode-background.svg}" Stretch="UniformToFill" />
+
+    <Grid Margin="24,0,24,24" ColumnDefinitions="*,5,400">
+      <Grid Margin="0,44,0,0" RowDefinitions="38,*">
+        <Grid ColumnDefinitions="Auto,*,Auto">
+          <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4">
+            <RadioButton x:Name="View2D" Content="2D" IsChecked="True" GroupName="HeadViewMode" Click="Show2D" Theme="{StaticResource ElectrodeRoleButtonTheme}" Width="48" />
+            <RadioButton x:Name="View3D" Content="3D" GroupName="HeadViewMode" Click="Show3D" Theme="{StaticResource ElectrodeRoleButtonTheme}" Width="48" />
+            <Button x:Name="Reset3D" Content="重置视角" IsVisible="False" Click="ResetHead3D" Theme="{StaticResource ElectrodeSmallButtonTheme}" />
+          </StackPanel>
+          <Button
+            Height="30"
+            Effect="{x:Null}"
+            Padding="14,0"
+            Background="#BFFFFFFF"
+            BorderBrush="{DynamicResource ProductSurface}"
+            BorderThickness="1"
+            Command="{Binding ToggleHeadOrientationCommand}"
+            CornerRadius="15"
+          >
+            <StackPanel VerticalAlignment="Center" Orientation="Horizontal" Spacing="6">
+              <TextBlock
+                FontSize="{DynamicResource FontSize14}"
+                Foreground="{DynamicResource ProductText}"
+                Text="{Binding HeadOrientationText}"
+              />
+              <Image Width="16" Height="16" Source="{SvgImage /Assets/Images/electrode-icons/refresh.svg}"  />
+            </StackPanel>
+          </Button>
+          <Border
+            Grid.Column="1"
+            Margin="12,0"
+            Padding="10,5"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Top"
+            Background="#FFFFE7E3"
+            CornerRadius="{StaticResource ProductCardRadius}"
+            IsVisible="{Binding IsStimulusMode}"
+          >
+            <TextBlock
+              FontSize="{DynamicResource FontSize11}"
+              Foreground="#FF543D"
+              Text="{Binding SupportedStimulusPointsText}"
+            />
+          </Border>
+
+        </Grid>
+
+        <Grid Grid.Row="1">
+          <ContentControl x:Name="Head3DHost" Margin="0,0,160,0" IsVisible="False" />
+          <controls:ElectrodeHeadMap
+            x:Name="Head2D"
+            IsEnabled="{Binding CanEditConfiguration}"
+            Margin="0,0,125,0"
+            ItemsSource="{Binding Points}"
+            Orientation="{Binding HeadOrientation}"
+            PointCommand="{Binding SelectPointCommand}"
+            PointDoubleClickCommand="{Binding ClearPointCommand}"
+          />
+          <controls:ImpedanceLegend
+            Margin="0,0,16,0"
+            HorizontalAlignment="Right"
+            VerticalAlignment="Bottom"
+          />
+        </Grid>
+      </Grid>
+      <GridSplitter Grid.Column="1" ResizeDirection="Columns">
+        <GridSplitter.Template>
+          <ControlTemplate>
+            <Grid>
+              <!-- 拖动热区 -->
+              <Border Background="Transparent" />
+
+              <!-- 中间胶囊拖动柄 -->
+              <Border
+                x:Name="Handle"
+                Width="4"
+                Height="40"
+                CornerRadius="2"
+                Background="#D1D5DB"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+              />
+            </Grid>
+          </ControlTemplate>
+        </GridSplitter.Template>
+
+        <GridSplitter.Styles>
+          <!-- 默认 -->
+          <Style Selector="GridSplitter">
+            <Setter Property="Background" Value="Transparent" />
+          </Style>
+
+          <!-- 悬浮 -->
+          <Style Selector="GridSplitter:pointerover /template/ Border#Handle">
+            <Setter Property="Width" Value="6" />
+            <Setter Property="Height" Value="56" />
+            <Setter Property="CornerRadius" Value="3" />
+            <Setter Property="Background" Value="#409EFF" />
+          </Style>
+
+          <!-- 按下 -->
+          <Style Selector="GridSplitter:pressed /template/ Border#Handle">
+            <Setter Property="Width" Value="6" />
+            <Setter Property="Height" Value="64" />
+            <Setter Property="Background" Value="#2563EB" />
+          </Style>
+        </GridSplitter.Styles>
+      </GridSplitter>
+      <Border
+        Grid.Column="2"
+        Margin="0"
+        Padding="{StaticResource ProductPanelPadding}"
+        Background="{DynamicResource ProductSurface}"
+        BoxShadow="0 4 12 0 #336885B3"
+        CornerRadius="{StaticResource ProductElectrodePanelRadius}"
+      >
+        <Grid RowDefinitions="40,Auto,*,Auto" RowSpacing="16">
+          <TextBlock
+            IsVisible="{Binding IsSingleMode}"
+            Text="{Binding SingleModeTitle}"
+            HorizontalAlignment="Left"
+            VerticalAlignment="Center"
+            FontFamily="{DynamicResource AlibabaPuHuiTi}"
+            FontWeight="Medium"
+            FontSize="{DynamicResource FontSize16}"
+            Foreground="{DynamicResource ProductText}"
+          />
+          <Grid
+            ColumnDefinitions="*,16,*"
+            IsVisible="{Binding !IsSingleMode}"
+            IsEnabled="{Binding CanEditConfiguration}"
+          >
+            <RadioButton
+              Command="{Binding SelectModeCommand}"
+              CommandParameter="{x:Static pages:ElectrodeConfigurationMode.Stimulus}"
+              GroupName="ElectrodeConfigurationMode"
+              IsChecked="{Binding IsStimulusMode, Mode=OneWay}"
+              Theme="{StaticResource ElectrodeModeTabTheme}"
+            >
+              <StackPanel Orientation="Horizontal">
+                <Grid Width="28" Height="28"><Image Width="28" Height="28" Source="{SvgImage /Assets/Images/electrode-icons/stimulus-active.svg}" IsVisible="{Binding IsStimulusMode}" /><Image Width="28" Height="28" Source="{SvgImage /Assets/Images/electrode-icons/stimulus-idle.svg}" IsVisible="{Binding !IsStimulusMode}" /></Grid>
+                <TextBlock VerticalAlignment="Center" Margin="6,0,0,0">刺激电极</TextBlock>
+              </StackPanel>
+            </RadioButton>
+            <RadioButton
+              Grid.Column="2"
+              Command="{Binding SelectModeCommand}"
+              CommandParameter="{x:Static pages:ElectrodeConfigurationMode.Acquisition}"
+              GroupName="ElectrodeConfigurationMode"
+              IsChecked="{Binding IsAcquisitionMode, Mode=OneWay}"
+              Theme="{StaticResource ElectrodeModeTabTheme}"
+            >
+              <StackPanel Orientation="Horizontal">
+                <Grid Width="28" Height="28"><Image Width="28" Height="28" Source="{SvgImage /Assets/Images/electrode-icons/acquisition-active.svg}" IsVisible="{Binding IsAcquisitionMode}" /><Image Width="28" Height="28" Source="{SvgImage /Assets/Images/electrode-icons/acquisition-idle.svg}" IsVisible="{Binding !IsAcquisitionMode}" /></Grid>
+                <TextBlock VerticalAlignment="Center" Margin="6,0,0,0">采集电极</TextBlock>
+              </StackPanel>
+            </RadioButton>
+          </Grid>
+
+          <StackPanel Grid.Row="1" IsEnabled="{Binding CanEditConfiguration}" Spacing="16">
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock
+                  FontFamily="{DynamicResource AlibabaPuHuiTi}"
+                  FontWeight="Bold"
+                  FontSize="{DynamicResource FontSize18}"
+                  Foreground="{DynamicResource ProductText}"
+                  Text="点位映射"
+                />
+                <Image Width="16" Height="16" Source="{SvgImage /Assets/Images/electrode-icons/warning.svg}" />
+                <TextBlock
+                  VerticalAlignment="Center"
+                  FontSize="{DynamicResource FontSize12}"
+                  Foreground="{DynamicResource ProductTextMuted}"
+                  Text="点击头模点位赋予所选角色"
+                />
+              </StackPanel>
+            <StackPanel IsVisible="{Binding IsStimulusMode}" Spacing="16">
+              <ItemsControl ItemsSource="{Binding StimulusSelectionGroups}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="pages:StimulusElectrodeSelectionGroupViewModel">
+                    <Border
+                      Margin="0"
+                      Padding="1"
+                      Background="{DynamicResource ProductSurfaceSubtle}"
+                      BorderBrush="#E0E7F2"
+                      BorderThickness="1"
+                      CornerRadius="4"
+                    >
+                      <Grid RowDefinitions="Auto,Auto" RowSpacing="0">
+                        <TextBlock
+                          FontFamily="{DynamicResource AlibabaPuHuiTi}"
+                          FontWeight="Bold"
+                          FontSize="{DynamicResource FontSize11}"
+                          Foreground="{DynamicResource ProductTextMuted}"
+                          IsVisible="{Binding ShowDisplayName}"
+                          Text="{Binding DisplayName}"
+                        />
+                        <ItemsControl Grid.Row="1" ItemsSource="{Binding Options}">
+                          <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                              <UniformGrid Rows="1" />
+                            </ItemsPanelTemplate>
+                          </ItemsControl.ItemsPanel>
+                          <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="pages:StimulusElectrodeSelectionOptionViewModel">
+                              <RadioButton
+                                Margin="0"
+                                Classes.blue="{Binding UsesBlueColor}"
+                                Classes.red="{Binding UsesRedColor}"
+                                Command="{Binding SelectCommand}"
+                                CommandParameter="{Binding}"
+                                IsChecked="{Binding IsSelected, Mode=OneWay}"
+                                Theme="{StaticResource ElectrodeRoleButtonTheme}"
+                              >
+                                <StackPanel
+                                  HorizontalAlignment="Center"
+                                  Orientation="Horizontal"
+                                  Spacing="6"
+                                >
+                                  <Grid Width="16" Height="16"><Image Width="16" Height="16" Source="{SvgImage /Assets/Images/electrode-icons/role-anode.svg}" IsVisible="{Binding UsesBlueColor}" /><Image Width="16" Height="16" Source="{SvgImage /Assets/Images/electrode-icons/role-cathode.svg}" IsVisible="{Binding UsesRedColor}" /></Grid>
+                                  <TextBlock Text="{Binding Label}" />
+                                  <TextBlock
+                                    FontSize="{DynamicResource FontSize12}"
+                                    Foreground="{DynamicResource ProductTextMuted}"
+                                    Text="{Binding ProgressText}"
+                                  />
+                                </StackPanel>
+                              </RadioButton>
+                            </DataTemplate>
+                          </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                      </Grid>
+                    </Border>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
+
+            <Border Padding="16,8" Background="{DynamicResource ProductSurfaceSubtle}" CornerRadius="8">
+              <Grid RowDefinitions="Auto,Auto,Auto" RowSpacing="8">
+                <Grid ColumnDefinitions="*,Auto" IsVisible="{Binding IsStimulusMode}">
+                  <TextBlock
+                    FontSize="{DynamicResource FontSize14}"
+                    Foreground="#8190A8"
+                    Text="刺激范式"
+                  />
+                  <TextBlock
+                    Grid.Column="1"
+                    FontSize="{DynamicResource FontSize14}"
+                    Foreground="{DynamicResource ProductText}"
+                    Text="{Binding StimulusKindText}"
+                  />
+                </Grid>
+                <Grid Grid.Row="1" ColumnDefinitions="*,Auto" IsVisible="{Binding IsStimulusMode}">
+                  <TextBlock
+                    FontSize="{DynamicResource FontSize14}"
+                    Foreground="#8190A8"
+                    Text="阵列"
+                  />
+                  <TextBlock
+                    Grid.Column="1"
+                    FontSize="{DynamicResource FontSize14}"
+                    Foreground="{DynamicResource ProductText}"
+                    Text="{Binding ArrayModeText}"
+                  />
+                </Grid>
+                <Grid ColumnDefinitions="*,Auto" IsVisible="{Binding IsAcquisitionMode}">
+                  <TextBlock
+                    FontSize="{DynamicResource FontSize14}"
+                    Foreground="#8190A8"
+                    Text="REF / GND"
+                  />
+                  <TextBlock
+                    Grid.Column="1"
+                    FontSize="{DynamicResource FontSize14}"
+                    Foreground="{DynamicResource ProductText}"
+                    Text="{Binding RefGndText}"
+                  />
+                </Grid>
+                <Grid
+                  Grid.Row="1"
+                  ColumnDefinitions="*,Auto"
+                  IsVisible="{Binding IsAcquisitionMode}"
+                >
+                  <TextBlock
+                    FontSize="{DynamicResource FontSize14}"
+                    Foreground="#8190A8"
+                    Text="采样率"
+                  />
+                  <TextBlock
+                    Grid.Column="1"
+                    FontSize="{DynamicResource FontSize14}"
+                    Foreground="{DynamicResource ProductText}"
+                    Text="500 Hz"
+                  />
+                </Grid>
+                <Grid
+                  Grid.Row="2"
+                  ColumnDefinitions="Auto,*"
+                  ColumnSpacing="10"
+                  IsVisible="{Binding ShowStimulusChannelCurrentSummary}"
+                >
+                  <TextBlock
+                    FontSize="{DynamicResource FontSize12}"
+                    Foreground="#8190A8"
+                    Text="电流分配"
+                  />
+                  <TextBlock
+                    Grid.Column="1"
+                    HorizontalAlignment="Right"
+                    FontSize="{DynamicResource FontSize11}"
+                    Foreground="{DynamicResource ProductText}"
+                    Text="{Binding StimulusChannelCurrentSummary}"
+                    TextAlignment="Right"
+                    TextWrapping="Wrap"
+                  />
+                </Grid>
+              </Grid>
+            </Border>
+
+            <Border
+              Padding="10"
+              Background="{DynamicResource ProductSurfaceSubtle}"
+              CornerRadius="8"
+              IsVisible="{Binding HasSelectedPoint}"
+            >
+              <Grid>
+                <Grid ColumnDefinitions="*,Auto" IsVisible="{Binding IsStimulusMode}">
+                  <TextBlock
+                    VerticalAlignment="Center"
+                    FontSize="{DynamicResource FontSize12}"
+                    Foreground="{DynamicResource ProductPrimary}"
+                    Text="{Binding SelectedPointRoleText}"
+                  />
+                  <Button
+                    Grid.Column="1"
+                    Width="58"
+                    Command="{Binding ClearSelectedPointCommand}"
+                    Content="清除"
+                    Foreground="{DynamicResource ProductBad}"
+                    Theme="{StaticResource ElectrodeSmallButtonTheme}"
+                  />
+                </Grid>
+                <StackPanel IsVisible="{Binding IsAcquisitionMode}" Spacing="7">
+                  <TextBlock
+                    FontSize="{DynamicResource FontSize12}"
+                    Foreground="{DynamicResource ProductPrimary}"
+                    Text="{Binding SelectedPointRoleText}"
+                  />
+                  <StackPanel Orientation="Horizontal" Spacing="6">
+                    <Button
+                      Command="{Binding SetSelectedPointRoleCommand}"
+                      CommandParameter="{x:Static pages:ElectrodeRole.Acquisition}"
+                      Content="采集"
+                      Theme="{StaticResource ElectrodeSmallButtonTheme}"
+                    />
+                    <Button
+                      Command="{Binding SetSelectedPointRoleCommand}"
+                      CommandParameter="{x:Static pages:ElectrodeRole.Reference}"
+                      Content="REF"
+                      Theme="{StaticResource ElectrodeSmallButtonTheme}"
+                    />
+                    <Button
+                      Command="{Binding SetSelectedPointRoleCommand}"
+                      CommandParameter="{x:Static pages:ElectrodeRole.Ground}"
+                      Content="GND"
+                      Theme="{StaticResource ElectrodeSmallButtonTheme}"
+                    />
+                    <Button
+                      Command="{Binding ClearSelectedPointCommand}"
+                      Content="清除"
+                      Foreground="{DynamicResource ProductBad}"
+                      Theme="{StaticResource ElectrodeSmallButtonTheme}"
+                    />
+                  </StackPanel>
+                </StackPanel>
+              </Grid>
+            </Border>
+          </StackPanel>
+
+          <controls:ImpedanceStatusList
+            PointCommand="{Binding FocusPointCommand}"
+            Grid.Row="2"
+            ButtonText="{Binding DetectionButtonText}"
+            DetectionCommand="{Binding ToggleDetectionCommand}"
+            EmptyDescription="{Binding EmptyStateDescription}"
+            EmptyTitle="{Binding EmptyStateTitle}"
+            HasItems="{Binding HasCurrentImpedanceItems}"
+            HasValidationMessage="{Binding HasValidationMessage}"
+            IsFailed="{Binding IsCurrentDetectionFailed}"
+            IsDetecting="{Binding IsCurrentDetecting}"
+            IsInteractionLocked="{Binding IsAnyDetecting}"
+            IsPassed="{Binding IsCurrentDetectionPassed}"
+            ItemsSource="{Binding CurrentImpedanceItems}"
+            StatusText="{Binding CurrentDetectionStatusText}"
+            Title="{Binding CurrentPanelTitle}"
+            ValidationText="{Binding ValidationText}"
+          />
+
+          <StackPanel Grid.Row="3" Spacing="6">
+            <TextBlock
+              HorizontalAlignment="Center"
+              FontSize="{DynamicResource FontSize12}"
+              Foreground="{DynamicResource ProductExcellent}"
+              Text="{Binding ConfirmationStatusText}"
+            />
+            <Button
+              Command="{Binding OpenConfirmationCommand}"
+              
+              IsEnabled="{Binding CanOpenConfirmation}"
+              Theme="{StaticResource ElectrodePrimaryButtonTheme}">
+              <StackPanel Orientation="Horizontal" Spacing="8"><Image Width="20" Height="20" Source="{SvgImage /Assets/Images/electrode-icons/confirm.svg}"  /><TextBlock Text="查看并确认实验配置" VerticalAlignment="Center" /></StackPanel>
+            </Button>
+          </StackPanel>
+        </Grid>
+      </Border>
+    </Grid>
+  </Grid>
+</UserControl>

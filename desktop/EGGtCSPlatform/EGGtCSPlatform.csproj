@@ -1,0 +1,78 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="12.1.1" />
+    <PackageReference Include="Avalonia.Controls.WebView" Version="12.1.0" />
+    <PackageReference Include="Avalonia.Desktop" Version="12.1.1" />
+    <PackageReference Include="Avalonia.Controls.DataGrid" Version="12.1.2" />
+    <PackageReference Include="Svg.Controls.Skia.Avalonia" Version="12.0.0.15" />
+    <PackageReference Include="Avalonia.Fonts.Inter" Version="12.1.1" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.1" />
+    <PackageReference Include="Xaml.Behaviors.Avalonia" Version="12.0.5" />
+    <PackageReference Include="AvaloniaUI.DiagnosticsSupport" Version="2.2.3">
+      <IncludeAssets Condition="'$(Configuration)' != 'Debug'">None</IncludeAssets>
+      <PrivateAssets Condition="'$(Configuration)' != 'Debug'">All</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.11" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.11" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.11" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.11" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.11">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Velopack" Version="1.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="appsettings.default.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\EGGtCSPlatform.DeviceSdk\EGGtCSPlatform.DeviceSdk.csproj" />
+    <ProjectReference Include="..\EGGtCSPlatform.DeviceRuntime\EGGtCSPlatform.DeviceRuntime.csproj" />
+    <ProjectReference Include="..\EGGtCSPlatform.Communication.Udp\EGGtCSPlatform.Communication.Udp.csproj" />
+    <ProjectReference Include="..\EGGtCSPlatform.Protocol.EggtCs.Gen1\EGGtCSPlatform.Protocol.EggtCs.Gen1.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Assets\Images\**\*.*" />
+    <AvaloniaResource Include="Assets\Images\**\*.*" Exclude="Assets\Images\icon.icns" />
+    <None Include="Assets\Images\icon.icns">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Remove="Assets\Fonts\Phosphor.ttf" />
+    <AvaloniaResource Include="Assets\Fonts\Phosphor.ttf" />
+    <None Remove="Assets\Fonts\Phosphor-Fill.ttf" />
+    <AvaloniaResource Include="Assets\Fonts\Phosphor-Fill.ttf" />
+    <None Remove="Assets\Fonts\alibaba\*.ttf" />
+    <!-- Bundle the complete Alibaba PuHuiTi family, including the extended L3 glyph set. -->
+    <AvaloniaResource Include="Assets\Fonts\alibaba\*.ttf" />
+    <None Remove="Assets\Fonts\icon\iconfont.ttf" />
+    <AvaloniaResource Include="Assets\Fonts\icon\iconfont.ttf" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Views\MainWindow.axaml.cs">
+      <DependentUpon>MainView.axaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Views\Pages\MainView.axaml.cs">
+      <DependentUpon>MainView.axaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Assets/Training/*.wav" />
+    <EmbeddedResource Include="WebAssets/Home/*" Exclude="WebAssets/Home/*.mp4" />
+    <EmbeddedResource Include="WebAssets/Head3D/*" Exclude="WebAssets/Head3D/scene-source.js;WebAssets/Head3D/electrode-visuals.js" />
+  </ItemGroup>
+</Project>

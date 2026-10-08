@@ -1,0 +1,65 @@
+<ResourceDictionary
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:controls="clr-namespace:EGGtCSPlatform.Controls"
+  xmlns:pages="clr-namespace:EGGtCSPlatform.ViewModels.Pages"
+  x:ClassModifier="internal"
+  x:CompileBindings="False"
+>
+  <ControlTheme
+    x:Key="{x:Type controls:StimulationChannelAllocationItem}"
+    TargetType="controls:StimulationChannelAllocationItem"
+  >
+    <Setter Property="Height" Value="32" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Grid ColumnDefinitions="56,8,1,8,16,4,120">
+          <ToggleButton
+            Grid.Column="0"
+            VerticalAlignment="Center"
+            Content="{TemplateBinding Label}"
+            IsChecked="{Binding IsChannelEnabled, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+            IsVisible="{Binding CanToggle, RelativeSource={RelativeSource TemplatedParent}}"
+            Theme="{StaticResource StimulusChannelToggleTheme}"
+            ToolTip.Tip="{TemplateBinding RoleText}"
+          />
+          <RadioButton
+            Grid.Column="0"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            Content="{TemplateBinding Label}"
+            Command="{Binding SelectFixedCommand, RelativeSource={RelativeSource TemplatedParent}}"
+            CommandParameter="{Binding CommandParameter, RelativeSource={RelativeSource TemplatedParent}}"
+            IsChecked="{Binding IsSelectedFixed, RelativeSource={RelativeSource TemplatedParent}, Mode=OneWay}"
+            IsVisible="{Binding IsFixedCandidate, RelativeSource={RelativeSource TemplatedParent}}"
+            Theme="{StaticResource StimulusFixedChannelPillTheme}"
+            ToolTip.Tip="{TemplateBinding RoleText}"
+          />
+          <Border Grid.Column="2" Width="1" Height="21" VerticalAlignment="Center" Background="{DynamicResource ProductStimulusInputBorder}" />
+          <Image Grid.Column="4" Width="16" Height="16" VerticalAlignment="Center" Source="{SvgImage /Assets/Images/stimulus-figma/channel-add.svg}" />
+          <controls:StimulusNumericInput
+            Grid.Column="6"
+            Width="120"
+            Height="{DynamicResource ProductStimulusNumericHeight}"
+            Padding="{DynamicResource ProductStimulusNumericPadding}"
+            HorizontalAlignment="Left"
+            VerticalAlignment="Center"
+            Background="{DynamicResource ProductSurface}"
+            BorderBrush="{DynamicResource ProductStimulusInputBorder}"
+            BorderThickness="1"
+            CornerRadius="6"
+            DecimalPlaces="2"
+            Foreground="{DynamicResource ProductText}"
+            Increment="{TemplateBinding CurrentIncrement}"
+            Maximum="{TemplateBinding MaximumCurrent}"
+            Minimum="{TemplateBinding MinimumCurrent}"
+            IsEnabled="{Binding CanEditCurrent, RelativeSource={RelativeSource TemplatedParent}}"
+            ShowButtonSpinner="True"
+            Unit="mA"
+            Value="{Binding Current, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+          />
+        </Grid>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+</ResourceDictionary>

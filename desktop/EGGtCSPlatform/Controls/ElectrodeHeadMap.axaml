@@ -1,0 +1,70 @@
+<ResourceDictionary
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:controls="clr-namespace:EGGtCSPlatform.Controls"
+  xmlns:pages="clr-namespace:EGGtCSPlatform.ViewModels.Pages"
+>
+  <ControlTheme x:Key="{x:Type controls:ElectrodeHeadMap}" TargetType="controls:ElectrodeHeadMap">
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Viewbox Stretch="Uniform">
+          <Grid x:Name="HeadMapLayer" Width="851" Height="782" RenderTransformOrigin="50%,50%">
+            <Image
+              Source="{SvgImage /Assets/Images/electrode-head-model.svg}"
+              Stretch="Uniform"
+              RenderTransform="rotate(180deg)"
+              RenderTransformOrigin="50%,50%"
+            />
+            <Line
+              StartPoint="179,450"
+              EndPoint="717.75,450"
+              Stroke="#ACB7C8"
+              StrokeDashArray="4,4"
+              StrokeThickness="1"
+            />
+            <Line
+              StartPoint="426,99.5"
+              EndPoint="426,642"
+              Stroke="#ACB7C8"
+              StrokeDashArray="4,4"
+              StrokeThickness="1"
+            />
+            <ItemsControl
+              ItemsSource="{TemplateBinding ItemsSource}"
+              ItemContainerTheme="{StaticResource ElectrodePointPresenterTheme}"
+            >
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <Canvas />
+                </ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="pages:ElectrodeSiteViewModel">
+                  <controls:ElectrodePoint
+                    Command="{Binding PointCommand, RelativeSource={RelativeSource AncestorType=controls:ElectrodeHeadMap}}"
+                    CommandParameter="{Binding}"
+                    DoubleClickCommand="{Binding PointDoubleClickCommand, RelativeSource={RelativeSource AncestorType=controls:ElectrodeHeadMap}}"
+                    DoubleClickCommandParameter="{Binding}"
+                    IsAvailable="{Binding IsAvailable}"
+                    IsBackView="{Binding IsBackView, RelativeSource={RelativeSource AncestorType=controls:ElectrodeHeadMap}}"
+                    IsSelected="{Binding IsSelected}"
+                    IsStimulus="{Binding IsStimulus}"
+                    Label="{Binding DisplayName}"
+                    Quality="{Binding Quality}"
+                    Role="{Binding Role}"
+                    ResolvedStimulationRole="{Binding ResolvedStimulationRole}"
+                    StimulationChannelRole="{Binding StimulationChannelRole}"
+                    ToolTipText="{Binding ToolTipText}"
+                  />
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </Grid>
+        </Viewbox>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:back /template/ Grid#HeadMapLayer">
+      <Setter Property="RenderTransform" Value="rotate(180deg)" />
+    </Style>
+  </ControlTheme>
+</ResourceDictionary>

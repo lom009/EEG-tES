@@ -1,0 +1,130 @@
+<UserControl
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+  xmlns:vm="clr-namespace:EGGtCSPlatform.ViewModels"
+  x:Class="EGGtCSPlatform.Views.BatchExportDialogView"
+  x:DataType="vm:BatchExportDialogViewModel"
+  Width="520"
+  Height="332"
+  Background="Transparent"
+  mc:Ignorable="d"
+>
+  <UserControl.Resources>
+    <ControlTheme x:Key="BatchExportPrimaryButtonTheme" TargetType="Button">
+      <Setter Property="Height" Value="34" />
+      <Setter Property="Padding" Value="18,0" />
+      <Setter Property="Background" Value="#3941B6" />
+      <Setter Property="Foreground" Value="White" />
+      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Border
+            Padding="{TemplateBinding Padding}"
+            Background="{TemplateBinding Background}"
+            CornerRadius="{TemplateBinding CornerRadius}"
+          >
+            <ContentPresenter
+              Content="{TemplateBinding Content}"
+              HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+              VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+            />
+          </Border>
+        </ControlTemplate>
+      </Setter>
+      <Style Selector="^:pointerover">
+        <Setter Property="Background" Value="#4C54D1" />
+      </Style>
+      <Style Selector="^:disabled">
+        <Setter Property="Opacity" Value="0.45" />
+      </Style>
+    </ControlTheme>
+    <ControlTheme x:Key="BatchExportSecondaryButtonTheme" TargetType="Button">
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="Height" Value="34" />
+      <Setter Property="Padding" Value="18,0" />
+      <Setter Property="Background" Value="White" />
+      <Setter Property="BorderBrush" Value="#D9DEE6" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="6" />
+    </ControlTheme>
+  </UserControl.Resources>
+
+  <Border
+    Width="480"
+    Height="292"
+    Margin="20"
+    Padding="24"
+    Background="White"
+    BoxShadow="0 8 20 0 #1A000000"
+    CornerRadius="8"
+  >
+    <Grid RowDefinitions="28,18,*,16,34">
+      <Grid ColumnDefinitions="*,32">
+        <TextBlock
+          VerticalAlignment="Center"
+          FontFamily="{DynamicResource AlibabaPuHuiTi}"
+          FontWeight="Medium"
+          FontSize="{DynamicResource FontSize17}"
+          Text="批量导出实验记录"
+        />
+        <Button
+          Grid.Column="1"
+          Margin="0,-4,-8,-4"
+          Padding="0"
+          Background="Transparent"
+          Command="{Binding CancelCommand}"
+        >
+          <Path
+            Width="14"
+            Height="14"
+            Data="M 1 1 L 13 13 M 13 1 L 1 13"
+            Stroke="#232B38"
+            StrokeThickness="1.5"
+          />
+        </Button>
+      </Grid>
+
+      <StackPanel Grid.Row="2" Spacing="13">
+        <TextBlock
+          FontSize="{DynamicResource FontSize13}"
+          Foreground="#64748B"
+          Text="{Binding SelectedCount, StringFormat='已选择 {0} 条运行记录'}"
+        />
+        <Border Padding="16,13" Background="#F7F9FC" CornerRadius="6">
+          <StackPanel Spacing="12">
+            <CheckBox Content="导出 EDF+ 脑电数据" IsChecked="{Binding ExportEdf, Mode=TwoWay}" />
+            <CheckBox
+              Content="导出 CSV 原始脑电数据"
+              IsChecked="{Binding ExportCsv, Mode=TwoWay}"
+            />
+            <CheckBox Content="导出 .expp 实验配置" IsChecked="{Binding ExportExpp, Mode=TwoWay}" />
+          </StackPanel>
+        </Border>
+        <TextBlock
+          FontSize="{DynamicResource FontSize12}"
+          Foreground="#E55252"
+          IsVisible="{Binding !HasSelectedFormat}"
+          Text="请至少选择一种导出格式"
+        />
+      </StackPanel>
+
+      <StackPanel Grid.Row="4" HorizontalAlignment="Right" Orientation="Horizontal" Spacing="8">
+        <Button
+          Content="取消"
+          Command="{Binding CancelCommand}"
+          Theme="{StaticResource BatchExportSecondaryButtonTheme}"
+        />
+        <Button
+          Content="选择目录并导出"
+          Command="{Binding ConfirmCommand}"
+          Theme="{StaticResource BatchExportPrimaryButtonTheme}"
+        />
+      </StackPanel>
+    </Grid>
+  </Border>
+</UserControl>

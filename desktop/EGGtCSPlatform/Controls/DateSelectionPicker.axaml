@@ -1,0 +1,85 @@
+<ResourceDictionary
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:controls="clr-namespace:EGGtCSPlatform.Controls"
+>
+  <ControlTheme
+    x:Key="{x:Type controls:DateSelectionPicker}"
+    TargetType="controls:DateSelectionPicker"
+  >
+    <Setter Property="Height" Value="40" />
+    <Setter Property="Padding" Value="12,0" />
+    <Setter Property="Background" Value="White" />
+    <Setter Property="BorderBrush" Value="#D9DEE6" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="4" />
+    <Setter Property="Cursor" Value="Hand" />
+    <Setter Property="FontFamily" Value="{DynamicResource AlibabaPuHuiTi}" />
+    <Setter Property="FontSize" Value="{DynamicResource FontSize14}" />
+    <Setter Property="Foreground" Value="#232B38" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Grid>
+          <CalendarDatePicker
+            x:Name="PART_DatePicker"
+            Padding="{TemplateBinding Padding}"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Stretch"
+            Background="{TemplateBinding Background}"
+            BorderBrush="{TemplateBinding BorderBrush}"
+            BorderThickness="{TemplateBinding BorderThickness}"
+            CornerRadius="{TemplateBinding CornerRadius}"
+            CustomDateFormatString="yyyy-MM-dd"
+            FontFamily="{TemplateBinding FontFamily}"
+            FontSize="{TemplateBinding FontSize}"
+            Foreground="{TemplateBinding Foreground}"
+            HorizontalContentAlignment="Stretch"
+            PlaceholderText="输入日期"
+            SelectedDateFormat="Custom"
+            VerticalContentAlignment="Center"
+            PlaceholderForeground="#AAB7CC"
+          >
+            <CalendarDatePicker.Styles>
+              <!-- CalendarDatePicker 模板里的 TextBox -->
+              <Style Selector="TextBox#PART_TextBox">
+                <Setter Property="IsReadOnly" Value="True" />
+              </Style>
+
+              <!-- 再进入 TextBox 自己的模板 -->
+              <Style Selector="TextBox#PART_TextBox /template/ Border:nth-child(2)">
+                <Setter
+                  Property="Background"
+                  Value="{Binding Background, RelativeSource={RelativeSource AncestorType=CalendarDatePicker}}"
+                />
+                <Setter
+                  Property="CornerRadius"
+                  Value="{Binding CornerRadius, RelativeSource={RelativeSource AncestorType=CalendarDatePicker}}"
+                />
+              </Style>
+            </CalendarDatePicker.Styles>
+          </CalendarDatePicker>
+          <Border
+            Width="39"
+            Margin="0,1,1,1"
+            HorizontalAlignment="Right"
+            Background="{TemplateBinding Background}"
+            CornerRadius="0,3,3,0"
+            IsHitTestVisible="False"
+          >
+            <PathIcon
+              Width="20"
+              Height="20"
+              HorizontalAlignment="Center"
+              VerticalAlignment="Center"
+              Foreground="#6B7D99"
+              Data="F0 M 5,3 L 7,3 L 7,1 L 9,1 L 9,3 L 15,3 L 15,1 L 17,1 L 17,3 L 19,3 C 20.105,3 21,3.895 21,5 L 21,19 C 21,20.105 20.105,21 19,21 L 5,21 C 3.895,21 3,20.105 3,19 L 3,5 C 3,3.895 3.895,3 5,3 Z M 5,8 L 19,8 L 19,19 L 5,19 Z"
+            />
+          </Border>
+        </Grid>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:focus-within /template/ CalendarDatePicker#PART_DatePicker">
+      <Setter Property="BorderBrush" Value="#3941B6" />
+    </Style>
+  </ControlTheme>
+</ResourceDictionary>

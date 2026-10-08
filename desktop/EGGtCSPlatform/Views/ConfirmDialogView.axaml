@@ -1,0 +1,226 @@
+<UserControl
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+  xmlns:design="clr-namespace:EGGtCSPlatform.Design"
+  xmlns:vm="clr-namespace:EGGtCSPlatform.ViewModels"
+  x:Class="EGGtCSPlatform.Views.ConfirmDialogView"
+  x:DataType="vm:ConfirmDialogViewModel"
+  Width="520"
+  Height="216"
+  Background="Transparent"
+  d:DataContext="{x:Static design:DesignData.ConfirmDialogViewModel}"
+  mc:Ignorable="d"
+>
+  <UserControl.Resources>
+    <ControlTheme x:Key="DialogPrimaryButtonTheme" TargetType="Button">
+      <Setter Property="Height" Value="32" />
+      <Setter Property="MinWidth" Value="64" />
+      <Setter Property="Padding" Value="16,0" />
+      <Setter Property="Background" Value="#3941B6" />
+      <Setter Property="Foreground" Value="White" />
+      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="FontSize" Value="{DynamicResource FontSize14}" />
+      <Setter Property="FontFamily" Value="{DynamicResource AlibabaPuHuiTi}" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Border
+            Padding="{TemplateBinding Padding}"
+            Background="{TemplateBinding Background}"
+            CornerRadius="{TemplateBinding CornerRadius}"
+          >
+            <ContentPresenter
+              Content="{TemplateBinding Content}"
+              HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+              VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+            />
+          </Border>
+        </ControlTemplate>
+      </Setter>
+      <Style Selector="^:pointerover">
+        <Setter Property="Background" Value="#4C54D1" />
+      </Style>
+      <Style Selector="^:pressed">
+        <Setter Property="Background" Value="#3037A5" />
+      </Style>
+      <Style Selector="^:disabled">
+        <Setter Property="Opacity" Value="0.5" />
+      </Style>
+    </ControlTheme>
+
+    <ControlTheme x:Key="DialogSecondaryButtonTheme" TargetType="Button">
+      <Setter Property="Height" Value="32" />
+      <Setter Property="MinWidth" Value="64" />
+      <Setter Property="Padding" Value="16,0" />
+      <Setter Property="Background" Value="White" />
+      <Setter Property="Foreground" Value="#232B38" />
+      <Setter Property="BorderBrush" Value="#E2E8F2" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="FontSize" Value="{DynamicResource FontSize14}" />
+      <Setter Property="FontFamily" Value="{DynamicResource AlibabaPuHuiTi}" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Border
+            Padding="{TemplateBinding Padding}"
+            Background="{TemplateBinding Background}"
+            BorderBrush="{TemplateBinding BorderBrush}"
+            BorderThickness="{TemplateBinding BorderThickness}"
+            CornerRadius="{TemplateBinding CornerRadius}"
+          >
+            <ContentPresenter
+              Content="{TemplateBinding Content}"
+              HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+              VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+            />
+          </Border>
+        </ControlTemplate>
+      </Setter>
+      <Style Selector="^:pointerover">
+        <Setter Property="Background" Value="#F5F7FA" />
+      </Style>
+    </ControlTheme>
+
+    <ControlTheme x:Key="DialogCloseButtonTheme" TargetType="Button">
+      <Setter Property="Width" Value="32" />
+      <Setter Property="Height" Value="32" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Foreground" Value="#232B38" />
+      <Setter Property="CornerRadius" Value="4" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Border
+            Background="{TemplateBinding Background}"
+            CornerRadius="{TemplateBinding CornerRadius}"
+          >
+            <ContentPresenter
+              Content="{TemplateBinding Content}"
+              HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+              VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+            />
+          </Border>
+        </ControlTemplate>
+      </Setter>
+      <Style Selector="^:pointerover">
+        <Setter Property="Background" Value="#F1F3F7" />
+      </Style>
+    </ControlTheme>
+  </UserControl.Resources>
+
+  <Border
+    Width="480"
+    Height="176"
+    Margin="20"
+    Padding="24"
+    Background="White"
+    BoxShadow="0 8 20 0 #1A000000"
+    CornerRadius="8"
+  >
+    <Grid RowDefinitions="24,*,32">
+      <Grid ColumnDefinitions="24,8,*,32">
+        <Image
+          Width="20"
+          Height="20"
+          IsVisible="{Binding IsSecondaryConfirmation}"
+          Source="{SvgImage /Assets/Images/Dialog/secondary-confirmation.svg}"
+        />
+        <Image
+          Width="20"
+          Height="20"
+          IsVisible="{Binding IsSuccess}"
+          Source="{SvgImage /Assets/Images/Dialog/success.svg}"
+        />
+        <Image
+          Width="20"
+          Height="20"
+          IsVisible="{Binding IsError}"
+          Source="{SvgImage /Assets/Images/Dialog/error.svg}"
+        />
+        <Image
+          Width="20"
+          Height="20"
+          IsVisible="{Binding IsRisk}"
+          Source="{SvgImage /Assets/Images/Dialog/risk.svg}"
+        />
+        <TextBlock
+          Grid.Column="2"
+          VerticalAlignment="Center"
+          FontFamily="{DynamicResource AlibabaPuHuiTi}"
+          FontWeight="Medium"
+          FontSize="{DynamicResource FontSize16}"
+          Foreground="#232B38"
+          Text="{Binding Title}"
+        />
+        <Button
+          Grid.Column="3"
+          Margin="8,-4,-8,-4"
+          Command="{Binding DismissCommand}"
+          IsVisible="{Binding ShowCloseButton}"
+          Theme="{StaticResource DialogCloseButtonTheme}"
+        >
+          <Path
+            Width="14"
+            Height="14"
+            Data="M 1 1 L 13 13 M 13 1 L 1 13"
+            Stroke="#232B38"
+            StrokeThickness="1.5"
+          />
+        </Button>
+      </Grid>
+
+      <StackPanel Grid.Row="1" Margin="0,16,0,8" Spacing="4">
+        <TextBlock
+          FontSize="{DynamicResource FontSize16}"
+          Foreground="#232B38"
+          Text="{Binding Message}"
+          TextWrapping="Wrap"
+        />
+        <TextBlock
+          FontSize="{DynamicResource FontSize12}"
+          Foreground="#E91919"
+          IsVisible="{Binding StatusText, Converter={x:Static ObjectConverters.IsNotNull}}"
+          Text="{Binding StatusText}"
+          TextWrapping="Wrap"
+        />
+      </StackPanel>
+
+      <StackPanel
+        Grid.Row="2"
+        HorizontalAlignment="Right"
+        Orientation="Horizontal"
+        Spacing="8"
+        IsVisible="{Binding !Busy}"
+      >
+        <Button
+          Command="{Binding ConfirmCommand}"
+          Content="{Binding ConfirmText}"
+          Theme="{StaticResource DialogPrimaryButtonTheme}"
+        />
+        <Button
+          Command="{Binding CancelCommand}"
+          Content="{Binding CancelText}"
+          IsVisible="{Binding ShowCancelButton}"
+          Theme="{StaticResource DialogSecondaryButtonTheme}"
+        />
+      </StackPanel>
+
+      <TextBlock
+        Grid.Row="2"
+        HorizontalAlignment="Right"
+        VerticalAlignment="Center"
+        FontSize="{DynamicResource FontSize13}"
+        Foreground="#7A8BA8"
+        IsVisible="{Binding Busy}"
+        Text="{Binding ProgressText}"
+      />
+    </Grid>
+  </Border>
+</UserControl>

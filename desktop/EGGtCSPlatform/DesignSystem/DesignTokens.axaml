@@ -1,0 +1,83 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <!-- Figma Page7. Component code consumes semantic brushes, not raw colors. -->
+  <Color x:Key="ProductColorPrimary">#3941B6</Color>
+  <SolidColorBrush x:Key="ProductPrimary" Color="{StaticResource ProductColorPrimary}" />
+  <Color x:Key="ProductColorText">#232B38</Color>
+  <SolidColorBrush x:Key="ProductText" Color="{StaticResource ProductColorText}" />
+  <Color x:Key="ProductColorTextMuted">#6B7D99</Color>
+  <SolidColorBrush x:Key="ProductTextMuted" Color="{StaticResource ProductColorTextMuted}" />
+  <Color x:Key="ProductColorSurface">#FFFFFF</Color>
+  <SolidColorBrush x:Key="ProductSurface" Color="{StaticResource ProductColorSurface}" />
+  <Color x:Key="ProductColorSurfaceSubtle">#F8FAFC</Color>
+  <SolidColorBrush x:Key="ProductSurfaceSubtle" Color="{StaticResource ProductColorSurfaceSubtle}" />
+  <Color x:Key="ProductColorBorder">#DCE5F1</Color>
+  <SolidColorBrush x:Key="ProductBorder" Color="{StaticResource ProductColorBorder}" />
+  <!-- Stimulation parameter page, Figma 660:9438. -->
+  <Color x:Key="ProductColorStimulusTile">#FAFBFC</Color>
+  <SolidColorBrush x:Key="ProductStimulusTile" Color="{StaticResource ProductColorStimulusTile}" />
+  <Color x:Key="ProductColorStimulusBorder">#ECF2F8</Color>
+  <SolidColorBrush x:Key="ProductStimulusBorder" Color="{StaticResource ProductColorStimulusBorder}" />
+  <Color x:Key="ProductColorStimulusParameterBorder">#E5EFFB</Color>
+  <SolidColorBrush x:Key="ProductStimulusParameterBorder" Color="{StaticResource ProductColorStimulusParameterBorder}" />
+  <Color x:Key="ProductColorStimulusOptionBorder">#EBEFF5</Color>
+  <SolidColorBrush x:Key="ProductStimulusOptionBorder" Color="{StaticResource ProductColorStimulusOptionBorder}" />
+  <Color x:Key="ProductColorStimulusInputBorder">#E2E8F2</Color>
+  <SolidColorBrush x:Key="ProductStimulusInputBorder" Color="{StaticResource ProductColorStimulusInputBorder}" />
+  <Color x:Key="ProductColorStimulusDisabledText">#ACB7C8</Color>
+  <SolidColorBrush x:Key="ProductStimulusDisabledText" Color="{StaticResource ProductColorStimulusDisabledText}" />
+  <Color x:Key="ProductColorStimulusDisabledInput">#ECF2F8</Color>
+  <SolidColorBrush x:Key="ProductStimulusDisabledInput" Color="{StaticResource ProductColorStimulusDisabledInput}" />
+  <x:Double x:Key="ProductStimulusNumericWidth">72</x:Double>
+  <x:Double x:Key="ProductStimulusNumericHeight">32</x:Double>
+  <Thickness x:Key="ProductStimulusNumericPadding">8,4</Thickness>
+  <!-- Figma 660:10798: color-feedback-error and its 10% surface. -->
+  <Color x:Key="ProductColorFeedbackError">#E91919</Color>
+  <SolidColorBrush x:Key="ProductFeedbackError" Color="{StaticResource ProductColorFeedbackError}" />
+  <Color x:Key="ProductColorFeedbackErrorSurface">#FDE8E8</Color>
+  <SolidColorBrush x:Key="ProductFeedbackErrorSurface" Color="{StaticResource ProductColorFeedbackErrorSurface}" />
+  <Color x:Key="ProductColorFeedbackSuccessSurface">#EBF6EF</Color>
+  <SolidColorBrush x:Key="ProductFeedbackSuccessSurface" Color="{StaticResource ProductColorFeedbackSuccessSurface}" />
+  <Color x:Key="ProductColorSelected">#2F86FF</Color>
+  <SolidColorBrush x:Key="ProductSelected" Color="{StaticResource ProductColorSelected}" />
+  <Color x:Key="ProductColorAnode">#9536F3</Color>
+  <SolidColorBrush x:Key="ProductAnode" Color="{StaticResource ProductColorAnode}" />
+  <Color x:Key="ProductColorAnodeSurface">#FDF6FF</Color>
+  <SolidColorBrush x:Key="ProductAnodeSurface" Color="{StaticResource ProductColorAnodeSurface}" />
+  <Color x:Key="ProductColorRoleSelected">#E2E8F2</Color>
+  <SolidColorBrush x:Key="ProductRoleSelected" Color="{StaticResource ProductColorRoleSelected}" />
+  <Color x:Key="ProductColorExcellent">#38A169</Color>
+  <SolidColorBrush x:Key="ProductExcellent" Color="{StaticResource ProductColorExcellent}" />
+  <Color x:Key="ProductColorGood">#2F86FF</Color>
+  <SolidColorBrush x:Key="ProductGood" Color="{StaticResource ProductColorGood}" />
+  <Color x:Key="ProductColorMedium">#F3A619</Color>
+  <SolidColorBrush x:Key="ProductMedium" Color="{StaticResource ProductColorMedium}" />
+  <Color x:Key="ProductColorPoor">#FD5B38</Color>
+  <SolidColorBrush x:Key="ProductPoor" Color="{StaticResource ProductColorPoor}" />
+  <Color x:Key="ProductColorBad">#E91919</Color>
+  <SolidColorBrush x:Key="ProductBad" Color="{StaticResource ProductColorBad}" />
+  <Color x:Key="ProductColorDangerSurface">#FFF1F0</Color>
+  <SolidColorBrush x:Key="ProductDangerSurface" Color="{StaticResource ProductColorDangerSurface}" />
+  <Color x:Key="ProductColorDisabled">#AEB9CC</Color>
+  <SolidColorBrush x:Key="ProductDisabled" Color="{StaticResource ProductColorDisabled}" />
+  <Color x:Key="ProductColorTabSurface">#EDF2F8</Color>
+  <SolidColorBrush x:Key="ProductTabSurface" Color="{StaticResource ProductColorTabSurface}" />
+  <Color x:Key="ProductColorPointTop">#EBEBFD</Color>
+  <SolidColorBrush x:Key="ProductPointTop" Color="{StaticResource ProductColorPointTop}" />
+  <Color x:Key="ProductColorPointBottom">#F7F7FF</Color>
+  <SolidColorBrush x:Key="ProductPointBottom" Color="{StaticResource ProductColorPointBottom}" />
+  <!-- Envelope training Figma 555:9479 / 555:9503 / 555:9792. This page's prompt uses
+       orange feedback-error (#FD5B38); keep the existing red validation token for score errors. -->
+  <SolidColorBrush x:Key="ProductTrainingAttention" Color="{StaticResource ProductColorPoor}" />
+  <SolidColorBrush x:Key="ProductTrainingAttentionSurface" Color="#21FD5B38" />
+  <SolidColorBrush x:Key="ProductTrainingEnd" Color="#D53730" />
+  <SolidColorBrush x:Key="ProductTrainingChip" Color="#F5F7FA" />
+  <x:Double x:Key="ProductPointFontSize">14</x:Double>
+  <x:Double x:Key="ProductPointMultilineFontSize">12</x:Double>
+  <x:Double x:Key="ProductPointLineHeight">14</x:Double>
+  <CornerRadius x:Key="ProductCardRadius">12</CornerRadius>
+  <CornerRadius x:Key="ProductControlRadius">6</CornerRadius>
+  <Thickness x:Key="ProductPanelPadding">16,20</Thickness>
+  <CornerRadius x:Key="ProductElectrodePanelRadius">16</CornerRadius>
+  <x:Double x:Key="ProductModeTabHeight">40</x:Double>
+  <x:Double x:Key="ProductRoleButtonHeight">32</x:Double>
+</ResourceDictionary>

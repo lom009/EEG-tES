@@ -1,0 +1,170 @@
+<ResourceDictionary
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:controls="clr-namespace:EGGtCSPlatform.Controls"
+  xmlns:pages="clr-namespace:EGGtCSPlatform.ViewModels.Pages"
+  x:CompileBindings="False"
+>
+  <ControlTheme
+    x:Key="{x:Type controls:ExperimentStageControl}"
+    TargetType="controls:ExperimentStageControl"
+  >
+    <Setter Property="MinHeight" Value="48" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Grid RowDefinitions="Auto,Auto">
+          <Border
+            x:Name="PART_StageCard"
+            Padding="8,6"
+            Background="White"
+            BorderBrush="#E8EDF5"
+            BorderThickness="1"
+            CornerRadius="5"
+          >
+            <Grid>
+              <Grid ColumnDefinitions="60,110,82,*" ColumnSpacing="6">
+                <TextBlock
+                  VerticalAlignment="Center"
+                  FontFamily="{DynamicResource AlibabaPuHuiTi}"
+                  FontWeight="Regular"
+                  FontSize="{DynamicResource FontSize14}"
+                  Foreground="#232B38"
+                  TextWrapping="NoWrap"
+                  Text="{TemplateBinding Title}"
+                />
+                <controls:ExperimentDurationInput
+                  x:Name="PART_DurationInput"
+                  Grid.Column="1"
+                  Height="32"
+                  Padding="8,0"
+                  Background="White"
+                  BorderBrush="#DDE4EE"
+                  BorderThickness="1"
+                  CornerRadius="5"
+                  Foreground="#34455D"
+                  HorizontalContentAlignment="Center"
+                  IsEnabled="{TemplateBinding IsDurationEditable}"
+                  CommittedValue="{Binding DurationValue, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                  MaximumMilliseconds="{TemplateBinding DurationMaximumMilliseconds}"
+                  MinimumMilliseconds="{TemplateBinding DurationMinimumMilliseconds}"
+                  StepMilliseconds="{TemplateBinding DurationStepMilliseconds}"
+                  Unit="{TemplateBinding SelectedUnit}"
+                  VerticalContentAlignment="Center"
+                />
+                <ComboBox
+                  x:Name="PART_UnitSelector"
+                  Grid.Column="2"
+                  IsEnabled="{TemplateBinding IsDurationEditable}"
+                  ItemsSource="{TemplateBinding Units}"
+                  SelectedItem="{Binding SelectedUnit, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                  Theme="{StaticResource ExperimentRunCompactComboBoxTheme}"
+                />
+                <Grid Grid.Column="3">
+                  <TextBlock
+                    x:Name="PART_StatusText"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    FontSize="{DynamicResource FontSize12}"
+                    Foreground="#8A99AE"
+                    Text="{TemplateBinding StatusText}"
+                  />
+                  <Border
+                    x:Name="PART_RunningStatus"
+                    MinWidth="78"
+                    Height="32"
+                    Padding="10,0"
+                    HorizontalAlignment="Right"
+                    Background="#38A169"
+                    CornerRadius="5"
+                    IsVisible="False"
+                  >
+                    <StackPanel
+                      HorizontalAlignment="Center"
+                      VerticalAlignment="Center"
+                      Orientation="Horizontal"
+                      Spacing="6"
+                    >
+                      <TextBlock
+                        FontFamily="{DynamicResource AlibabaPuHuiTi}"
+                        FontWeight="Medium"
+                        FontSize="{DynamicResource FontSize12}"
+                        Foreground="White"
+                        Text="进行中"
+                      />
+                      <controls:RunLoadingSpinner Width="20" Height="20" />
+                    </StackPanel>
+                  </Border>
+                </Grid>
+              </Grid>
+            </Grid>
+          </Border>
+          <Rectangle
+            x:Name="PART_RunningOutline"
+            Grid.Row="0"
+            IsHitTestVisible="False"
+            IsVisible="False"
+            RadiusX="5"
+            RadiusY="5"
+            Stroke="#36A66F"
+            StrokeDashArray="4,3"
+            StrokeThickness="1"
+          />
+          <TextBlock
+            Grid.Row="1"
+            Margin="8,2,4,0"
+            FontSize="{DynamicResource FontSize11}"
+            Foreground="#D94B4B"
+            IsVisible="{Binding !!ValidationText, RelativeSource={RelativeSource TemplatedParent}}"
+            Text="{TemplateBinding ValidationText}"
+            TextTrimming="CharacterEllipsis"
+          />
+        </Grid>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:running:acquisition /template/ Border#PART_StageCard">
+      <Setter Property="Background" Value="White" />
+      <Setter Property="BorderBrush" Value="Transparent" />
+    </Style>
+    <Style Selector="^:running:acquisition /template/ TextBlock#PART_StatusText">
+      <Setter Property="Foreground" Value="#36A66F" />
+    </Style>
+    <Style Selector="^:running:stimulation /template/ Border#PART_StageCard">
+      <Setter Property="Background" Value="White" />
+      <Setter Property="BorderBrush" Value="Transparent" />
+    </Style>
+    <Style Selector="^:running:stimulation /template/ TextBlock#PART_StatusText">
+      <Setter Property="Foreground" Value="#36A66F" />
+    </Style>
+    <Style Selector="^:running:blanking /template/ Border#PART_StageCard">
+      <Setter Property="Background" Value="White" />
+      <Setter Property="BorderBrush" Value="Transparent" />
+    </Style>
+    <Style Selector="^:running:recovery /template/ Border#PART_StageCard">
+      <Setter Property="Background" Value="#F0FAF4" />
+      <Setter Property="BorderBrush" Value="#8FD3AA" />
+    </Style>
+    <Style Selector="^:running /template/ Rectangle#PART_RunningOutline">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+    <Style Selector="^:running /template/ TextBlock#PART_StatusText">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+    <Style Selector="^:running /template/ Border#PART_RunningStatus">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+    <Style Selector="^:completed /template/ Border#PART_StageCard">
+      <Setter Property="Background" Value="White" />
+      <Setter Property="BorderBrush" Value="#ECF2F8" />
+    </Style>
+    <Style Selector="^:completed /template/ TextBlock#PART_StatusText">
+      <Setter Property="Foreground" Value="#32A56A" />
+    </Style>
+    <Style Selector="^:stopped /template/ Border#PART_StageCard">
+      <Setter Property="Background" Value="#FFF3F3" />
+      <Setter Property="BorderBrush" Value="#F1A1A1" />
+    </Style>
+    <Style Selector="^:stopped /template/ TextBlock#PART_StatusText">
+      <Setter Property="Foreground" Value="#E65058" />
+    </Style>
+  </ControlTheme>
+</ResourceDictionary>

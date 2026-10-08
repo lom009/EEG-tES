@@ -1,0 +1,285 @@
+<UserControl
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+  xmlns:controls="clr-namespace:EGGtCSPlatform.Controls"
+  xmlns:converters="clr-namespace:EGGtCSPlatform.ValueConverters"
+  xmlns:pages="clr-namespace:EGGtCSPlatform.ViewModels.Pages"
+  x:Class="EGGtCSPlatform.Views.Pages.StimulusConfigurationPageView"
+  x:Name="Root"
+  x:DataType="pages:StimulusConfigurationPageViewModel"
+  FontFamily="{DynamicResource AlibabaPuHuiTi}"
+  FontWeight="Normal"
+  Foreground="#232B38"
+  mc:Ignorable="d"
+  d:DesignWidth="1440"
+  d:DesignHeight="768"
+>
+  <UserControl.Resources>
+    <converters:VerticalOffsetToTransformConverter x:Key="VerticalOffsetToTransformConverter" />
+    <converters:HasTextConverter x:Key="HasTextConverter" />
+  </UserControl.Resources>
+
+  <UserControl.Styles>
+    <Style Selector="Border.mode-selection-indicator.navigation-animation-enabled">
+      <Setter Property="Transitions">
+        <Transitions>
+          <TransformOperationsTransition
+            Property="RenderTransform"
+            Duration="0:0:0.28"
+            Easing="CubicEaseInOut"
+          />
+        </Transitions>
+      </Setter>
+    </Style>
+    <Style Selector="TransitioningContentControl.mode-content-transition">
+      <Setter Property="PageTransition" Value="{x:Null}" />
+    </Style>
+    <Style Selector="TransitioningContentControl.mode-content-transition.navigation-animation-enabled">
+      <Setter Property="PageTransition">
+        <PageSlide Duration="0:0:0.28" Orientation="Vertical">
+          <PageSlide.SlideInEasing>
+            <CubicEaseInOut />
+          </PageSlide.SlideInEasing>
+          <PageSlide.SlideOutEasing>
+            <CubicEaseInOut />
+          </PageSlide.SlideOutEasing>
+        </PageSlide>
+      </Setter>
+    </Style>
+  </UserControl.Styles>
+
+  <Grid ColumnDefinitions="224,*">
+    <Grid Margin="24,0,0,0" VerticalAlignment="Top">
+      <ItemsControl ItemsSource="{Binding Modes}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="pages:StimulusModeNavigationItemViewModel">
+            <controls:StimulusModeItem
+              Command="{Binding SelectCommand}"
+              IsSelected="{Binding IsSelected}"
+              Subtitle="{Binding Subtitle}"
+              Title="{Binding Title}"
+            />
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+      <Border
+        x:Name="ModeSelectionIndicator"
+        Width="3"
+        Height="10"
+        Margin="0,14,0,0"
+        HorizontalAlignment="Left"
+        VerticalAlignment="Top"
+        Background="{DynamicResource ProductPrimary}"
+        Classes="mode-selection-indicator"
+        Classes.navigation-animation-enabled="{Binding IsNavigationAnimationEnabled}"
+        CornerRadius="0,2,2,0"
+        IsHitTestVisible="False"
+        RenderTransform="{Binding SelectionIndicatorOffset, Converter={StaticResource VerticalOffsetToTransformConverter}}"
+      />
+    </Grid>
+
+    <TransitioningContentControl
+      x:Name="ModeContentHost"
+      Grid.Column="1"
+      HorizontalContentAlignment="Stretch"
+      VerticalContentAlignment="Stretch"
+      Classes="mode-content-transition"
+      Classes.navigation-animation-enabled="{Binding IsNavigationAnimationEnabled}"
+      ClipToBounds="True"
+      Content="{Binding CurrentConfiguration}"
+      IsTransitionReversed="{Binding IsModeTransitionReversed}"
+    >
+      <TransitioningContentControl.ContentTemplate>
+        <DataTemplate x:DataType="pages:StimulusModeConfigurationViewModel">
+          <ScrollViewer
+            Classes="mode-content-scroll"
+            HorizontalScrollBarVisibility="Disabled"
+            VerticalScrollBarVisibility="Auto"
+          >
+            <Border
+              BoxShadow="0 4 12 0 #336885B3"
+              MinHeight="727"
+              Margin="16,0,24,24"
+              Padding="16,20,16,24"
+              VerticalAlignment="Top"
+              Background="{DynamicResource ProductSurface}"
+              CornerRadius="8"
+            >
+              <StackPanel Spacing="16">
+                <Grid Height="32" ColumnDefinitions="*,Auto,Auto">
+                  <TextBlock
+                    VerticalAlignment="Center"
+                    FontFamily="{DynamicResource AlibabaPuHuiTi}"
+                    FontWeight="SemiBold"
+                    FontSize="{DynamicResource FontSize16}"
+                    Foreground="{DynamicResource ProductText}"
+                  >
+                    <Run Text="刺激范式：" />
+                    <Run Text="{Binding DisplayName}" />
+                  </TextBlock>
+                  <TextBlock
+                    Grid.Column="1"
+                    Margin="0,0,12,0"
+                    VerticalAlignment="Center"
+                    FontSize="{DynamicResource FontSize13}"
+                    Foreground="{DynamicResource ProductExcellent}"
+                    IsVisible="{Binding #Root.((pages:StimulusConfigurationPageViewModel)DataContext).IsConfigurationSaved}"
+                    Text="配置已保存"
+                  />
+                  <Button
+                    Grid.Column="2"
+                    Height="32"
+                    Padding="16,0"
+                    Background="{DynamicResource ProductPrimary}"
+                    Command="{Binding #Root.((pages:StimulusConfigurationPageViewModel)DataContext).SaveConfigurationCommand}"
+                    CornerRadius="6"
+                    Theme="{StaticResource StimulusFlatButtonTheme}"
+                  >
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <Image
+                        Width="20"
+                        Height="20"
+                        Source="{SvgImage /Assets/Images/stimulus-figma/check-double.svg}"
+                      />
+                      <TextBlock
+                        VerticalAlignment="Center"
+                        FontFamily="{DynamicResource AlibabaPuHuiTi}"
+                        FontWeight="SemiBold"
+                        FontSize="{DynamicResource FontSize14}"
+                        Foreground="White"
+                        Text="进入电极配置与检测"
+                      />
+                    </StackPanel>
+                  </Button>
+                </Grid>
+
+                <controls:StimulusSectionCard
+                  Header="{Binding SelectionSectionTitle}"
+                  IsVisible="{Binding ShowSelectionSection}"
+                >
+                  <Grid ColumnDefinitions="*,16,*">
+                    <controls:StimulusOptionSelector
+                      Grid.Column="0"
+                      ItemsSource="{Binding ArrayOptions}"
+                      Label="阵列类型"
+                      IsVisible="{Binding ShowArraySelector}"
+                      SelectedItem="{Binding SelectedArrayOption, Mode=TwoWay}"
+                    />
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8">
+                      <controls:StimulusOptionSelector
+                        ItemsSource="{Binding ShamModeOptions}"
+                        Label="电流模式"
+                        IsVisible="{Binding ShowShamModeSelector}"
+                        SelectedItem="{Binding SelectedShamModeOption, Mode=TwoWay}"
+                      />
+                      <controls:StimulusOptionSelector
+                      ItemsSource="{Binding DirectionOptions}"
+                      Label="模式方向"
+                      IsVisible="{Binding ShowDirectionSelector}"
+                      SelectedItem="{Binding SelectedDirectionOption, Mode=TwoWay}"
+                      />
+                    </StackPanel>
+                  </Grid>
+                </controls:StimulusSectionCard>
+
+                <controls:StimulusSectionCard Header="参数设置" BorderBrush="{DynamicResource ProductStimulusParameterBorder}">
+                  <StackPanel Spacing="{Binding ParameterRowSpacing}">
+                    <Grid ColumnDefinitions="*,16,*">
+                    <controls:StimulusParameterEditor
+                      Grid.Column="2"
+                      Title="延时"
+                      Unit="ms"
+                      Minimum="0"
+                      Maximum="300"
+                      Increment="1"
+                      DecimalPlaces="0"
+                      IsVisible="{Binding IsEnvelope}"
+                      Value="{Binding DelayMilliseconds, Mode=TwoWay}"
+                    />
+                    <controls:StimulusParameterEditor
+                      Grid.Column="0"
+                      InfoText="{Binding CurrentInfo}"
+                      IsError="{Binding CurrentHasError}"
+                      IsAllocated="{Binding IsAllocationValid}"
+                      IsPeakAboveSelectableTotal="{Binding IsPeakAboveSelectableTotal}"
+                      IsPeakBelowSelectableTotal="{Binding IsPeakBelowSelectableTotal}"
+                      Maximum="{Binding MaximumCurrent}"
+                      Minimum="{Binding MinimumCurrent}"
+                      Increment="{Binding CurrentIncrement}"
+                      DecimalPlaces="2"
+                      StatusText="{Binding CurrentStatusText}"
+                      Title="{Binding CurrentTitle}"
+                      Unit="mA"
+                      Value="{Binding Current, Mode=TwoWay}"
+                      IsVisible="{Binding ShowGlobalCurrent}"
+                    />
+                    <controls:StimulusParameterEditor
+                      Grid.Column="2"
+                      Maximum="{Binding ParameterPolicy.Ramp.Maximum}"
+                      Minimum="{Binding ParameterPolicy.Ramp.Minimum}"
+                      Increment="{Binding ParameterPolicy.Ramp.Increment}"
+                      DecimalPlaces="{Binding ParameterPolicy.Ramp.DecimalPlaces}"
+                      IsVisible="{Binding ShowRampParameter}"
+                      Title="缓升缓降时间"
+                      Unit="s"
+                      Value="{Binding RampSeconds, Mode=TwoWay}"
+                    />
+                    <controls:StimulusParameterEditor
+                      Grid.Column="2"
+                      Maximum="{Binding MaximumFrequency}"
+                      Minimum="{Binding ParameterPolicy.Frequency.Minimum}"
+                      Increment="{Binding ParameterPolicy.Frequency.Increment}"
+                      DecimalPlaces="{Binding ParameterPolicy.Frequency.DecimalPlaces}"
+                      IsVisible="{Binding ShowFrequencyParameter}"
+                      Title="频率"
+                      Unit="Hz"
+                      Value="{Binding Frequency, Mode=TwoWay}"
+                    />
+                    </Grid>
+                    <controls:StimulusParameterEditor
+                      Maximum="{Binding DutyRange.Maximum}"
+                      Minimum="{Binding DutyRange.Minimum}"
+                      Increment="{Binding DutyRange.Increment}"
+                      DecimalPlaces="{Binding DutyRange.DecimalPlaces}"
+                      IsVisible="{Binding ShowDutyPercentParameter}"
+                      Title="占空比"
+                      Unit="%"
+                      Value="{Binding DutyPercent, Mode=TwoWay}"
+                    />
+                    <controls:StimulationChannelAllocationEditor
+                      HasError="{Binding HasAllocationError}"
+                      IsPeakAboveSelectableTotal="{Binding IsPeakAboveSelectableTotal}"
+                      IsPeakBelowSelectableTotal="{Binding IsPeakBelowSelectableTotal}"
+                      IsVisible="{Binding ShowPhysicalChannelAllocation}"
+                      ItemsSource="{Binding PhysicalChannels}"
+                      SelectFixedCommand="{Binding SelectFixedChannelCommand}"
+                      StatusText="{Binding AllocationStatusText}"
+                    />
+                  </StackPanel>
+                </controls:StimulusSectionCard>
+
+                <controls:StimulusSectionCard Header="示意图">
+                  <StackPanel Spacing="4">
+                    <TextBlock
+                      HorizontalAlignment="Right"
+                      FontSize="{DynamicResource FontSize11}"
+                      Foreground="{DynamicResource ProductTextMuted}"
+                      Text="{Binding WaveformHint}"
+                      IsVisible="{Binding WaveformHint, Converter={StaticResource HasTextConverter}}"
+                    />
+                    <controls:StimulusWaveformControl
+                      Height="267"
+                      Descriptor="{Binding Waveform}"
+                    />
+                  </StackPanel>
+                </controls:StimulusSectionCard>
+              </StackPanel>
+            </Border>
+          </ScrollViewer>
+        </DataTemplate>
+      </TransitioningContentControl.ContentTemplate>
+    </TransitioningContentControl>
+  </Grid>
+</UserControl>

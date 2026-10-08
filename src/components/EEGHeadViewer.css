@@ -1,0 +1,17 @@
+.electrode-shell .workspace{background:radial-gradient(circle at 45% 38%,#fbfdff 0%,#edf4ff 48%,#dfeeff 100%)}
+.electrode-shell .neural-background{display:none}
+.eeg-viewer{position:absolute;inset:0;overflow:hidden;isolation:isolate}
+.eeg-canvas{position:absolute;inset:0 0 65px}
+.eeg-canvas canvas{display:block;touch-action:none;width:100%;height:100%}
+.eeg-test-labels{position:absolute;inset:0;pointer-events:none;z-index:3}
+.eeg-test-point{--point-state:#f8fbff;position:absolute;left:0;top:0;visibility:hidden;display:grid;place-items:center;pointer-events:auto;contain:layout style paint;will-change:transform;padding:4px 9px;min-width:36px;height:34px;font:700 14px/1 system-ui,sans-serif;letter-spacing:-.01em;border:1px solid #d7e1ed;border-radius:13px;background:#fffffff5;color:#365578;cursor:pointer;box-shadow:0 4px 13px #36567c20,inset 0 -1px 2px #a9bfd41c;transition:border-color .24s,box-shadow .24s,color .24s}
+.eeg-test-point[aria-pressed=true]{border-color:var(--point-state);box-shadow:0 4px 13px #36567c20,0 0 0 2px color-mix(in srgb,var(--point-state) 22%,transparent);color:var(--point-state)}
+.eeg-test-point:focus-visible{outline:2px solid #286cff;outline-offset:3px}
+.eeg-test-point[data-state=checking]{animation:eeg-label-breathe 1.15s ease-in-out infinite}
+@keyframes eeg-label-breathe{50%{box-shadow:0 4px 13px #36567c20,0 0 0 4px color-mix(in srgb,var(--point-state) 18%,transparent)}}
+.eeg-view-controls{position:absolute;bottom:30px;left:50%;transform:translateX(-50%);padding:4px;background:#ffffffd9;border:1px solid #fff;border-radius:14px;box-shadow:0 12px 36px #6385b51d;backdrop-filter:blur(16px)}
+.eeg-view-controls button{border:0;background:transparent;padding:7px 14px;border-radius:9px;color:#365578;cursor:pointer;font-size:12px}
+.eeg-view-hint{position:absolute;bottom:9px;text-align:center;width:100%;color:#718298;font-size:11px}
+.eeg-loading{position:absolute;inset:0;display:grid;place-content:center;background:#f5f7fb;color:#748397;font-size:14px;z-index:4}
+.static-head-stage:has(.eeg-viewer){height:calc(100vh - 150px);max-height:773px;min-height:470px}
+@media(prefers-reduced-motion:reduce){.eeg-test-point[data-state=checking]{animation:none}}

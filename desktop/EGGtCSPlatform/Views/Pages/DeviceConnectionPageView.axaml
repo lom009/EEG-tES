@@ -1,0 +1,301 @@
+<UserControl
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+  xmlns:pages="clr-namespace:EGGtCSPlatform.ViewModels.Pages"
+  xmlns:services="clr-namespace:EGGtCSPlatform.Services"
+  x:Class="EGGtCSPlatform.Views.Pages.DeviceConnectionPageView"
+  x:DataType="pages:DeviceConnectionPageViewModel"
+  mc:Ignorable="d"
+>
+  <ScrollViewer
+    Background="#F5F7FB"
+    HorizontalScrollBarVisibility="Disabled"
+    VerticalScrollBarVisibility="Auto"
+  >
+    <Border
+      Width="720"
+      Margin="20"
+      Padding="28"
+      HorizontalAlignment="Center"
+      Background="White"
+      CornerRadius="12"
+      BoxShadow="0 5 15 0 #20283B22"
+    >
+      <StackPanel Spacing="20">
+        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="24">
+          <StackPanel Spacing="8">
+            <TextBlock
+              FontFamily="{DynamicResource AlibabaPuHuiTi}"
+              FontWeight="Bold"
+              FontSize="{DynamicResource FontSize22}"
+              Foreground="#232B38"
+              Text="设备连接"
+            />
+            <TextBlock
+              FontSize="{DynamicResource FontSize13}"
+              Foreground="#6B7D99"
+              Text="{Binding Connection.StatusMessage}"
+            />
+          </StackPanel>
+          <Button
+            Grid.Column="1"
+            Padding="18,10"
+            VerticalAlignment="Center"
+            Background="#4148C5"
+            Command="{Binding OpenConfigurationCommand}"
+            Content="进入配置"
+            Foreground="White"
+            CornerRadius="6"
+          />
+        </Grid>
+
+        <ItemsControl MinHeight="112" ItemsSource="{Binding Devices}">
+          <ItemsControl.Styles>
+            <Style Selector="ContentPresenter">
+              <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            </Style>
+          </ItemsControl.Styles>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="pages:DeviceConnectionItemViewModel">
+              <Border
+                MinHeight="112"
+                Margin="0,4"
+                Padding="20,16"
+                Background="#F8F7FF"
+                BorderBrush="#DDD9FA"
+                BorderThickness="1"
+                CornerRadius="10"
+                BoxShadow="0 3 10 0 #14283B18"
+              >
+                <Grid ColumnDefinitions="4,16,*,Auto">
+                  <Border Width="4" Background="#5A4BD8" CornerRadius="2" />
+                  <StackPanel Grid.Column="2" VerticalAlignment="Center" Spacing="6">
+                    <TextBlock
+                      FontFamily="{DynamicResource AlibabaPuHuiTi}"
+                      FontWeight="Bold"
+                      FontSize="{DynamicResource FontSize15}"
+                      Foreground="#2B3150"
+                      Text="{Binding DisplayName}"
+                    />
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <TextBlock
+                        FontSize="{DynamicResource FontSize12}"
+                        Foreground="#8A98AD"
+                        Text="设备序列号"
+                      />
+                      <TextBlock
+                        FontFamily="{DynamicResource AlibabaPuHuiTi}"
+                        FontWeight="Medium"
+                        FontSize="{DynamicResource FontSize12}"
+                        Foreground="#65718A"
+                        Text="{Binding SerialNumber}"
+                      />
+                    </StackPanel>
+                    <Grid ColumnDefinitions="Auto,8,120,24,Auto,8,*">
+                      <TextBlock
+                        FontSize="{DynamicResource FontSize12}"
+                        Foreground="#8A98AD"
+                        Text="IP"
+                      />
+                      <TextBlock
+                        Grid.Column="2"
+                        FontFamily="{DynamicResource AlibabaPuHuiTi}"
+                        FontWeight="Medium"
+                        FontSize="{DynamicResource FontSize12}"
+                        Foreground="#65718A"
+                        Text="{Binding IpAddress}"
+                      />
+                      <TextBlock
+                        Grid.Column="4"
+                        FontSize="{DynamicResource FontSize12}"
+                        Foreground="#8A98AD"
+                        Text="MAC"
+                      />
+                      <TextBlock
+                        Grid.Column="6"
+                        FontFamily="{DynamicResource AlibabaPuHuiTi}"
+                        FontWeight="Medium"
+                        FontSize="{DynamicResource FontSize12}"
+                        Foreground="#65718A"
+                        Text="{Binding MacAddress}"
+                      />
+                    </Grid>
+                    <TextBlock
+                      FontSize="{DynamicResource FontSize12}"
+                      Foreground="#65718A"
+                      Text="{Binding ProtocolDisplayText}"
+                      ToolTip.Tip="{Binding ProtocolExplanation}"
+                    />
+                  </StackPanel>
+                  <Border
+                    Grid.Column="3"
+                    Height="28"
+                    Padding="11,0"
+                    VerticalAlignment="Center"
+                    Background="#E7F7EF"
+                    BorderBrush="#C7ECD9"
+                    BorderThickness="1"
+                    CornerRadius="14"
+                  >
+                    <StackPanel VerticalAlignment="Center" Orientation="Horizontal" Spacing="6">
+                      <Ellipse Width="7" Height="7" Fill="#2EAD70" />
+                      <TextBlock
+                        VerticalAlignment="Center"
+                        FontFamily="{DynamicResource AlibabaPuHuiTi}"
+                        FontWeight="Medium"
+                        FontSize="{DynamicResource FontSize13}"
+                        Foreground="#258A5B"
+                        Text="{Binding ConnectionState}"
+                      />
+                    </StackPanel>
+                  </Border>
+                </Grid>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <TextBlock
+          Margin="0,-16,0,0"
+          HorizontalAlignment="Center"
+          FontSize="{DynamicResource FontSize13}"
+          Foreground="#8A98AD"
+          IsVisible="{Binding !Connection.IsConnected}"
+          Text="暂无已连接设备"
+        />
+
+        <Separator />
+        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="24">
+          <StackPanel Spacing="8">
+            <TextBlock
+              FontFamily="{DynamicResource AlibabaPuHuiTi}"
+              FontWeight="Bold"
+              FontSize="{DynamicResource FontSize22}"
+              Foreground="#232B38"
+              Text="界面显示"
+            />
+            <TextBlock
+              FontSize="{DynamicResource FontSize14}"
+              Foreground="#44546A"
+              Text="这是一段字号预览文字 Aa 123"
+              TextWrapping="Wrap"
+            />
+            <TextBlock
+              FontSize="{DynamicResource FontSize12}"
+              Foreground="#6B7D99"
+              Text="{Binding FontSizePercentText}"
+            />
+            <TextBlock
+              FontSize="{DynamicResource FontSize12}"
+              Foreground="#C53B3B"
+              IsVisible="{Binding !!FontSizeError}"
+              Text="{Binding FontSizeError}"
+              TextWrapping="Wrap"
+            />
+          </StackPanel>
+          <StackPanel
+            Grid.Column="1"
+            VerticalAlignment="Center"
+            Orientation="Horizontal"
+            Spacing="6"
+          >
+            <RadioButton
+              Command="{Binding SetFontSizeCommand}"
+              CommandParameter="{x:Static services:FontSizePreset.Small}"
+              Content="小"
+              GroupName="ApplicationFontSize"
+              IsChecked="{Binding IsSmallFontSize, Mode=OneWay}"
+              IsEnabled="{Binding !IsFontSizeSaving}"
+            />
+            <RadioButton
+              Command="{Binding SetFontSizeCommand}"
+              CommandParameter="{x:Static services:FontSizePreset.Standard}"
+              Content="标准"
+              GroupName="ApplicationFontSize"
+              IsChecked="{Binding IsStandardFontSize, Mode=OneWay}"
+              IsEnabled="{Binding !IsFontSizeSaving}"
+            />
+            <RadioButton
+              Command="{Binding SetFontSizeCommand}"
+              CommandParameter="{x:Static services:FontSizePreset.Large}"
+              Content="大"
+              GroupName="ApplicationFontSize"
+              IsChecked="{Binding IsLargeFontSize, Mode=OneWay}"
+              IsEnabled="{Binding !IsFontSizeSaving}"
+            />
+            <RadioButton
+              Command="{Binding SetFontSizeCommand}"
+              CommandParameter="{x:Static services:FontSizePreset.ExtraLarge}"
+              Content="特大"
+              GroupName="ApplicationFontSize"
+              IsChecked="{Binding IsExtraLargeFontSize, Mode=OneWay}"
+              IsEnabled="{Binding !IsFontSizeSaving}"
+            />
+          </StackPanel>
+        </Grid>
+
+        <Separator />
+        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="24">
+          <StackPanel Spacing="8">
+            <TextBlock
+              FontFamily="{DynamicResource AlibabaPuHuiTi}"
+              FontWeight="Bold"
+              FontSize="{DynamicResource FontSize22}"
+              Foreground="#232B38"
+              Text="电极物理通道映射"
+            />
+            <TextBlock
+              FontSize="{DynamicResource FontSize13}"
+              Foreground="#6B7D99"
+              Text="独立配置电极位置到设备1～32物理通道的映射关系"
+              TextWrapping="Wrap"
+            />
+          </StackPanel>
+          <Button
+            Grid.Column="1"
+            Padding="18,10"
+            VerticalAlignment="Center"
+            Background="#4148C5"
+            Command="{Binding OpenPhysicalChannelMappingCommand}"
+            Content="进入配置"
+            Foreground="White"
+            CornerRadius="6"
+          />
+        </Grid>
+
+        <Separator />
+        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="24">
+          <StackPanel Spacing="8">
+            <TextBlock
+              FontFamily="{DynamicResource AlibabaPuHuiTi}"
+              FontWeight="Bold"
+              FontSize="{DynamicResource FontSize22}"
+              Foreground="#232B38"
+              Text="恢复出厂设置"
+            />
+            <TextBlock
+              FontSize="{DynamicResource FontSize13}"
+              Foreground="#6B7D99"
+              Text="恢复当前版本默认配置，不删除实验数据、记录文件和日志"
+              TextWrapping="Wrap"
+            />
+          </StackPanel>
+          <Button
+            Grid.Column="1"
+            Padding="18,10"
+            VerticalAlignment="Center"
+            Background="#FFF2F2"
+            BorderBrush="#E05252"
+            BorderThickness="1"
+            Command="{Binding RestoreFactorySettingsCommand}"
+            Content="恢复出厂设置"
+            Foreground="#C53B3B"
+            CornerRadius="6"
+          />
+        </Grid>
+      </StackPanel>
+    </Border>
+  </ScrollViewer>
+</UserControl>

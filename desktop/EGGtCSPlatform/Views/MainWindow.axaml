@@ -1,0 +1,26 @@
+<Window
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+  xmlns:local="clr-namespace:EGGtCSPlatform.Views"
+  xmlns:vm="clr-namespace:EGGtCSPlatform.ViewModels"
+  mc:Ignorable="d"
+  d:DesignWidth="1400"
+  d:DesignHeight="900"
+  Width="1260"
+  MinWidth="1260"
+  Height="810"
+  MinHeight="810"
+  Icon="/Assets/Images/icon.ico"
+  WindowStartupLocation="CenterScreen"
+  x:Class="EGGtCSPlatform.MainWindow"
+  xmlns:design="clr-namespace:EGGtCSPlatform.Design"
+  xmlns:pages="clr-namespace:EGGtCSPlatform.Views.Pages"
+  Title="EGGtCSPlatform"
+  WindowState="Maximized"
+  CanResize="False"
+  d:DataContext="{x:Static design:DesignData.MainViewModel}"
+>
+  <pages:MainView />
+</Window>

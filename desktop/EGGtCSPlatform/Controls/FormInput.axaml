@@ -1,0 +1,75 @@
+<ResourceDictionary
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:controls="using:EGGtCSPlatform.Controls"
+>
+  <!--
+    Additional resources
+    Using Control Themes:
+    https://docs.avaloniaui.net/docs/basics/user-interface/styling/control-themes
+    Using Theme Variants:
+    https://docs.avaloniaui.net/docs/guides/styles-and-resources/how-to-use-theme-variants
+    -->
+
+  <Design.PreviewWith>
+    <StackPanel Width="400" Spacing="10">
+      <controls:FormInput HeaderText="账号" Watermark="请输入手机号" InputText="123" />
+      <controls:FormInput HeaderText="密码" Watermark="请输入密码" PasswordChar="●" />
+    </StackPanel>
+  </Design.PreviewWith>
+
+  <ControlTheme x:Key="{x:Type controls:FormInput}" TargetType="controls:FormInput">
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Grid RowDefinitions="28,8,60">
+          <TextBlock
+            Margin="0"
+            VerticalAlignment="Top"
+            FontFamily="{DynamicResource AlibabaPuHuiTi}"
+            FontWeight="Medium"
+            FontSize="{DynamicResource FontSize20}"
+            Foreground="#4F607D"
+            Text="{TemplateBinding HeaderText}"
+          />
+
+          <Grid Grid.Row="2">
+            <TextBox
+              x:Name="PART_InputText"
+              Height="60"
+              Padding="16,0"
+              VerticalAlignment="Top"
+              VerticalContentAlignment="Center"
+              FontSize="{DynamicResource FontSize16}"
+              Foreground="#364459"
+              CaretBrush="#3941B6"
+              Background="#80FFFFFF"
+              BorderThickness="1"
+              BorderBrush="#E2E8F2"
+              CornerRadius="8"
+              PlaceholderText="{TemplateBinding Watermark}"
+              PlaceholderForeground="#ACB7C8"
+              PasswordChar="{TemplateBinding PasswordChar}"
+              Text="{Binding InputText, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+            >
+              <TextBox.Styles>
+                <Style Selector="TextBox:focus /template/ Border#PART_BorderElement">
+                  <Setter Property="BorderBrush" Value="#8294B2" />
+                  <Setter Property="BorderThickness" Value="1" />
+                  <Setter Property="Background" Value="#80FFFFFF" />
+                </Style>
+                <Style Selector="TextBox:pointerover:not(:focus) /template/ Border#PART_BorderElement">
+                  <Setter Property="BorderBrush" Value="#C4CFDF" />
+                  <Setter Property="Background" Value="#80FFFFFF" />
+                </Style>
+                <Style Selector="TextBox /template/ TextBlock#PART_Placeholder">
+                  <Setter Property="Opacity" Value="1" />
+                </Style>
+              </TextBox.Styles>
+            </TextBox>
+
+          </Grid>
+        </Grid>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+</ResourceDictionary>

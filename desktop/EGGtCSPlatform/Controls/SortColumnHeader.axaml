@@ -1,0 +1,44 @@
+<UserControl
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+  mc:Ignorable="d"
+  d:DesignWidth="200"
+  d:DesignHeight="36"
+  x:Class="EGGtCSPlatform.Controls.SortColumnHeader"
+  xmlns:controls="clr-namespace:EGGtCSPlatform.Controls"
+  x:DataType="controls:SortColumnHeader"
+>
+  <Button
+    Command="{Binding $parent[controls:SortColumnHeader].Command}"
+    CommandParameter="{Binding $parent[controls:SortColumnHeader].CommandParameter}"
+    HorizontalAlignment="Stretch"
+    HorizontalContentAlignment="Center"
+    VerticalContentAlignment="Center"
+    Background="Transparent"
+    BorderThickness="0"
+    CornerRadius="0"
+    Padding="16 11"
+    Effect="{x:Null}"
+    Cursor="Hand"
+  >
+    <StackPanel Orientation="Horizontal">
+      <TextBlock
+        Text="{Binding $parent[controls:SortColumnHeader].Text}"
+        FontSize="{DynamicResource FontSize11}"
+        Foreground="{DynamicResource LabelForeground}"
+        FontFamily="{DynamicResource AlibabaPuHuiTi}"
+        FontWeight="SemiBold"
+      />
+      <TextBlock
+        Text="{Binding $parent[controls:SortColumnHeader].SortArrow}"
+        FontSize="{DynamicResource FontSize9}"
+        Foreground="{DynamicResource SecondaryForeground}"
+        Margin="5 1 0 0"
+        VerticalAlignment="Center"
+        IsVisible="{Binding $parent[controls:SortColumnHeader].IsSortActive}"
+      />
+    </StackPanel>
+  </Button>
+</UserControl>

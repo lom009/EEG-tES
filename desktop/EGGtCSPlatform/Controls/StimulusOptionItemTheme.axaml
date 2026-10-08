@@ -1,0 +1,64 @@
+<ResourceDictionary
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:controls="clr-namespace:EGGtCSPlatform.Controls"
+  xmlns:pages="clr-namespace:EGGtCSPlatform.ViewModels.Pages"
+  x:ClassModifier="internal"
+  x:CompileBindings="False"
+>
+  <ControlTheme x:Key="StimulusOptionItemTheme" TargetType="ListBoxItem">
+    <Setter Property="FontSize" Value="{DynamicResource FontSize14}" />
+    <Setter Property="MinWidth" Value="64" />
+    <Setter Property="Height" Value="32" />
+    <Setter Property="Padding" Value="12,0" />
+    <Setter Property="Background" Value="White" />
+    <Setter Property="Foreground" Value="{DynamicResource ProductText}" />
+    <Setter Property="FontWeight" Value="Normal" />
+    <Setter Property="IsVisible" Value="{Binding IsVisible}" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="Cursor" Value="Hand" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border
+          x:Name="OptionBorder"
+          Padding="{TemplateBinding Padding}"
+          Background="{TemplateBinding Background}"
+          BorderBrush="{DynamicResource ProductStimulusOptionBorder}"
+          BorderThickness="1"
+          CornerRadius="0"
+        >
+          <ContentPresenter
+            Content="{TemplateBinding Content}"
+            ContentTemplate="{TemplateBinding ContentTemplate}"
+            HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+            VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+          />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:selected /template/ Border#OptionBorder">
+      <Setter Property="Background" Value="{DynamicResource ProductPrimary}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ProductRoleSelected}" />
+    </Style>
+    <Style Selector="^:selected">
+      <Setter Property="Foreground" Value="White" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="^:nth-child(n+2)">
+      <Setter Property="Margin" Value="-1,0,0,0" />
+    </Style>
+    <Style Selector="^:nth-child(1) /template/ Border#OptionBorder">
+      <Setter Property="CornerRadius" Value="6,0,0,6" />
+    </Style>
+    <Style Selector="^:nth-last-child(1) /template/ Border#OptionBorder">
+      <Setter Property="CornerRadius" Value="0,6,6,0" />
+    </Style>
+    <Style Selector="^:nth-child(1):nth-last-child(1) /template/ Border#OptionBorder">
+      <Setter Property="CornerRadius" Value="6" />
+    </Style>
+    <Style Selector="^:pointerover /template/ Border#OptionBorder">
+      <Setter Property="BorderBrush" Value="#7077D9" />
+    </Style>
+  </ControlTheme>
+</ResourceDictionary>

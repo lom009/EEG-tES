@@ -1,0 +1,97 @@
+<UserControl
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:pages="clr-namespace:EGGtCSPlatform.ViewModels.Pages"
+  xmlns:vm="clr-namespace:EGGtCSPlatform.ViewModels"
+  x:Class="EGGtCSPlatform.Dialog.DialogAdornerHost"
+  x:DataType="pages:MainViewModel"
+  IsVisible="{Binding !!DialogStack.Count}"
+  IsHitTestVisible="{Binding !!DialogStack.Count}"
+>
+  <UserControl.Resources>
+    <ControlTheme x:Key="DialogOverlayButtonTheme" TargetType="Button">
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="VerticalAlignment" Value="Stretch" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="Background" Value="{DynamicResource DialogOverlay}" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Opacity" Value="0.6" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Border Background="{TemplateBinding Background}" />
+        </ControlTemplate>
+      </Setter>
+      <Style Selector="^:pointerover">
+        <Setter Property="Background" Value="{DynamicResource DialogOverlay}" />
+      </Style>
+      <Style Selector="^:pressed">
+        <Setter Property="Background" Value="{DynamicResource DialogOverlay}" />
+      </Style>
+    </ControlTheme>
+  </UserControl.Resources>
+
+  <ItemsControl ItemsSource="{Binding DialogStack}">
+    <ItemsControl.ItemsPanel>
+      <ItemsPanelTemplate>
+        <Grid />
+      </ItemsPanelTemplate>
+    </ItemsControl.ItemsPanel>
+    <ItemsControl.Styles>
+      <Style Selector="ItemsControl > ContentPresenter">
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="VerticalContentAlignment" Value="Stretch" />
+      </Style>
+    </ItemsControl.Styles>
+    <ItemsControl.ItemTemplate>
+      <DataTemplate x:DataType="vm:DialogViewModel">
+        <Grid Classes.open="{Binding IsDialogOpen}">
+          <Grid.Styles>
+            <Style Selector="Button#DialogOverlay">
+              <Setter Property="Opacity" Value="0" />
+              <Setter Property="Transitions">
+                <Transitions>
+                  <DoubleTransition Property="Opacity" Duration="0:0:0.1" />
+                </Transitions>
+              </Setter>
+            </Style>
+            <Style Selector="ContentControl#DialogContent">
+              <Setter Property="Opacity" Value="0" />
+              <Setter Property="RenderTransformOrigin" Value="50%,50%" />
+              <Setter Property="RenderTransform" Value="translate(0px, 10px) scale(0.96)" />
+              <Setter Property="Transitions">
+                <Transitions>
+                  <DoubleTransition Property="Opacity" Duration="0:0:0.1" />
+                  <TransformOperationsTransition
+                    Easing="CubicEaseOut"
+                    Property="RenderTransform"
+                    Duration="0:0:0.1"
+                  />
+                </Transitions>
+              </Setter>
+            </Style>
+            <Style Selector="Grid.open > Button#DialogOverlay">
+              <Setter Property="Opacity" Value="0.6" />
+            </Style>
+            <Style Selector="Grid.open > ContentControl#DialogContent">
+              <Setter Property="Opacity" Value="1" />
+              <Setter Property="RenderTransform" Value="translate(0px, 0px) scale(1)" />
+            </Style>
+          </Grid.Styles>
+          <Button
+            x:Name="DialogOverlay"
+            Command="{Binding OverlayDismissCommand}"
+            Theme="{StaticResource DialogOverlayButtonTheme}"
+          />
+          <ContentControl
+            x:Name="DialogContent"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            Content="{Binding}"
+          />
+        </Grid>
+      </DataTemplate>
+    </ItemsControl.ItemTemplate>
+  </ItemsControl>
+</UserControl>

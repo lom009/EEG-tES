@@ -1,0 +1,112 @@
+<ResourceDictionary
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:controls="clr-namespace:EGGtCSPlatform.Controls"
+  xmlns:pages="clr-namespace:EGGtCSPlatform.ViewModels.Pages"
+  x:ClassModifier="internal"
+  x:CompileBindings="False"
+>
+  <Design.PreviewWith>
+    <Grid Width="200" Height="200">
+      <controls:StimulusNumericInput
+        Padding="8,0"
+        Height="40"
+        Width="90"
+        Background="White"
+        BorderBrush="#D7E0ED"
+        BorderThickness="1"
+        CornerRadius="5"
+        DecimalPlaces="1"
+        Foreground="#33405A"
+        Increment="0.1"
+        IsEnabled="True"
+        Maximum="1"
+        Minimum="0"
+        Unit="mA"
+        Value="1"
+      ></controls:StimulusNumericInput>
+    </Grid>
+  </Design.PreviewWith>
+
+  <ControlTheme
+    x:Key="{x:Type controls:StimulusNumericInput}"
+    TargetType="controls:StimulusNumericInput"
+  >
+    <Setter Property="Background" Value="{DynamicResource ProductSurface}" />
+    <Setter Property="Foreground" Value="{DynamicResource ProductText}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource ProductStimulusInputBorder}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="ShowButtonSpinner" Value="True" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <ButtonSpinner
+          Name="PART_Spinner"
+          Padding="{TemplateBinding Padding}"
+          Background="{TemplateBinding Background}"
+          BorderBrush="{TemplateBinding BorderBrush}"
+          BorderThickness="{TemplateBinding BorderThickness}"
+          CornerRadius="{TemplateBinding CornerRadius}"
+          ShowButtonSpinner="{TemplateBinding ShowButtonSpinner}"
+          Theme="{StaticResource StimulusButtonSpinnerTheme}"
+        >
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBox
+              Name="PART_TextBox"
+              FontSize="14"
+              MinHeight="0"
+              MinWidth="0"
+              Margin="0"
+              Padding="0"
+              Background="Transparent"
+              BorderThickness="0"
+              Foreground="{TemplateBinding Foreground}"
+              HorizontalContentAlignment="Left"
+              IsReadOnly="{TemplateBinding IsReadOnly}"
+              Text="{TemplateBinding Text}"
+              TextAlignment="{TemplateBinding TextAlignment}"
+              VerticalContentAlignment="Center"
+            />
+            <TextBlock
+              FontSize="{Binding FontSize, ElementName=PART_TextBox}"
+              Name="DisabledValueText"
+              Margin="0"
+              Padding="0"
+              HorizontalAlignment="Left"
+              VerticalAlignment="Center"
+              Foreground="{TemplateBinding Foreground}"
+              IsHitTestVisible="False"
+              IsVisible="False"
+              Text="{TemplateBinding Text}"
+              TextAlignment="{TemplateBinding TextAlignment}"
+            />
+            <TextBlock
+              Grid.Column="1"
+              Name="PART_UnitText"
+              Margin="2,0,0,0"
+              VerticalAlignment="Center"
+              FontSize="{DynamicResource FontSize12}"
+              Foreground="{DynamicResource ProductTextMuted}"
+              IsHitTestVisible="False"
+              Text="{TemplateBinding Unit}"
+            />
+          </Grid>
+        </ButtonSpinner>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:disabled /template/ ButtonSpinner#PART_Spinner">
+      <Setter Property="Background" Value="{DynamicResource ProductStimulusDisabledInput}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ProductStimulusInputBorder}" />
+    </Style>
+    <Style Selector="^:disabled /template/ TextBox#PART_TextBox">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+    <Style Selector="^:disabled /template/ TextBlock#DisabledValueText">
+      <Setter Property="IsVisible" Value="True" />
+      <Setter Property="Foreground" Value="{DynamicResource ProductStimulusDisabledText}" />
+    </Style>
+    <Style Selector="^:disabled /template/ TextBlock#PART_UnitText">
+      <Setter Property="Foreground" Value="{DynamicResource ProductStimulusDisabledText}" />
+    </Style>
+  </ControlTheme>
+</ResourceDictionary>

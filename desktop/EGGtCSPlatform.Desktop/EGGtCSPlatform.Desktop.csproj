@@ -1,0 +1,29 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>EGGtCSPlatform.Desktop</RootNamespace>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ApplicationManifest Condition="'$(RuntimeIdentifier)' == '' Or $([System.String]::Copy('$(RuntimeIdentifier)').StartsWith('win-'))">app.manifest</ApplicationManifest>
+    <SupportedUpdateRuntimeIdentifiers>;win-x86;win-x64;win-arm64;linux-x64;linux-arm64;osx-x64;osx-arm64;</SupportedUpdateRuntimeIdentifiers>
+    <ApplicationIcon
+      Condition="'$(RuntimeIdentifier)' == '' Or $([System.String]::Copy('$(RuntimeIdentifier)').StartsWith('win-'))"
+      >..\EGGtCSPlatform\Assets\Images\icon.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="12.1.1" />
+    <PackageReference Include="Avalonia.Desktop" Version="12.1.1" />
+    <PackageReference Include="Velopack" Version="1.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\EGGtCSPlatform\EGGtCSPlatform.csproj" />
+  </ItemGroup>
+
+  <Target Name="ValidateUpdateRuntimeIdentifier" BeforeTargets="Publish"
+          Condition="'$(RuntimeIdentifier)' != '' And ('$(SelfContained)' == 'true' Or '$(PublishSelfContained)' == 'true')">
+    <Error Condition="!$([System.String]::Copy('$(SupportedUpdateRuntimeIdentifiers)').Contains(';$(RuntimeIdentifier);'))"
+           Text="Unsupported self-contained Velopack RuntimeIdentifier '$(RuntimeIdentifier)'. Supported values: win-x86, win-x64, win-arm64, linux-x64, linux-arm64, osx-x64, osx-arm64. Velopack 1.2.0 does not support 32-bit linux-arm packages." />
+  </Target>
+</Project>

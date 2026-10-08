@@ -1,0 +1,25 @@
+<UserControl
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:controls="clr-namespace:EGGtCSPlatform.Controls"
+  xmlns:vm="clr-namespace:EGGtCSPlatform.ViewModels"
+  x:Class="EGGtCSPlatform.Views.ExperimentConfigurationDialogView"
+  x:DataType="vm:ExperimentConfigurationDialogViewModel"
+  Background="Transparent"
+>
+  <controls:ExperimentConfigurationDialog
+    Margin="32"
+    EnvelopeConfirmation="{Binding EnvelopeConfirmation}"
+    ShowAcquisition="{Binding ShowAcquisition}"
+    ShowStimulation="{Binding ShowStimulation}"
+    AcquisitionElectrodes="{Binding AcquisitionElectrodes}"
+    CloseCommand="{Binding CancelCommand}"
+    ConfirmCommand="{Binding ConfirmCommand}"
+    ExperimentId="{Binding ExperimentId}"
+    ParameterSummary="{Binding ParameterSummary}"
+    SafetySummary="{Binding SafetySummary}"
+    StimulusElectrodes="{Binding StimulusElectrodes}"
+    StimulusSummary="{Binding StimulusSummary}"
+    SubjectId="{Binding SubjectId}"
+  />
+</UserControl>

@@ -1,0 +1,288 @@
+<UserControl
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+  xmlns:vm="clr-namespace:EGGtCSPlatform.ViewModels"
+  x:Class="EGGtCSPlatform.Views.DeviceConnectionDialogView"
+  x:DataType="vm:DeviceConnectionDialogViewModel"
+  Width="520"
+  Height="328"
+  Background="Transparent"
+  mc:Ignorable="d"
+>
+  <UserControl.Resources>
+    <ControlTheme x:Key="ConnectionDialogLinkTheme" TargetType="Button">
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="Height" Value="32" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Foreground" Value="#6B7D99" />
+      <Setter Property="FontSize" Value="{DynamicResource FontSize14}" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <ContentPresenter
+            Content="{TemplateBinding Content}"
+            HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+            VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+          />
+        </ControlTemplate>
+      </Setter>
+      <Style Selector="^:pointerover">
+        <Setter Property="Foreground" Value="#3941B6" />
+      </Style>
+      <Style Selector="^:disabled">
+        <Setter Property="Opacity" Value="0.5" />
+      </Style>
+    </ControlTheme>
+    <ControlTheme x:Key="ConnectionDialogSecondaryButtonTheme" TargetType="Button">
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="Width" Value="75" />
+      <Setter Property="Height" Value="32" />
+      <Setter Property="Background" Value="White" />
+      <Setter Property="BorderBrush" Value="#E2E8F2" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="Foreground" Value="#232B38" />
+      <Setter Property="FontFamily" Value="{DynamicResource AlibabaPuHuiTi}" />
+    </ControlTheme>
+    <ControlTheme x:Key="ConnectionDialogPrimaryButtonTheme" TargetType="Button">
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="Width" Value="75" />
+      <Setter Property="Height" Value="32" />
+      <Setter Property="Background" Value="#3941B6" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="Foreground" Value="White" />
+      <Setter Property="FontFamily" Value="{DynamicResource AlibabaPuHuiTi}" />
+      <Style Selector="^:pointerover">
+        <Setter Property="Background" Value="#4C54D1" />
+      </Style>
+      <Style Selector="^:disabled">
+        <Setter Property="Opacity" Value="0.5" />
+      </Style>
+    </ControlTheme>
+  </UserControl.Resources>
+  <UserControl.Styles>
+    <Style Selector="TextBox.connection-input">
+      <Setter Property="Height" Value="32" />
+      <Setter Property="Padding" Value="12,0" />
+      <Setter Property="Background" Value="White" />
+      <Setter Property="BorderBrush" Value="#E2E8F2" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="FontSize" Value="{DynamicResource FontSize14}" />
+      <Setter Property="Foreground" Value="#232B38" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="TextBox.connection-input:disabled">
+      <Setter Property="Opacity" Value="1" />
+      <Setter Property="Background" Value="#F2F4F8" />
+      <Setter Property="BorderBrush" Value="#E4E8F0" />
+      <Setter Property="Foreground" Value="#8A98AD" />
+    </Style>
+    <Style Selector="ComboBox.connection-combo">
+      <Setter Property="Height" Value="32" />
+      <Setter Property="Padding" Value="12,0" />
+      <Setter Property="Background" Value="White" />
+      <Setter Property="BorderBrush" Value="#E2E8F2" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="FontSize" Value="{DynamicResource FontSize14}" />
+      <Setter Property="Foreground" Value="#232B38" />
+      <Setter Property="PlaceholderText" Value="请先搜索设备" />
+    </Style>
+  </UserControl.Styles>
+
+  <Border Background="White" CornerRadius="8">
+    <Grid Margin="24" RowDefinitions="24,24,32,8,32,16,32,16,32,32,32">
+      <Grid ColumnDefinitions="Auto,8,Auto,*,32">
+        <TextBlock
+          VerticalAlignment="Center"
+          FontFamily="{DynamicResource AlibabaPuHuiTi}"
+          FontWeight="Medium"
+          FontSize="{DynamicResource FontSize16}"
+          Foreground="#232B38"
+          Text="串口与下位机"
+        />
+        <Border
+          Grid.Column="2"
+          Height="24"
+          Padding="10,0"
+          Background="#1AE91919"
+          CornerRadius="12"
+          IsVisible="{Binding IsDisconnected}"
+        >
+          <StackPanel VerticalAlignment="Center" Orientation="Horizontal" Spacing="4">
+            <Image
+              Width="16"
+              Height="16"
+              Source="{SvgImage /Assets/Images/device-base-station-line.svg}"
+            />
+            <TextBlock
+              VerticalAlignment="Center"
+              FontSize="{DynamicResource FontSize14}"
+              Foreground="#E91919"
+              Text="{Binding ConnectionStateText}"
+            />
+          </StackPanel>
+        </Border>
+        <Border
+          Grid.Column="2"
+          Height="24"
+          Padding="10,0"
+          Background="#1A38A169"
+          CornerRadius="12"
+          IsVisible="{Binding IsConnected}"
+        >
+          <TextBlock
+            VerticalAlignment="Center"
+            FontSize="{DynamicResource FontSize14}"
+            Foreground="#38A169"
+            Text="{Binding ConnectionStateText}"
+          />
+        </Border>
+        <Button
+          Grid.Column="4"
+          Width="32"
+          Height="32"
+          Margin="0,-4,-8,0"
+          Padding="0"
+          Background="Transparent"
+          BorderThickness="0"
+          Command="{Binding CancelCommand}"
+          IsEnabled="{Binding CanInteract}"
+        >
+          <Path Data="M 1 1 L 13 13 M 13 1 L 1 13" Stroke="#232B38" StrokeThickness="1.5" />
+        </Button>
+      </Grid>
+
+      <TextBlock
+        Grid.Row="2"
+        Width="75"
+        HorizontalAlignment="Left"
+        VerticalAlignment="Center"
+        FontSize="{DynamicResource FontSize14}"
+        Foreground="#6B7D99"
+        Text="设备 IP"
+        TextAlignment="Right"
+      />
+      <TextBox
+        Grid.Row="2"
+        Margin="85,0,0,0"
+        Classes="connection-input"
+        IsEnabled="False"
+        Text="{Binding DeviceIp}"
+      />
+
+      <TextBlock
+        Grid.Row="4"
+        Width="75"
+        HorizontalAlignment="Left"
+        VerticalAlignment="Center"
+        FontSize="{DynamicResource FontSize14}"
+        Foreground="#6B7D99"
+        Text="设备端口"
+        TextAlignment="Right"
+      />
+      <TextBox
+        Grid.Row="4"
+        Margin="85,0,0,0"
+        Classes="connection-input"
+        IsEnabled="{Binding CanInteract}"
+        MaxLength="5"
+        Text="{Binding DevicePort, Mode=TwoWay}"
+      />
+
+      <TextBlock
+        Grid.Row="6"
+        Width="75"
+        HorizontalAlignment="Left"
+        VerticalAlignment="Center"
+        FontSize="{DynamicResource FontSize14}"
+        Foreground="#6B7D99"
+        Text="本机端口"
+        TextAlignment="Right"
+      />
+      <TextBox
+        Grid.Row="6"
+        Margin="85,0,0,0"
+        Classes="connection-input"
+        IsEnabled="False"
+        Text="{Binding LocalPort}"
+      />
+
+      <TextBlock
+        Grid.Row="8"
+        Width="75"
+        HorizontalAlignment="Left"
+        VerticalAlignment="Center"
+        FontSize="{DynamicResource FontSize14}"
+        Foreground="#6B7D99"
+        Text="设备选择"
+        TextAlignment="Right"
+      />
+      <Grid Grid.Row="8" Margin="85,0,0,0" ColumnDefinitions="256,12,*">
+        <ComboBox
+          Classes="connection-combo"
+          IsEnabled="{Binding CanInteract}"
+          ItemsSource="{Binding DiscoveredDevices}"
+          SelectedItem="{Binding SelectedCandidate, Mode=TwoWay}"
+        >
+          <ComboBox.ItemTemplate>
+            <DataTemplate x:DataType="vm:DeviceConnectionCandidateViewModel">
+              <TextBlock Text="{Binding DisplayText}" TextTrimming="CharacterEllipsis" />
+            </DataTemplate>
+          </ComboBox.ItemTemplate>
+        </ComboBox>
+        <Button
+          Grid.Column="2"
+          Command="{Binding SearchCommand}"
+          IsEnabled="{Binding CanInteract}"
+          Theme="{StaticResource ConnectionDialogLinkTheme}"
+        >
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <Image Width="16" Height="16" Source="{SvgImage /Assets/Images/device-search.svg}" />
+            <TextBlock VerticalAlignment="Center" Text="搜索设备" />
+          </StackPanel>
+        </Button>
+      </Grid>
+
+      <TextBlock
+        Grid.Row="9"
+        Margin="80,4,0,0"
+        FontSize="{DynamicResource FontSize12}"
+        Foreground="{Binding StatusColor}"
+        Text="{Binding StatusText}"
+        TextTrimming="CharacterEllipsis"
+      />
+
+      <Grid Grid.Row="10" ColumnDefinitions="*,Auto,8,Auto">
+        <TextBlock
+          VerticalAlignment="Center"
+          FontSize="{DynamicResource FontSize12}"
+          Foreground="#6B7D99"
+          Text="{Binding BusyText}"
+        />
+        <Button
+          Grid.Column="1"
+          Command="{Binding CancelCommand}"
+          Content="取消"
+          IsEnabled="{Binding CanInteract}"
+          Theme="{StaticResource ConnectionDialogSecondaryButtonTheme}"
+        />
+        <Button
+          Grid.Column="3"
+          Command="{Binding ConnectCommand}"
+          Content="连接"
+          IsEnabled="{Binding CanConnect}"
+          Theme="{StaticResource ConnectionDialogPrimaryButtonTheme}"
+        />
+      </Grid>
+    </Grid>
+  </Border>
+</UserControl>

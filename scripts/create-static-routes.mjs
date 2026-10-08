@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 
 const distDirectory = resolve("dist");
 const sourceEntry = resolve(distDirectory, "index.html");
-const routes = ["home", "setup", "history", "electrodes", "experiment"];
+const routes = ["login", "home", "setup", "history", "electrodes", "experiment", "device-lab", "workflow-prototype", "envelope-tacs-prototype", "single-stimulation-demo"];
 
 for (const route of routes) {
   const routeDirectory = resolve(distDirectory, route);

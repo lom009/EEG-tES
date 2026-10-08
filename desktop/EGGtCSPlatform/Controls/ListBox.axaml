@@ -1,0 +1,74 @@
+<ResourceDictionary
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  x:ClassModifier="internal"
+  x:CompileBindings="False"
+>
+  <Design.PreviewWith>
+    <Border Padding="20" Background="#F2F3F5" Height="200" Width="300">
+      <!-- Add Controls for Previewer Here -->
+      <StackPanel Spacing="10">
+        <ListBox>
+          <ListBoxItem>test</ListBoxItem>
+          <ListBoxItem>test</ListBoxItem>
+          <ListBoxItem>test</ListBoxItem>
+        </ListBox>
+      </StackPanel>
+    </Border>
+  </Design.PreviewWith>
+  <!-- Template and base states from Avalonia.Themes.Fluent 12.1.1 (MIT); see Fluent.LICENSE.txt. -->
+  <ControlTheme x:Key="{x:Type ListBox}" TargetType="ListBox">
+    <Setter Property="Foreground" Value="#303133" />
+    <Setter Property="CornerRadius" Value="3" />
+    <Setter Property="BorderThickness" Value="{DynamicResource PrimaryBorderThickness}" />
+    <Setter Property="BorderBrush" Value="#DCDFE6" />
+    <Setter Property="Background" Value="#FFFFFF" />
+    <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
+    <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
+    <Setter Property="ScrollViewer.IsScrollChainingEnabled" Value="True" />
+    <Setter Property="ScrollViewer.IsScrollInertiaEnabled" Value="True" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border
+          Name="border"
+          ClipToBounds="{TemplateBinding ClipToBounds}"
+          Background="{TemplateBinding Background}"
+          BorderBrush="{TemplateBinding BorderBrush}"
+          BorderThickness="{TemplateBinding BorderThickness}"
+          CornerRadius="{TemplateBinding CornerRadius}"
+        >
+          <ScrollViewer
+            Name="PART_ScrollViewer"
+            VerticalSnapPointsType="{TemplateBinding (ScrollViewer.VerticalSnapPointsType)}"
+            HorizontalSnapPointsType="{TemplateBinding (ScrollViewer.HorizontalSnapPointsType)}"
+            HorizontalScrollBarVisibility="{TemplateBinding (ScrollViewer.HorizontalScrollBarVisibility)}"
+            VerticalScrollBarVisibility="{TemplateBinding (ScrollViewer.VerticalScrollBarVisibility)}"
+            IsScrollChainingEnabled="{TemplateBinding (ScrollViewer.IsScrollChainingEnabled)}"
+            IsScrollInertiaEnabled="{TemplateBinding (ScrollViewer.IsScrollInertiaEnabled)}"
+            IsDeferredScrollingEnabled="{TemplateBinding (ScrollViewer.IsDeferredScrollingEnabled)}"
+            AllowAutoHide="{TemplateBinding (ScrollViewer.AllowAutoHide)}"
+            BringIntoViewOnFocusChange="{TemplateBinding (ScrollViewer.BringIntoViewOnFocusChange)}"
+          >
+            <ItemsPresenter
+              Name="PART_ItemsPresenter"
+              ItemsPanel="{TemplateBinding ItemsPanel}"
+              Margin="{TemplateBinding Padding}"
+            />
+          </ScrollViewer>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:pointerover, ^:focus">
+      <Setter Property="BorderBrush" Value="#409EFF" />
+    </Style>
+    <Style Selector="^:disabled">
+      <Setter Property="Background" Value="#F5F7FA" />
+      <Setter Property="BorderBrush" Value="#E4E7ED" />
+      <Setter Property="Foreground" Value="#C0C4CC" />
+      <Setter Property="Opacity" Value="1" />
+    </Style>
+    <Style Selector="^.draggable">
+      <Setter Property="ItemContainerTheme" Value="{StaticResource DraggableListBoxItemTheme}" />
+    </Style>
+  </ControlTheme>
+</ResourceDictionary>

@@ -1,0 +1,138 @@
+<Window
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+  xmlns:vm="clr-namespace:EGGtCSPlatform.ViewModels"
+  x:Class="EGGtCSPlatform.Views.ApplicationUpdateWindow"
+  x:DataType="vm:ApplicationUpdateViewModel"
+  Width="520"
+  Height="310"
+  CanResize="False"
+  Icon="/Assets/Images/icon.ico"
+  Title="软件更新"
+  WindowStartupLocation="CenterOwner"
+  mc:Ignorable="d"
+>
+  <Window.Styles>
+    <Style Selector="Button.primary">
+      <Setter Property="MinWidth" Value="92" />
+      <Setter Property="Height" Value="34" />
+      <Setter Property="Padding" Value="18,0" />
+      <Setter Property="Background" Value="#3941B6" />
+      <Setter Property="Foreground" Value="White" />
+      <Setter Property="CornerRadius" Value="6" />
+    </Style>
+    <Style Selector="Button.primary:pointerover">
+      <Setter Property="Background" Value="#4C54D1" />
+    </Style>
+    <Style Selector="Button.secondary">
+      <Setter Property="MinWidth" Value="92" />
+      <Setter Property="Height" Value="34" />
+      <Setter Property="Padding" Value="18,0" />
+      <Setter Property="Background" Value="White" />
+      <Setter Property="Foreground" Value="#232B38" />
+      <Setter Property="BorderBrush" Value="#D9DFEA" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="6" />
+    </Style>
+  </Window.Styles>
+
+  <Border Padding="28" Background="#FCFDFF">
+    <Grid RowDefinitions="Auto,Auto,*,Auto" RowSpacing="16">
+      <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+        <Border Width="32" Height="32" Background="#EEF0FF" CornerRadius="16">
+          <TextBlock
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            FontSize="{DynamicResource FontSize18}"
+            Foreground="#3941B6"
+            Text="⬆"
+          />
+        </Border>
+        <TextBlock
+          Grid.Column="1"
+          VerticalAlignment="Center"
+          FontFamily="{DynamicResource AlibabaPuHuiTi}"
+          FontSize="{DynamicResource FontSize20}"
+          FontWeight="SemiBold"
+          Foreground="#232B38"
+          Text="{Binding Title}"
+        />
+      </Grid>
+
+      <TextBlock
+        Grid.Row="1"
+        FontSize="{DynamicResource FontSize15}"
+        Foreground="#3E4F65"
+        Text="{Binding Message}"
+        TextWrapping="Wrap"
+      />
+
+      <StackPanel Grid.Row="2" Spacing="9">
+        <TextBlock
+          FontSize="{DynamicResource FontSize13}"
+          Foreground="#7A8BA8"
+          Text="{Binding StatusText}"
+          TextWrapping="Wrap"
+        />
+        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12" IsVisible="{Binding ShowProgress}">
+          <ProgressBar
+            Height="8"
+            VerticalAlignment="Center"
+            Minimum="0"
+            Maximum="100"
+            Value="{Binding Progress}"
+          />
+          <TextBlock
+            Grid.Column="1"
+            MinWidth="36"
+            VerticalAlignment="Center"
+            FontSize="{DynamicResource FontSize13}"
+            Foreground="#3941B6"
+            Text="{Binding ProgressText}"
+            TextAlignment="Right"
+          />
+        </Grid>
+        <Border Padding="10,8" Background="#FFF1F1" CornerRadius="5" IsVisible="{Binding HasError}">
+          <TextBlock
+            MaxHeight="48"
+            FontSize="{DynamicResource FontSize12}"
+            Foreground="#D64545"
+            Text="{Binding ErrorMessage}"
+            TextWrapping="Wrap"
+          />
+        </Border>
+      </StackPanel>
+
+      <StackPanel
+        Grid.Row="3"
+        HorizontalAlignment="Right"
+        Orientation="Horizontal"
+        Spacing="10"
+        IsVisible="{Binding !Busy}"
+      >
+        <Button
+          Classes="primary"
+          Command="{Binding PrimaryCommand}"
+          Content="{Binding PrimaryButtonText}"
+        />
+        <Button
+          Classes="secondary"
+          Command="{Binding LaterCommand}"
+          Content="稍后再说"
+          IsVisible="{Binding ShowSecondaryButton}"
+        />
+      </StackPanel>
+      <Button
+        Grid.Row="3"
+        HorizontalAlignment="Right"
+        Classes="secondary"
+        Command="{Binding CancelDownloadCommand}"
+        Content="取消下载"
+        IsEnabled="{Binding CanCancelDownload}"
+        IsVisible="{Binding IsDownloading}"
+      />
+    </Grid>
+  </Border>
+</Window>

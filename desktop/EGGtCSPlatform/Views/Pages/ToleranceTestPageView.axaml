@@ -1,0 +1,22 @@
+<UserControl
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+  xmlns:pages="clr-namespace:EGGtCSPlatform.ViewModels.Pages"
+  x:Class="EGGtCSPlatform.Views.Pages.ToleranceTestPageView"
+  x:DataType="pages:ToleranceTestPageViewModel"
+  mc:Ignorable="d"
+>
+  <Border Background="#F5F7FB">
+    <TextBlock
+      HorizontalAlignment="Center"
+      VerticalAlignment="Center"
+      FontFamily="{DynamicResource AlibabaPuHuiTi}"
+      FontWeight="Medium"
+      FontSize="{DynamicResource FontSize28}"
+      Foreground="#232B38"
+      Text="{Binding PageTitle}"
+    />
+  </Border>
+</UserControl>

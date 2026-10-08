@@ -1,0 +1,38 @@
+<ResourceDictionary
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:controls="clr-namespace:EGGtCSPlatform.Controls"
+  xmlns:pages="clr-namespace:EGGtCSPlatform.ViewModels.Pages"
+  x:ClassModifier="internal"
+  x:CompileBindings="False"
+>
+  <ControlTheme x:Key="StimulusSpinnerButtonTheme" TargetType="RepeatButton">
+    <Setter Property="MinWidth" Value="18" />
+    <Setter Property="MinHeight" Value="0" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Cursor" Value="Hand" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border x:Name="SpinnerButtonSurface" Background="{TemplateBinding Background}">
+          <ContentPresenter
+            Content="{TemplateBinding Content}"
+            HorizontalContentAlignment="Center"
+            VerticalContentAlignment="Center"
+          />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:pointerover /template/ Border#SpinnerButtonSurface">
+      <Setter Property="Background" Value="#EEF1F8" />
+    </Style>
+    <Style Selector="^:pressed /template/ Border#SpinnerButtonSurface">
+      <Setter Property="Background" Value="#E1E5F2" />
+    </Style>
+    <Style Selector="^:disabled">
+      <Setter Property="Cursor" Value="Arrow" />
+      <Setter Property="Opacity" Value="0.35" />
+    </Style>
+  </ControlTheme>
+</ResourceDictionary>

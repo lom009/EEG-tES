@@ -1,0 +1,111 @@
+<ResourceDictionary
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  x:ClassModifier="internal"
+  x:CompileBindings="False"
+>
+  <Design.PreviewWith>
+    <Border Padding="20" Background="#F5F7FA">
+      <!-- Add Controls for Previewer Here -->
+      <StackPanel Spacing="10">
+        <Label>Normal Label</Label>
+        <Label Classes="icon"></Label>
+        <Label Classes="icon-only"></Label>
+        <Label Classes="h1">Header 1</Label>
+        <Label Classes="h2">Header 2</Label>
+        <Label Classes="sub1">Sub header 1</Label>
+        <Label Classes="sub2">Sub header 2</Label>
+        <Label Classes="sub1 success">Sub header 1 Success</Label>
+        <Label Classes="h1 success">Header 1 Success</Label>
+        <Label Classes="icon-only icon-outline subtle-hover"></Label>
+      </StackPanel>
+    </Border>
+  </Design.PreviewWith>
+  <!-- Template and base states from Avalonia.Themes.Fluent 12.1.1 (MIT); see Fluent.LICENSE.txt. -->
+  <ControlTheme x:Key="{x:Type Label}" TargetType="Label">
+    <Setter Property="FontSize" Value="{DynamicResource FontSize14}" />
+    <Setter Property="Foreground" Value="#303133" />
+    <Setter Property="Padding" Value="3" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <ContentPresenter
+          Name="PART_ContentPresenter"
+          Background="{TemplateBinding Background}"
+          BorderBrush="{TemplateBinding BorderBrush}"
+          BorderThickness="{TemplateBinding BorderThickness}"
+          CornerRadius="{TemplateBinding CornerRadius}"
+          ContentTemplate="{TemplateBinding ContentTemplate}"
+          Content="{TemplateBinding Content}"
+          Padding="{TemplateBinding Padding}"
+          VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+          HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+        />
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="RecognizesAccessKey" Value="True" />
+    </Style>
+    <Style Selector="^.h1">
+      <Setter Property="FontSize" Value="{DynamicResource FontSize34}" />
+      <Setter Property="FontFamily" Value="{DynamicResource AlibabaPuHuiTi}" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="Margin" Value="0" />
+    </Style>
+    <Style Selector="^.h2">
+      <Setter Property="Padding" Value="0 0 8 0" />
+      <Setter Property="FontFamily" Value="{DynamicResource AlibabaPuHuiTi}" />
+      <Setter Property="FontSize" Value="{DynamicResource FontSize20}" />
+    </Style>
+    <Style Selector="^.sub1">
+      <Setter Property="FontSize" Value="{DynamicResource FontSize13}" />
+      <Setter Property="FontFamily" Value="{DynamicResource AlibabaPuHuiTi}" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="Margin" Value="0 -5 0 0" />
+      <Setter Property="Foreground" Value="#F56C6C" />
+    </Style>
+    <Style Selector="^.sub2">
+      <Setter Property="FontSize" Value="{DynamicResource FontSize11}" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="Margin" Value="0 -5 0 0" />
+    </Style>
+    <Style Selector="^.success">
+      <Setter Property="Foreground" Value="#67C23A" />
+    </Style>
+    <Style Selector="^.info">
+      <Setter Property="Foreground" Value="#409EFF" />
+    </Style>
+    <Style Selector="^.warning">
+      <Setter Property="Foreground" Value="#E6A23C" />
+    </Style>
+    <Style Selector="^.alert, ^.danger, ^.error">
+      <Setter Property="Foreground" Value="#F56C6C" />
+    </Style>
+    <Style Selector="^:disabled">
+      <Setter Property="Foreground" Value="#C0C4CC" />
+      <Setter Property="Opacity" Value="1" />
+    </Style>
+    <Style Selector="^.icon, ^.icon-only">
+      <Setter Property="FontFamily" Value="{DynamicResource PhosphorFill}" />
+      <Setter Property="FontSize" Value="19" />
+      <Setter Property="Padding" Value="0 2.5 -0.4 3" />
+      <Setter Property="Margin" Value="0 0 5 0" />
+    </Style>
+    <Style Selector="^.icon-only">
+      <Setter Property="Margin" Value="0" />
+    </Style>
+    <Style Selector="^.subtle-hover">
+      <Setter Property="Transitions">
+        <Transitions>
+          <BrushTransition Property="Foreground" Duration="0:0:0.1" />
+        </Transitions>
+      </Setter>
+      <Setter Property="Foreground" Value="#909399" />
+      <Style Selector="^:pointerover">
+        <Setter Property="Foreground" Value="#409EFF" />
+      </Style>
+    </Style>
+    <Style Selector="^.icon-outline">
+      <Setter Property="FontFamily" Value="{DynamicResource Phosphor}" />
+    </Style>
+  </ControlTheme>
+</ResourceDictionary>

@@ -1,0 +1,266 @@
+.device-lab-shell {
+  min-height: 100vh;
+  padding: 20px;
+  color: #232b38;
+  background: #edf0f9;
+}
+
+.device-lab-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 16px;
+  padding: 16px;
+  background: #fff;
+  border-radius: 10px;
+}
+
+.device-lab-header h1,
+.device-lab-header p {
+  margin: 0;
+}
+
+.device-lab-header p {
+  margin-top: 4px;
+  color: #6b7d99;
+}
+
+.device-lab-header > div {
+  flex: 1;
+}
+
+.device-lab-demo-badge {
+  padding: 6px 10px;
+  color: #8a5600;
+  background: #fff0c7;
+  border-radius: 4px;
+  font-weight: 700;
+}
+
+.device-lab-summary {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.device-lab-status {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px;
+  background: #fff;
+  border: 1px solid #dce2ec;
+  border-radius: 8px;
+}
+
+.device-lab-status span {
+  color: #6b7d99;
+  font-size: 12px;
+}
+
+.device-lab-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.device-lab-card {
+  padding: 16px;
+  background: #fff;
+  border: 1px solid #dce2ec;
+  border-radius: 10px;
+  overflow: auto;
+}
+
+.device-lab-card h2 {
+  margin: 0 0 14px;
+  font-size: 18px;
+}
+
+.device-lab-card button,
+.device-lab-card select,
+.device-lab-card input,
+.device-lab-header button {
+  min-height: 36px;
+  padding: 7px 10px;
+  border: 1px solid #acb7c8;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.device-lab-card button:not(:disabled),
+.device-lab-header button {
+  cursor: pointer;
+}
+
+.device-lab-card button:disabled {
+  color: #8c98aa;
+  background: #edf0f5;
+}
+
+.device-lab-card button.is-selected {
+  color: #fff;
+  border-color: #3941b6;
+  background: #3941b6;
+}
+
+.device-lab-card button.is-danger:not(:disabled) {
+  color: #fff;
+  border-color: #e91919;
+  background: #e91919;
+}
+
+.device-lab-card label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.device-lab-actions,
+.device-lab-option-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.device-lab-option-list button {
+  flex: 1 1 180px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  text-align: left;
+}
+
+.device-lab-option-list small {
+  font-size: 12px;
+}
+
+.device-lab-parameters {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(120px, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.device-lab-card table {
+  width: 100%;
+  margin-top: 12px;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.device-lab-card th,
+.device-lab-card td {
+  padding: 6px;
+  border-bottom: 1px solid #e7ebf2;
+  text-align: left;
+}
+
+.device-lab-check {
+  margin-bottom: 10px;
+  padding: 8px;
+  border-radius: 6px;
+}
+
+.device-lab-check.is-pass {
+  color: #237a4b;
+  background: #e9f8f0;
+}
+
+.device-lab-check.is-blocked,
+.device-lab-error {
+  color: #b42318;
+  background: #fff0ee;
+}
+
+.device-lab-error {
+  margin: 6px 0;
+  padding: 6px;
+}
+
+.device-lab-json {
+  margin-top: 10px;
+}
+
+.device-lab-json pre {
+  max-height: 320px;
+  overflow: auto;
+  padding: 10px;
+  color: #d8e3f2;
+  background: #182231;
+  font-size: 12px;
+}
+
+.device-lab-muted {
+  color: #6b7d99;
+}
+
+.device-lab-events ol {
+  max-height: 350px;
+  margin: 0;
+  padding-left: 22px;
+  overflow: auto;
+}
+
+.device-lab-events li {
+  display: grid;
+  grid-template-columns: 105px 170px 1fr;
+  gap: 8px;
+  padding: 5px 0;
+  border-bottom: 1px solid #edf0f5;
+  font-size: 12px;
+}
+
+.device-lab-events time {
+  color: #6b7d99;
+}
+
+.device-lab-signal-meta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.device-lab-channel-values {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(72px, 1fr));
+  gap: 8px;
+  padding: 0;
+  list-style: none;
+}
+
+.device-lab-channel-values li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px;
+  border: 1px solid #dce2ec;
+  border-radius: 6px;
+  background: #f7f9fc;
+}
+
+.device-lab-channel-values span {
+  color: #50617c;
+  font-variant-numeric: tabular-nums;
+}
+
+.device-lab-boundary {
+  border-color: #e5c15e;
+  background: #fffdf5;
+}
+
+@media (max-width: 900px) {
+  .device-lab-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .device-lab-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .device-lab-parameters {
+    grid-template-columns: repeat(2, minmax(120px, 1fr));
+  }
+}

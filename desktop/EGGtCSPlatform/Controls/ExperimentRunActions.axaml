@@ -1,0 +1,108 @@
+<ResourceDictionary
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:controls="clr-namespace:EGGtCSPlatform.Controls"
+  xmlns:pages="clr-namespace:EGGtCSPlatform.ViewModels.Pages"
+  x:CompileBindings="False"
+>
+  <ControlTheme
+    x:Key="{x:Type controls:ExperimentRunActions}"
+    TargetType="controls:ExperimentRunActions"
+  >
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Panel>
+          <Grid IsVisible="{TemplateBinding IsCompletion, Converter={x:Static BoolConverters.Not}}">
+            <Grid ColumnDefinitions="*,16,*" IsVisible="{TemplateBinding IsEmergencyOnly, Converter={x:Static BoolConverters.Not}}">
+            <Button
+              Command="{TemplateBinding EmergencyCommand}"
+              IsEnabled="{TemplateBinding IsEmergencyEnabled}"
+              Height="{TemplateBinding ButtonHeight}"
+              Theme="{StaticResource RunPageDangerButtonTheme}"
+            >
+              <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Spacing="8">
+                <Image Width="20" Height="20" VerticalAlignment="Center" Source="{SvgImage /Assets/Images/experiment-run-emergency-stop.svg}" />
+                <TextBlock
+                  Classes="experimentRunAction"
+                  VerticalAlignment="Center"
+                  Foreground="White"
+                  Text="紧急停止"
+                />
+              </StackPanel>
+            </Button>
+            <Button
+              Grid.Column="2"
+              Command="{TemplateBinding PrimaryCommand}"
+              IsEnabled="{TemplateBinding IsPrimaryEnabled}"
+              Height="{TemplateBinding ButtonHeight}"
+              Theme="{StaticResource RunPageMonitorPrimaryButtonTheme}"
+            >
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock
+                  Classes="experimentRunAction"
+                  VerticalAlignment="Center"
+                  Foreground="White"
+                  Text="{TemplateBinding PrimaryText}"
+                />
+                <Path
+                  Width="12"
+                  Height="16"
+                  VerticalAlignment="Center"
+                  Data="M 0,0 L 12,8 L 0,16 Z"
+                  Fill="White"
+                  IsVisible="{TemplateBinding ShowStartIcon}"
+                />
+              </StackPanel>
+            </Button>
+            </Grid>
+            <Button
+              Height="32"
+              VerticalAlignment="Center"
+              Command="{TemplateBinding EmergencyCommand}"
+              IsEnabled="{TemplateBinding IsEmergencyEnabled}"
+              IsVisible="{TemplateBinding IsEmergencyOnly}"
+              Theme="{StaticResource RunPageDangerButtonTheme}"
+            >
+              <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Spacing="8">
+                <Image Width="20" Height="20" VerticalAlignment="Center" Source="{SvgImage /Assets/Images/experiment-run-emergency-stop.svg}" />
+                <TextBlock Classes="experimentRunAction" VerticalAlignment="Center" Foreground="White" Text="紧急停止" />
+              </StackPanel>
+            </Button>
+          </Grid>
+          <Button
+            IsVisible="{TemplateBinding IsCompletion}"
+            Command="{TemplateBinding CompletionCommand}"
+            IsEnabled="{TemplateBinding IsCompletionEnabled}"
+            Height="{TemplateBinding ButtonHeight}"
+            HorizontalAlignment="Stretch"
+            Theme="{StaticResource RunPageCompletionButtonTheme}"
+          >
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8">
+              <Grid Width="18" Height="18" VerticalAlignment="Center">
+                <Path
+                  Data="M 6,1 L 12,1 L 17,6 L 17,12 L 12,17 L 6,17 L 1,12 L 1,6 Z"
+                  Stroke="White"
+                  StrokeThickness="1.5"
+                />
+                <TextBlock
+                  Classes="experimentRunAction"
+                  HorizontalAlignment="Center"
+                  VerticalAlignment="Center"
+                  FontSize="11"
+                  Foreground="White"
+                  Text="!"
+                />
+              </Grid>
+              <TextBlock
+                Classes="experimentRunAction"
+                VerticalAlignment="Center"
+                Foreground="White"
+                Text="{TemplateBinding CompletionText}"
+              />
+            </StackPanel>
+          </Button>
+        </Panel>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+</ResourceDictionary>

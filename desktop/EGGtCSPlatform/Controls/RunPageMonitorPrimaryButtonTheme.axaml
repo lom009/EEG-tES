@@ -1,0 +1,15 @@
+<ResourceDictionary
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:controls="clr-namespace:EGGtCSPlatform.Controls"
+  xmlns:pages="clr-namespace:EGGtCSPlatform.ViewModels.Pages"
+  x:CompileBindings="False"
+>
+  <ControlTheme
+    x:Key="RunPageMonitorPrimaryButtonTheme"
+    TargetType="Button"
+    BasedOn="{StaticResource RunPagePrimaryButtonTheme}"
+  >
+    <Setter Property="Background" Value="#38A169" />
+  </ControlTheme>
+</ResourceDictionary>

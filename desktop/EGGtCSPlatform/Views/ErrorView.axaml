@@ -1,0 +1,39 @@
+<UserControl
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+  xmlns:vm="clr-namespace:EGGtCSPlatform.ViewModels"
+  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+  mc:Ignorable="d"
+  d:DesignWidth="500"
+  d:DesignHeight="350"
+  MinWidth="500"
+  MinHeight="350"
+  Background="{StaticResource PrimaryBackground}"
+  Foreground="{StaticResource PrimaryForeground}"
+  x:DataType="vm:ErrorViewModel"
+  x:Class="EGGtCSPlatform.Views.ErrorView"
+  xmlns:design="clr-namespace:EGGtCSPlatform.Design"
+  d:DataContext="{x:Static design:DesignData.ErrorViewModel}"
+>
+  <Grid Margin="20" RowDefinitions="Auto, Auto, Auto, *, Auto">
+    <Label Grid.Row="0" Classes="h2" Content="程序发生异常" />
+    <Label
+      Grid.Row="1"
+      Margin="0 10"
+      Classes="sub1"
+      Content="程序遇到了未处理的错误，请记录以下信息并联系技术支持。"
+    />
+    <Label Grid.Row="2" Content="{Binding Title}" />
+    <TextBox Grid.Row="3" TextWrapping="Wrap" IsReadOnly="True" Text="{Binding Description}" />
+    <Button
+      Grid.Row="4"
+      MinWidth="96"
+      Margin="0,16,0,0"
+      Padding="18,8"
+      HorizontalAlignment="Right"
+      Click="ConfirmButton_OnClick"
+      Content="{Binding ConfirmText}"
+    />
+  </Grid>
+</UserControl>

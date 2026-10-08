@@ -1,0 +1,23 @@
+<ResourceDictionary
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:controls="clr-namespace:EGGtCSPlatform.Controls"
+  xmlns:pages="clr-namespace:EGGtCSPlatform.ViewModels.Pages"
+  x:CompileBindings="False"
+>
+  <ControlTheme
+    x:Key="{x:Type controls:TimelineRangeNavigator}"
+    TargetType="controls:TimelineRangeNavigator"
+  >
+    <Setter Property="Height" Value="26" />
+    <Setter Property="ClipToBounds" Value="False" />
+    <Setter Property="HandleImage" Value="{SvgImage /Assets/Images/timeline-range-handle.svg}" />
+    <Setter Property="TrackBrush" Value="#ECF2F8" />
+    <Setter Property="SelectionBrush" Value="#333686FF" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Grid Background="Transparent" />
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+</ResourceDictionary>

@@ -46,7 +46,7 @@ assert.equal(
 );
 
 assert.equal(MIN_DURATION_MS, 10, "duration lower bound should be 10 ms");
-assert.equal(MAX_DURATION_MS, 60_000, "duration upper bound should be 60 seconds");
+assert.equal(MAX_DURATION_MS, 3_600_000, "duration upper bound should be 60 minutes");
 assert.equal(MIN_CYCLE_COUNT, 1, "cycle count lower bound should be one");
 assert.equal(MAX_CYCLE_COUNT, 99, "cycle count upper bound should be 99");
 
@@ -72,10 +72,10 @@ assert.ok(Number.isNaN(toMilliseconds("", "ms")), "empty input should be invalid
 assert.ok(Number.isNaN(toMilliseconds("abc", "s")), "non-numeric input should be invalid");
 
 assert.equal(clampDurationMs(1), 10, "duration should clamp to the minimum");
-assert.equal(clampDurationMs(90_000), 60_000, "duration should clamp to the maximum");
+assert.equal(clampDurationMs(4_000_000), 3_600_000, "duration should clamp to the maximum");
 assert.equal(normalizeDurationInput("", "ms", 1200), 1200, "empty input should restore the previous duration");
 assert.equal(normalizeDurationInput("0.001", "s", 1200), 10, "valid input below range should clamp");
-assert.equal(normalizeDurationInput("120", "s", 1200), 60_000, "valid input above range should clamp");
+assert.equal(normalizeDurationInput("4000", "s", 1200), 3_600_000, "valid input above range should clamp");
 
 assert.equal(formatDurationForInput(1500, "ms"), "1500");
 assert.equal(formatDurationForInput(1500, "s"), "1.5");
@@ -128,8 +128,8 @@ assert.match(appSource, /role="listbox"/, "unit controls should render a custom 
 assert.match(appSource, /formatDurationLabel\(phaseDurationMs\[stage\.id\], phaseUnits\[stage\.id\]\)/, "timeline labels should use configured values");
 assert.match(
   appSource,
-  /<div className="experiment-status-row"[\s\S]*?<button className="experiment-back"[\s\S]*?返回电极配置/,
-  "return-to-electrodes action should be the first control in the status row",
+  /<div className="experiment-status-row"[\s\S]*?<button className="experiment-back"[\s\S]*?返回\/时序与运行/,
+  "return-to-sequencing action should be the first control in the experiment information row",
 );
 assert.match(appSource, /value=\{cycleCountDraft\}/, "cycle count should render as an editable controlled input");
 assert.match(appSource, /stepCycleCount\(1\)/, "cycle control should expose an increment action");
