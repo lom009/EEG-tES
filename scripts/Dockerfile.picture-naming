@@ -1,0 +1,26 @@
+FROM python:3.11-slim-bookworm AS assets
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl && rm -rf /var/lib/apt/lists/*
+RUN set -eu; \
+    mkdir /asr; \
+    curl -fLsS --retry 3 --connect-timeout 15 -o /tmp/runner.tgz https://github.com/QwenAudio/SenseVoice/releases/download/runtime-llamacpp-v0.2.1/funasr-llamacpp-linux-x64.tar.gz; \
+    echo '1bc83dd36d11b1a2b9a45faaf77a5d1014000ac641c93dfec73d24d71ec51caf  /tmp/runner.tgz' | sha256sum -c -; \
+    tar -xzf /tmp/runner.tgz -C /asr ./llama-funasr-paraformer; \
+    rm /tmp/runner.tgz; \
+    curl -fLsS --retry 3 --connect-timeout 15 -o /asr/paraformer-q8.gguf https://huggingface.co/FunAudioLLM/Paraformer-GGUF/resolve/45a1221b84fc3403f796b8efef9feedbf9161653/paraformer-q8.gguf; \
+    echo '42bf76ea1575a336aaca4c1b7c01a82b79113e6d04d0d6b799561bfcf07ee011  /asr/paraformer-q8.gguf' | sha256sum -c -; \
+    curl -fLsS --retry 3 --connect-timeout 15 -o /asr/kTGHZ2013.txt https://raw.githubusercontent.com/mozillazg/pinyin-data/9b03af029579661401c9e8daba180dcc3c908750/kTGHZ2013.txt; \
+    echo '83be5ecdfe0b8fcc1202ae45882a2f983c013db87ba68369d94a4dad775382bb  /asr/kTGHZ2013.txt' | sha256sum -c -; \
+    curl -fLsS --retry 3 --connect-timeout 15 -o /asr/pinyin-data-LICENSE https://raw.githubusercontent.com/mozillazg/pinyin-data/9b03af029579661401c9e8daba180dcc3c908750/LICENSE
+
+FROM python:3.11-slim-bookworm
+WORKDIR /app
+RUN apt-get update && apt-get install -y --no-install-recommends libgomp1 && rm -rf /var/lib/apt/lists/*
+RUN printf '%s\n' 'pypinyin==0.55.0 --hash=sha256:d53b1e8ad2cdb815fb2cb604ed3123372f5a28c6f447571244aca36fc62a286f' >/tmp/requirements.txt && \
+    pip install --no-cache-dir --require-hashes --only-binary=:all: -r /tmp/requirements.txt && rm /tmp/requirements.txt
+COPY --from=assets /asr /app/asr
+COPY scripts/picture-naming-asr-server.py scripts/picture_naming_scoring.py /app/scripts/
+COPY picture-naming-tdcs-prototype.html /app/
+ENV NAMING_ASR_DIR=/app/asr NAMING_HOST=0.0.0.0 PORT=10000 PYTHONUNBUFFERED=1
+USER 65534:65534
+EXPOSE 10000
+CMD ["python3", "scripts/picture-naming-asr-server.py"]

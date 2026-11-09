@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: eeg-tes-picture-naming
+    runtime: docker
+    branch: codex/picture-naming-online-demo
+    plan: free
+    region: singapore
+    dockerfilePath: ./scripts/Dockerfile.picture-naming
+    healthCheckPath: /api/naming/status
+    autoDeployTrigger: "off"
