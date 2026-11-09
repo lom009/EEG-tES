@@ -12,7 +12,7 @@ RUN set -eu; \
     echo '83be5ecdfe0b8fcc1202ae45882a2f983c013db87ba68369d94a4dad775382bb  /asr/kTGHZ2013.txt' | sha256sum -c -; \
     curl -fLsS --retry 3 --connect-timeout 15 -o /asr/pinyin-data-LICENSE https://raw.githubusercontent.com/mozillazg/pinyin-data/9b03af029579661401c9e8daba180dcc3c908750/LICENSE
 
-FROM python:3.11-slim-bookworm
+FROM python:3.11-slim-trixie
 WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends libgomp1 && rm -rf /var/lib/apt/lists/*
 RUN printf '%s\n' 'pypinyin==0.55.0 --hash=sha256:d53b1e8ad2cdb815fb2cb604ed3123372f5a28c6f447571244aca36fc62a286f' >/tmp/requirements.txt && \
@@ -22,5 +22,6 @@ COPY scripts/picture-naming-asr-server.py scripts/picture_naming_scoring.py /app
 COPY picture-naming-tdcs-prototype.html /app/
 ENV NAMING_ASR_DIR=/app/asr NAMING_HOST=0.0.0.0 PORT=10000 PYTHONUNBUFFERED=1
 USER 65534:65534
+RUN python3 scripts/picture-naming-asr-server.py --check-model
 EXPOSE 10000
 CMD ["python3", "scripts/picture-naming-asr-server.py"]

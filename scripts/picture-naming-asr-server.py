@@ -12,6 +12,7 @@ import threading
 import wave
 from array import array
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from math import sin, tau
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
@@ -67,6 +68,20 @@ def evaluate(item, payload):
     baseline = '错误' if normalize(transcript) in KNOWN_ANSWERS else '待复核'
     verdict, match = SCORER.score(CATALOG[item], transcript, baseline)
     return dict(item=item, transcript=transcript, verdict=verdict, match=match)
+
+
+def check_model():
+    # Exercise the native model in the final container without using a voice recording.
+    payload = io.BytesIO()
+    samples = array('h', (int(800 * sin(tau * 220 * i / 16000)) for i in range(16000)))
+    with wave.open(payload, 'wb') as audio:
+        audio.setparams((1, 2, 16000, 0, 'NONE', 'not compressed'))
+        audio.writeframes(samples.tobytes())
+    try:
+        evaluate('apple', payload.getvalue())
+    except subprocess.CalledProcessError as error:
+        raise SystemExit(error.stderr or str(error)) from error
+    print('Paraformer model smoke test passed', flush=True)
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -136,9 +151,12 @@ class Handler(BaseHTTPRequestHandler):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--check-model', action='store_true')
     parser.add_argument('--host', default=os.environ.get('NAMING_HOST', '127.0.0.1'))
     parser.add_argument('--port', type=int, default=int(os.environ.get('PORT', '7192')))
     args = parser.parse_args()
+    if args.check_model:
+        return check_model()
     server = ThreadingHTTPServer((args.host, args.port), Handler)
     url = PUBLIC_ORIGIN or f'http://127.0.0.1:{server.server_port}'
     print(f'{url}{PREVIEW}?preview=run', flush=True)
