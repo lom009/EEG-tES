@@ -236,7 +236,7 @@ async function finishLocalAnswer(){
   s.voiceTrial.audioUrl=audioUrl;
   const controller=new AbortController();
   asrRequest=controller;
-  const timer=setTimeout(()=>controller.abort(),14500);
+  const timer=setTimeout(()=>controller.abort(),hostedAsr?52000:14500);
   try{
    const response=await fetch('/api/naming/score?item='+encodeURIComponent(item.key),{
     method:'POST',headers:{'Content-Type':'audio/wav'},body:wav,signal:controller.signal

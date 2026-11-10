@@ -21,6 +21,7 @@ COPY --from=assets /asr /app/asr
 COPY scripts/picture-naming-asr-server.py scripts/picture_naming_scoring.py /app/scripts/
 COPY picture-naming-tdcs-prototype.html /app/
 ENV NAMING_ASR_DIR=/app/asr NAMING_HOST=0.0.0.0 PORT=10000 PYTHONUNBUFFERED=1
+ENV OMP_THREAD_LIMIT=1 OMP_WAIT_POLICY=PASSIVE
 USER 65534:65534
 RUN python3 scripts/picture-naming-asr-server.py --check-model
 EXPOSE 10000

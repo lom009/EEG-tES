@@ -32,6 +32,7 @@ CATALOG = {'apple': ('苹果',), 'cup': ('杯子',), 'key': ('钥匙',), 'umbrel
 KNOWN_ANSWERS = {word for answers in CATALOG.values() for word in answers}
 MODEL_SLOT = threading.BoundedSemaphore(1)
 PUBLIC_ORIGIN = (os.environ.get('NAMING_PUBLIC_ORIGIN') or os.environ.get('RENDER_EXTERNAL_URL') or '').rstrip('/')
+ASR_TIMEOUT = 45 if PUBLIC_ORIGIN else 12
 PREVIEW = '/picture-naming-tdcs-prototype.html'
 MAX_WAV_BYTES = 257000
 MAX_FRAMES = 16000 * 8
@@ -63,7 +64,7 @@ def evaluate(item, payload):
         path.write_bytes(payload)
         # The model receives audio only. The current picture is used afterward.
         result = subprocess.run([str(ENGINE), '-m', str(MODEL), '-a', str(path)],
-                                capture_output=True, text=True, check=True, timeout=12)
+                                capture_output=True, text=True, check=True, timeout=ASR_TIMEOUT)
     transcript = result.stdout.strip()
     baseline = '错误' if normalize(transcript) in KNOWN_ANSWERS else '待复核'
     verdict, match = SCORER.score(CATALOG[item], transcript, baseline)
@@ -143,7 +144,12 @@ class Handler(BaseHTTPRequestHandler):
         except (ValueError, wave.Error, EOFError, TimeoutError) as error:
             message = str(error) if isinstance(error, ValueError) else '录音无法读取，请回听后评分'
             self.reply(400, {'error': message})
-        except (OSError, subprocess.SubprocessError):
+        except subprocess.TimeoutExpired:
+            self.log_error('Paraformer inference timed out after %d seconds', ASR_TIMEOUT)
+            self.reply(503, {'error': '识别超时，请回听后评分'})
+        except (OSError, subprocess.SubprocessError) as error:
+            self.log_error('Paraformer inference failed (%s, code %s)', type(error).__name__,
+                           getattr(error, 'returncode', getattr(error, 'errno', 'unknown')))
             self.reply(503, {'error': '本地识别未完成，请回听后评分'})
         finally:
             MODEL_SLOT.release()
