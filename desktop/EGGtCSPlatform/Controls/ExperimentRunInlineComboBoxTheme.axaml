@@ -20,4 +20,39 @@
     <Setter Property="FontSize" Value="{DynamicResource FontSize14}" />
     <Setter Property="HorizontalContentAlignment" Value="Left" />
   </ControlTheme>
+  <ControlTheme x:Key="ExperimentRunWaveformComboBoxTheme" TargetType="ComboBox"
+                BasedOn="{StaticResource ExperimentRunInlineComboBoxTheme}">
+    <Setter Property="Height" Value="24" />
+    <Setter Property="MinWidth" Value="0" />
+    <Setter Property="Foreground" Value="{DynamicResource ProductText}" />
+    <!-- Figma 301:4780: selected text, 2px gap, original 20px SVG arrow. -->
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Grid ColumnDefinitions="*,20">
+          <Border x:Name="PART_Background" Grid.ColumnSpan="2"
+                  Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                  BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{TemplateBinding CornerRadius}" />
+          <ContentControl x:Name="PART_SelectedContent" Margin="0,0,2,0"
+                          HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                          VerticalContentAlignment="Center" Content="{TemplateBinding SelectionBoxItem}"
+                          ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                          Foreground="{TemplateBinding Foreground}" />
+          <Image x:Name="PART_DropDownArrow" Grid.Column="1" Width="20" Height="20"
+                 VerticalAlignment="Center" Source="{SvgImage /Assets/Images/waveform/toolbar-arrow-down-20.svg}" />
+          <Popup Name="PART_Popup" MinWidth="{Binding Bounds.Width, RelativeSource={RelativeSource TemplatedParent}}"
+                 MaxHeight="{TemplateBinding MaxDropDownHeight}" IsLightDismissEnabled="True"
+                 IsOpen="{TemplateBinding IsDropDownOpen, Mode=TwoWay}" Placement="BottomEdgeAlignedLeft"
+                 PlacementTarget="{Binding #PART_Background}">
+            <Border Margin="0,4,0,0" Padding="0,3" Background="{DynamicResource ProductSurface}"
+                    BorderBrush="{DynamicResource ProductStimulusInputBorder}" BorderThickness="1"
+                    BoxShadow="0 8 22 0 #26152538" CornerRadius="8" ClipToBounds="True">
+              <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+                <ItemsPresenter Name="PART_ItemsPresenter" ItemsPanel="{TemplateBinding ItemsPanel}" />
+              </ScrollViewer>
+            </Border>
+          </Popup>
+        </Grid>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
 </ResourceDictionary>

@@ -53,7 +53,8 @@ public partial class ExperimentRunPageViewModel : PageViewModel, IDisposable
     private readonly ExperimentRunTimingOptions _timingOptions;
     private readonly IExperimentRunErrorDialogService? _errorDialogService;
     private readonly IEegHistoryWindowProvider? _historyWindowProvider;
-    private readonly IReadOnlyDictionary<int, string> _rawPacketChannelNames;
+    private IReadOnlyDictionary<int, string> _rawPacketChannelNames;
+    private readonly IEegPhysicalChannelMappingService? _eegChannelMappings;
     private readonly IExperimentRunPersistenceCoordinator? _persistence;
     private readonly IEegExportService? _exportService;
     private readonly DialogService? _dialogs;
@@ -293,6 +294,7 @@ public partial class ExperimentRunPageViewModel : PageViewModel, IDisposable
         _errorDialogService = errorDialogService;
         _historyWindowProvider = historyWindowProvider;
         _persistence = persistence;
+        _eegChannelMappings = eegChannelMappings;
         _exportService = exportService;
         _dialogs = dialogs;
         _deviceSelection = deviceSelection;
@@ -318,7 +320,7 @@ public partial class ExperimentRunPageViewModel : PageViewModel, IDisposable
             ?? new Dictionary<int, string>();
         if (routeData.HistoricalResult is null)
             _runService.TelemetryReceived += OnTelemetryReceived;
-        HeaderBadges =
+        _headerBadges =
         [
             new PageHeaderBadgeViewModel("患者ID", routeData.SubjectId),
             new PageHeaderBadgeViewModel("实验ID", routeData.ExperimentId),
@@ -399,8 +401,7 @@ public partial class ExperimentRunPageViewModel : PageViewModel, IDisposable
         RecoveryStage = allStages.Single(stage => stage.Stage == ExperimentRunStage.Recovery);
         Stages = new(
             allStages.Where(stage =>
-                !IsAcquisitionOnly
-                || stage.Stage is ExperimentRunStage.Acquisition or ExperimentRunStage.Blanking
+                !IsAcquisitionOnly || stage.Stage == ExperimentRunStage.Acquisition
             )
         );
         BlankingStage.SetDurationMilliseconds(_timingOptions.BlankingDurationMilliseconds);
@@ -461,14 +462,45 @@ public partial class ExperimentRunPageViewModel : PageViewModel, IDisposable
             InitializeHistoricalResult(historical);
     }
 
-    public override IReadOnlyList<PageHeaderBadgeViewModel> HeaderBadges { get; }
+    private IReadOnlyList<PageHeaderBadgeViewModel> _headerBadges = [];
+    public override IReadOnlyList<PageHeaderBadgeViewModel> HeaderBadges => _headerBadges;
 
-    public override object? HeaderAction => IsHistoricalResult ? null : this;
+    public override object? HeaderAction => IsHistoricalResult || IsAcquisitionOnly ? null : this;
 
     public override bool CanGoBack =>
         IsTimingSetup || IsEmergencyStopped || IsCompleted || IsResults;
 
-    public ExperimentRunRouteData RouteData { get; }
+    public ExperimentRunRouteData RouteData { get; private set; }
+
+    public string? HistoricalConfigurationWarning =>
+        RouteData.HistoricalResult?.ConfigurationWarning;
+    public bool HasHistoricalConfigurationWarning =>
+        !string.IsNullOrEmpty(HistoricalConfigurationWarning);
+
+    public override void UpdateExperimentIdentity(
+        long previousId,
+        long id,
+        string code,
+        EGGtCSPlatform.MainApp.ExperimentConfigurationTemplate? configuration = null
+    )
+    {
+        if (RouteData.ExperimentDatabaseId != previousId || IsHistoricalResult)
+            return;
+        RouteData = RouteData with
+        {
+            ExperimentDatabaseId = id,
+            ExperimentId = code,
+            ImportedTiming = configuration?.Timing ?? RouteData.ImportedTiming,
+        };
+        _headerBadges =
+        [
+            new("患者ID", RouteData.SubjectId),
+            new("实验ID", code),
+            PageHeaderBadgeViewModel.CreateExperimentMode(RouteData.CreationMode),
+        ];
+        OnPropertyChanged(nameof(RouteData));
+        OnPropertyChanged(nameof(HeaderBadges));
+    }
 
     public double WaveformStrokeThickness { get; }
 
@@ -497,7 +529,10 @@ public partial class ExperimentRunPageViewModel : PageViewModel, IDisposable
 
     private TimeSpan? GetStageDuration(ExperimentStageViewModel stage) =>
         IsAcquisitionOnly
-        && stage.Stage is ExperimentRunStage.Stimulation or ExperimentRunStage.Recovery
+        && stage.Stage
+            is ExperimentRunStage.Blanking
+                or ExperimentRunStage.Stimulation
+                or ExperimentRunStage.Recovery
             ? TimeSpan.Zero
             : stage.GetDuration();
 
@@ -545,7 +580,7 @@ public partial class ExperimentRunPageViewModel : PageViewModel, IDisposable
 
     public bool IsModeLocked => !IsTimingSetup;
 
-    public bool IsCycleCountVisible => IsAutomaticMode && IsTimingSetup;
+    public bool IsCycleCountVisible => !IsAcquisitionOnly && IsAutomaticMode && IsTimingSetup;
 
     public bool IsManualStimulusReady =>
         !IsAcquisitionOnly
@@ -579,7 +614,7 @@ public partial class ExperimentRunPageViewModel : PageViewModel, IDisposable
 
     public string FooterPrimaryText =>
         IsEmergencyStopped ? "保存当前数据"
-        : IsCompleted ? "结束实验并查看结果"
+        : IsCompleted ? "结束实验"
         : IsRunning && !IsManualStimulusReady && !IsManualFinalAcquisitionReady ? "运行中"
         : PrimaryActionText;
 
@@ -765,7 +800,7 @@ public partial class ExperimentRunPageViewModel : PageViewModel, IDisposable
     [RelayCommand]
     private void SelectMode(ExperimentRunMode mode)
     {
-        if (IsModeLocked)
+        if (IsModeLocked || (IsAcquisitionOnly && mode != ExperimentRunMode.Manual))
             return;
         SelectedMode = mode;
         RefreshValidationAndCommands();
@@ -778,7 +813,7 @@ public partial class ExperimentRunPageViewModel : PageViewModel, IDisposable
     {
         if (
             AcquisitionStage.GetDuration() is not { } acquisitionDuration
-            || BlankingStage.GetDuration() is not { } blankingDuration
+            || GetStageDuration(BlankingStage) is not { } blankingDuration
         )
             return;
         try
@@ -798,6 +833,13 @@ public partial class ExperimentRunPageViewModel : PageViewModel, IDisposable
                 await _persistence.CompleteCurrentStageAsync(acquisitionDuration);
             FlushPendingTelemetry();
             MarkStageCompleted(ExperimentRunStage.Acquisition);
+            if (IsAcquisitionOnly)
+            {
+                _runCancellation.Token.ThrowIfCancellationRequested();
+                if (PageState == ExperimentRunPageState.Running)
+                    await CompleteRunAsync();
+                return;
+            }
             if (_persistence is not null)
                 await _persistence.RequestStageAsync(
                     ExperimentRunStage.Blanking,
@@ -810,13 +852,6 @@ public partial class ExperimentRunPageViewModel : PageViewModel, IDisposable
                 acquisitionDuration,
                 _runCancellation.Token
             );
-            if (IsAcquisitionOnly)
-            {
-                _runCancellation.Token.ThrowIfCancellationRequested();
-                if (PageState == ExperimentRunPageState.Running)
-                    await CompleteRunAsync();
-                return;
-            }
             CurrentStage = ExperimentRunStage.Standby;
             NotifyRunProperties();
         }
@@ -907,11 +942,13 @@ public partial class ExperimentRunPageViewModel : PageViewModel, IDisposable
     }
 
     private bool CanStartAutomaticExperiment() =>
-        IsTimingSetup && IsAutomaticMode && IsTimelineValid;
+        !IsAcquisitionOnly && IsTimingSetup && IsAutomaticMode && IsTimelineValid;
 
     [RelayCommand(CanExecute = nameof(CanStartAutomaticExperiment))]
     private async Task StartAutomaticExperimentAsync()
     {
+        if (IsAcquisitionOnly)
+            return;
         if (
             AcquisitionStage.GetDuration() is not { } acquisition
             || BlankingStage.GetDuration() is not { } blanking
@@ -1309,7 +1346,7 @@ public partial class ExperimentRunPageViewModel : PageViewModel, IDisposable
     }
 
     private bool CanRerunExperiment() =>
-        IsResults
+        (IsCompleted || IsResults)
         && !IsExporting
         && (
             IsAcquisitionOnly
@@ -1371,7 +1408,7 @@ public partial class ExperimentRunPageViewModel : PageViewModel, IDisposable
                 AcquisitionStage.GetDuration()
                 ?? throw new InvalidOperationException("采集时长不完整。");
             var blanking =
-                BlankingStage.GetDuration()
+                GetStageDuration(BlankingStage)
                 ?? throw new InvalidOperationException("消隐时长不完整。");
             var stimulation =
                 GetStageDuration(StimulationStage)
@@ -1733,6 +1770,17 @@ public partial class ExperimentRunPageViewModel : PageViewModel, IDisposable
             );
         if (parameterError is not null)
             throw new InvalidOperationException(parameterError);
+        if (_eegChannelMappings is not null)
+            _rawPacketChannelNames = _eegChannelMappings
+                .Load()
+                .Mappings.Where(m =>
+                    m.PhysicalChannel.HasValue
+                    && RouteData.AcquisitionChannels.Contains(
+                        m.ElectrodeId,
+                        StringComparer.OrdinalIgnoreCase
+                    )
+                )
+                .ToDictionary(m => m.PhysicalChannel!.Value, m => m.ElectrodeId);
         _telemetryBuffer.Clear();
         _runCancellation?.Dispose();
         _runCancellation = new CancellationTokenSource();
@@ -1743,7 +1791,19 @@ public partial class ExperimentRunPageViewModel : PageViewModel, IDisposable
         _rawDataVersion = 0;
         if (_persistence is not null && RouteData.ExperimentDatabaseId > 0)
         {
-            await _persistence.PrepareAsync(
+            var finalConfiguration = ExperimentRunConfiguration.Snapshot(
+                RouteData,
+                new ExperimentTimingTemplate(
+                    SelectedMode,
+                    AcquisitionStage.GetDuration()!.Value.TotalMilliseconds,
+                    GetStageDuration(BlankingStage)!.Value.TotalMilliseconds,
+                    GetStageDuration(StimulationStage)!.Value.TotalMilliseconds,
+                    GetStageDuration(RecoveryStage)!.Value.TotalMilliseconds,
+                    CycleCount
+                ),
+                _rawPacketChannelNames
+            );
+            var prepared = await _persistence.PrepareAsync(
                 new ExperimentRunPreparation(
                     _recordingId,
                     RouteData.ExperimentDatabaseId,
@@ -1751,12 +1811,26 @@ public partial class ExperimentRunPageViewModel : PageViewModel, IDisposable
                     CycleCount,
                     RouteData.SampleRateHz,
                     AcquisitionStage.GetDuration()!.Value,
-                    BlankingStage.GetDuration()!.Value,
+                    GetStageDuration(BlankingStage)!.Value,
                     GetStageDuration(StimulationStage)!.Value,
-                    GetStageDuration(RecoveryStage)!.Value
+                    GetStageDuration(RecoveryStage)!.Value,
+                    finalConfiguration
                 ),
                 RouteData.DeviceId,
                 _runCancellation.Token
+            );
+            var previousId = RouteData.ExperimentDatabaseId;
+            _router.UpdateExperimentIdentity(
+                previousId,
+                prepared.ExperimentId,
+                prepared.ExperimentCode,
+                finalConfiguration
+            );
+            UpdateExperimentIdentity(
+                previousId,
+                prepared.ExperimentId,
+                prepared.ExperimentCode,
+                finalConfiguration
             );
             _runCancellation.Dispose();
             _runCancellation = CancellationTokenSource.CreateLinkedTokenSource(
@@ -3110,6 +3184,11 @@ public partial class ExperimentRunPageViewModel : PageViewModel, IDisposable
 
     partial void OnCycleCountChanged(int value)
     {
+        if (IsAcquisitionOnly && !IsHistoricalResult && value != 1)
+        {
+            CycleCount = 1;
+            return;
+        }
         if (value < 0 || value > 200)
             CycleCount = Math.Clamp(value, 0, 200);
         RefreshValidationAndCommands();
@@ -3158,6 +3237,11 @@ public partial class ExperimentRunPageViewModel : PageViewModel, IDisposable
 
     partial void OnSelectedModeChanged(ExperimentRunMode value)
     {
+        if (IsAcquisitionOnly && !IsHistoricalResult && value != ExperimentRunMode.Manual)
+        {
+            SelectedMode = ExperimentRunMode.Manual;
+            return;
+        }
         OnPropertyChanged(nameof(IsCycleCountVisible));
         OnPropertyChanged(nameof(CurrentStageMonitorText));
         NotifyPrimaryActionProperties();

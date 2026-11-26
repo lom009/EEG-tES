@@ -9,9 +9,9 @@
   d:DesignWidth="1400"
   d:DesignHeight="900"
   Width="1260"
-  MinWidth="1260"
+  MinWidth="1024"
   Height="810"
-  MinHeight="810"
+  MinHeight="640"
   Icon="/Assets/Images/icon.ico"
   WindowStartupLocation="CenterScreen"
   x:Class="EGGtCSPlatform.MainWindow"
@@ -19,7 +19,7 @@
   xmlns:pages="clr-namespace:EGGtCSPlatform.Views.Pages"
   Title="EGGtCSPlatform"
   WindowState="Maximized"
-  CanResize="False"
+  CanResize="True"
   d:DataContext="{x:Static design:DesignData.MainViewModel}"
 >
   <pages:MainView />

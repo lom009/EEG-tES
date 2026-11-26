@@ -1,7 +1,6 @@
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory = $true)]
-    [ValidatePattern('^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$')]
+    [AllowNull()][AllowEmptyString()]
     [string]$Version,
 
     [Parameter(Mandatory = $true)]
@@ -32,8 +31,12 @@ $resolvedRuntimeIdentifiers = @(Resolve-VelopackRuntimeIdentifiers `
     -AllowedRuntimeIdentifiers $allowedRuntimeIdentifiers `
     -DefaultRuntimeIdentifiers $allowedRuntimeIdentifiers)
 
-Invoke-VelopackBuildAndPublish `
-    -Version $Version `
+$versionArguments = @{}
+if ($PSBoundParameters.ContainsKey('Version')) {
+    $versionArguments.Version = $Version
+}
+
+Invoke-VelopackBuildAndPublish @versionArguments `
     -SourceBaseAddress $SourceBaseAddress `
     -PublishPath $PublishPath `
     -RuntimeIdentifiers $resolvedRuntimeIdentifiers

@@ -6,13 +6,20 @@
   xmlns:vm="clr-namespace:EGGtCSPlatform.ViewModels"
   xmlns:pages="clr-namespace:EGGtCSPlatform.ViewModels.Pages"
   xmlns:controls="clr-namespace:EGGtCSPlatform.Controls"
+  xmlns:converters="clr-namespace:EGGtCSPlatform.ValueConverters"
   x:Class="EGGtCSPlatform.Views.BasicView"
   x:DataType="vm:BasicViewModel"
   mc:Ignorable="d"
   d:DesignWidth="1440"
   d:DesignHeight="900"
 >
+  <UserControl.Resources>
+    <converters:PageContentMarginConverter x:Key="PageContentMarginConverter" />
+  </UserControl.Resources>
   <UserControl.Styles>
+    <Style Selector="Button#HomeLogoButton:enabled">
+      <Setter Property="Cursor" Value="Hand" />
+    </Style>
     <Style Selector="TransitioningContentControl.navigation-animation-enabled">
       <Setter Property="PageTransition">
         <PageSlide Duration="0:0:0.3" Orientation="Horizontal">
@@ -37,6 +44,15 @@
 
     <Border x:Name="Banner" Grid.Row="0" Background="White">
       <Grid Margin="24,0" ColumnDefinitions="Auto,*">
+        <Button x:Name="HomeLogoButton" Width="182" Height="36" Padding="0"
+                HorizontalAlignment="Left" VerticalAlignment="Center"
+                Command="{Binding GoHomeCommand}" IsEnabled="{Binding CurrentPage.CanGoBack}"
+                ToolTip.Tip="返回首页" AutomationProperties.Name="返回首页">
+          <Button.Template>
+            <ControlTemplate>
+              <ContentPresenter Content="{TemplateBinding Content}" Background="Transparent"/>
+            </ControlTemplate>
+          </Button.Template>
         <Image
           Width="182"
           Height="36"
@@ -45,6 +61,7 @@
           Source="{SvgImage /Assets/Images/eeg_tes.svg}"
           Stretch="Uniform"
         />
+        </Button>
 
         <StackPanel
           Grid.Column="1"
@@ -303,15 +320,29 @@
     </Grid>
 
     <TransitioningContentControl
-      Grid.Row="{Binding PageContentRow}"
+      x:Name="PageContentHost"
+      Grid.Row="1"
       Grid.RowSpan="2"
-      Margin="{Binding PageContentMargin}"
+      Margin="0,24,0,0"
       HorizontalContentAlignment="Stretch"
       VerticalContentAlignment="Stretch"
       ClipToBounds="True"
       Classes.navigation-animation-enabled="{Binding IsNavigationAnimationEnabled}"
       Content="{Binding CurrentPage}"
       IsTransitionReversed="{Binding IsTransitionReversed}"
-    />
+    >
+      <TransitioningContentControl.ContentTemplate>
+        <DataTemplate x:DataType="pages:PageViewModel">
+          <!-- Each transitioning page keeps its own inset, including while exiting. -->
+          <Border Margin="{Binding ., Converter={StaticResource PageContentMarginConverter}}">
+            <ContentControl
+              HorizontalContentAlignment="Stretch"
+              VerticalContentAlignment="Stretch"
+              Content="{Binding .}"
+            />
+          </Border>
+        </DataTemplate>
+      </TransitioningContentControl.ContentTemplate>
+    </TransitioningContentControl>
   </Grid>
 </UserControl>

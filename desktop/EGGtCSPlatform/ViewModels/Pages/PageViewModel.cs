@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using EGGtCSPlatform.MainApp;
 
 namespace EGGtCSPlatform.ViewModels.Pages;
@@ -15,6 +16,19 @@ public abstract class PageViewModel(ApplicationPageNames pageName, string pageTi
     public virtual object? HeaderAction => null;
 
     public virtual bool CanGoBack => true;
+
+    public virtual void OnNavigatedFrom() { }
+
+    public virtual bool RequiresAsyncNavigation => false;
+
+    public virtual Task<bool> PrepareToLeaveAsync() => Task.FromResult(true);
+
+    public virtual void UpdateExperimentIdentity(
+        long previousId,
+        long id,
+        string code,
+        EGGtCSPlatform.MainApp.ExperimentConfigurationTemplate? configuration = null
+    ) { }
 
     public string PageTitle
     {

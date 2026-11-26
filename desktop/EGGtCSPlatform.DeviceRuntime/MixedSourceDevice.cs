@@ -251,6 +251,15 @@ public class MixedSourceDevice : IEggtCsDevice, IDeviceCapabilitySourceProfile
             return _physical.State;
         if (IsSelectedOperation(_simulation.State.Operation, DeviceCapabilitySource.Simulated))
             return _simulation.State;
+        // A physical battery-only reply cannot describe the idle simulated stimulation capability.
+        // Selected active operations and faults above still take precedence.
+        if (
+            statusState.Operation == DeviceOperationState.Unknown
+            && GetCapabilitySource(DeviceCapabilityKind.Stimulation)
+                == DeviceCapabilitySource.Simulated
+            && _simulation.State.Operation == DeviceOperationState.Ready
+        )
+            return _simulation.State;
         return statusState;
     }
 

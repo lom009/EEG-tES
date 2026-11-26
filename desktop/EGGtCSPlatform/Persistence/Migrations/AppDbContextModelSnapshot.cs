@@ -683,6 +683,86 @@ namespace EGGtCSPlatform.Persistence.Migrations
                     b.Navigation("Experiments");
                 }
             );
+            modelBuilder.Entity("EGGtCSPlatform.Persistence.SpeechExperimentEntity", b =>
+            {
+                b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("TEXT");
+                b.Property<long>("ExperimentId").HasColumnType("INTEGER");
+                b.Property<string>("SourceJson").IsRequired().HasColumnType("TEXT");
+                b.Property<int>("Version").HasColumnType("INTEGER");
+                b.Property<DateTimeOffset>("StartedAt").HasColumnType("TEXT");
+                b.Property<DateTimeOffset?>("EndedAt").HasColumnType("TEXT");
+                b.Property<int>("Status").HasColumnType("INTEGER");
+                b.HasKey("Id");
+                b.HasIndex("ExperimentId").IsUnique();
+                b.ToTable("SpeechExperiments");
+            });
+            modelBuilder.Entity("EGGtCSPlatform.Persistence.SpeechTrainingRoundEntity", b =>
+            {
+                b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("TEXT");
+                b.Property<Guid>("SpeechExperimentId").HasColumnType("TEXT");
+                b.Property<int>("Number").HasColumnType("INTEGER");
+                b.Property<double>("DelayMilliseconds").HasColumnType("REAL");
+                b.Property<DateTimeOffset?>("EndedAt").HasColumnType("TEXT");
+                b.Property<int>("Status").HasColumnType("INTEGER");
+                b.Property<string>("ResultJson").IsRequired().HasColumnType("TEXT");
+                b.HasKey("Id");
+                b.HasIndex("SpeechExperimentId", "Number").IsUnique();
+                b.ToTable("SpeechTrainingRounds");
+            });
+            modelBuilder.Entity("EGGtCSPlatform.Persistence.SpeechExperimentEntity", b =>
+            {
+                b.HasOne("EGGtCSPlatform.Persistence.ExperimentEntity", "Experiment")
+                    .WithOne("SpeechExperiment").HasForeignKey("EGGtCSPlatform.Persistence.SpeechExperimentEntity", "ExperimentId")
+                    .OnDelete(DeleteBehavior.Cascade).IsRequired();
+                b.Navigation("Experiment");
+            });
+            modelBuilder.Entity("EGGtCSPlatform.Persistence.SpeechTrainingRoundEntity", b =>
+            {
+                b.HasOne("EGGtCSPlatform.Persistence.SpeechExperimentEntity", "Experiment")
+                    .WithMany("Rounds").HasForeignKey("SpeechExperimentId").OnDelete(DeleteBehavior.Cascade).IsRequired();
+                b.Navigation("Experiment");
+            });
+            modelBuilder.Entity("EGGtCSPlatform.Persistence.ExperimentEntity", b => b.Navigation("SpeechExperiment"));
+            modelBuilder.Entity("EGGtCSPlatform.Persistence.SpeechExperimentEntity", b => b.Navigation("Rounds"));
+            modelBuilder.Entity("EGGtCSPlatform.Persistence.ToleranceConfigurationEntity", b =>
+            {
+                b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("TEXT");
+                b.Property<long>("SubjectId").HasColumnType("INTEGER");
+                b.Property<string>("ConfigurationKey").IsRequired().HasMaxLength(64).HasColumnType("TEXT");
+                b.Property<string>("ConfigurationJson").IsRequired().HasColumnType("TEXT");
+                b.Property<int>("Kind").HasColumnType("INTEGER");
+                b.HasKey("Id");
+                b.HasIndex("SubjectId", "ConfigurationKey").IsUnique();
+                b.ToTable("ToleranceConfigurations");
+            });
+            modelBuilder.Entity("EGGtCSPlatform.Persistence.ToleranceSnapshotEntity", b =>
+            {
+                b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("TEXT");
+                b.Property<Guid>("ConfigurationId").HasColumnType("TEXT");
+                b.Property<long>("OperatorId").HasColumnType("INTEGER");
+                b.Property<long>("SavedAtUtcTicks").HasColumnType("INTEGER");
+                b.Property<string>("SnapshotJson").IsRequired().HasColumnType("TEXT");
+                b.HasKey("Id");
+                b.HasIndex("ConfigurationId", "SavedAtUtcTicks");
+                b.HasIndex("OperatorId");
+                b.ToTable("ToleranceSnapshots");
+            });
+            modelBuilder.Entity("EGGtCSPlatform.Persistence.ToleranceConfigurationEntity", b =>
+            {
+                b.HasOne("EGGtCSPlatform.Persistence.SubjectEntity", "Subject").WithMany()
+                    .HasForeignKey("SubjectId").OnDelete(DeleteBehavior.Restrict).IsRequired();
+                b.Navigation("Subject");
+            });
+            modelBuilder.Entity("EGGtCSPlatform.Persistence.ToleranceSnapshotEntity", b =>
+            {
+                b.HasOne("EGGtCSPlatform.Persistence.ToleranceConfigurationEntity", "Configuration").WithMany("Snapshots")
+                    .HasForeignKey("ConfigurationId").OnDelete(DeleteBehavior.Cascade).IsRequired();
+                b.HasOne("EGGtCSPlatform.Persistence.OperatorEntity", "Operator").WithMany()
+                    .HasForeignKey("OperatorId").OnDelete(DeleteBehavior.Restrict).IsRequired();
+                b.Navigation("Configuration");
+                b.Navigation("Operator");
+            });
+            modelBuilder.Entity("EGGtCSPlatform.Persistence.ToleranceConfigurationEntity", b => b.Navigation("Snapshots"));
 #pragma warning restore 612, 618
         }
     }

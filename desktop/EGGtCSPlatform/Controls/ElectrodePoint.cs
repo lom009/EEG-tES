@@ -20,6 +20,15 @@ public class ElectrodePoint : TemplatedControl
         );
     }
 
+    public static readonly StyledProperty<ElectrodeSiteViewModel?> SiteProperty =
+        AvaloniaProperty.Register<ElectrodePoint, ElectrodeSiteViewModel?>(nameof(Site));
+
+    public ElectrodeSiteViewModel? Site
+    {
+        get => GetValue(SiteProperty);
+        set => SetValue(SiteProperty, value);
+    }
+
     public static readonly StyledProperty<string?> LabelProperty = AvaloniaProperty.Register<
         ElectrodePoint,
         string?
@@ -57,6 +66,15 @@ public class ElectrodePoint : TemplatedControl
         ElectrodePoint,
         bool
     >(nameof(IsSelected));
+
+    public static readonly StyledProperty<bool> IsDimmedProperty =
+        AvaloniaProperty.Register<ElectrodePoint, bool>(nameof(IsDimmed));
+
+    public bool IsDimmed
+    {
+        get => GetValue(IsDimmedProperty);
+        set => SetValue(IsDimmedProperty, value);
+    }
 
     public static readonly StyledProperty<bool> IsAvailableProperty = AvaloniaProperty.Register<
         ElectrodePoint,
@@ -197,6 +215,7 @@ public class ElectrodePoint : TemplatedControl
             || change.Property == IsStimulusProperty
             || change.Property == QualityProperty
             || change.Property == IsSelectedProperty
+            || change.Property == IsDimmedProperty
             || change.Property == IsAvailableProperty
             || change.Property == IsBackViewProperty
         )
@@ -205,9 +224,12 @@ public class ElectrodePoint : TemplatedControl
 
     private void UpdatePseudoClasses()
     {
-        PseudoClasses.Set(":assigned", IsStimulus || Role is ElectrodeRole.Acquisition or ElectrodeRole.Reference or ElectrodeRole.Ground);
+        PseudoClasses.Set(":shared", !IsDimmed && IsStimulus && Role != ElectrodeRole.None);
+        var displayRole = IsDimmed ? ElectrodeRole.None : Role;
+        var displayQuality = IsDimmed ? ImpedanceQuality.Unknown : Quality;
+        PseudoClasses.Set(":assigned", !IsDimmed && (IsStimulus || Role is ElectrodeRole.Acquisition or ElectrodeRole.Reference or ElectrodeRole.Ground));
         PseudoClasses.Set(":multiline", Label?.Contains('\n') == true);
-        PseudoClasses.Set(":stimulus", IsStimulus);
+        PseudoClasses.Set(":stimulus", !IsDimmed && IsStimulus);
         PseudoClasses.Set(
             ":fixed-active",
             StimulationChannelRole
@@ -220,25 +242,21 @@ public class ElectrodePoint : TemplatedControl
         );
         PseudoClasses.Set(
             ":blue-stimulus",
-            ResolvedStimulationRole
-                is ResolvedElectrodeRole.Anode
-                    or ResolvedElectrodeRole.FixedActive
+            ResolvedStimulationRole is { } blueRole && ElectrodeRoleDisplay.IsAnode(blueRole)
         );
         PseudoClasses.Set(
             ":red-stimulus",
-            ResolvedStimulationRole
-                is ResolvedElectrodeRole.Cathode
-                    or ResolvedElectrodeRole.Stimulating
+            ResolvedStimulationRole is { } redRole && ElectrodeRoleDisplay.IsCathode(redRole)
         );
-        PseudoClasses.Set(":acquisition", Role == ElectrodeRole.Acquisition);
-        PseudoClasses.Set(":reference", Role == ElectrodeRole.Reference);
-        PseudoClasses.Set(":ground", Role == ElectrodeRole.Ground);
-        PseudoClasses.Set(":excellent", Quality == ImpedanceQuality.Excellent);
-        PseudoClasses.Set(":good", Quality == ImpedanceQuality.Good);
-        PseudoClasses.Set(":medium", Quality == ImpedanceQuality.Medium);
-        PseudoClasses.Set(":poor", Quality == ImpedanceQuality.Poor);
-        PseudoClasses.Set(":bad", Quality == ImpedanceQuality.Bad);
-        PseudoClasses.Set(":selected", IsSelected);
+        PseudoClasses.Set(":acquisition", displayRole == ElectrodeRole.Acquisition);
+        PseudoClasses.Set(":reference", displayRole == ElectrodeRole.Reference);
+        PseudoClasses.Set(":ground", displayRole == ElectrodeRole.Ground);
+        PseudoClasses.Set(":excellent", displayQuality == ImpedanceQuality.Excellent);
+        PseudoClasses.Set(":good", displayQuality == ImpedanceQuality.Good);
+        PseudoClasses.Set(":medium", displayQuality == ImpedanceQuality.Medium);
+        PseudoClasses.Set(":poor", displayQuality == ImpedanceQuality.Poor);
+        PseudoClasses.Set(":bad", displayQuality == ImpedanceQuality.Bad);
+        PseudoClasses.Set(":selected", !IsDimmed && IsSelected);
         PseudoClasses.Set(":unavailable", !IsAvailable);
         PseudoClasses.Set(":back", IsBackView);
     }

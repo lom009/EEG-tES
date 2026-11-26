@@ -1,4 +1,7 @@
 * { box-sizing: border-box; }
+#loading { position: fixed; inset: 0; z-index: 10000; background: transparent; cursor: wait; }
+/* Keep layout and WebGL rendering active, without exposing a partial scene. */
+#stage[inert] { opacity: 0; pointer-events: none; }
 html { background: transparent; }
 body { margin: 0; overflow: hidden; background: transparent; color: #344b65; font: 14px system-ui, sans-serif; }
 #stage { position: fixed; inset: 0; overflow: hidden; isolation: isolate; background: transparent; }
@@ -24,3 +27,10 @@ button:disabled { cursor: default; opacity: .42; }
 header,footer{display:none} #stage::before,#stage::after{display:none} .point:disabled{opacity:1} .point{min-width:44px}
 
 .point[hidden] { display: none !important; }
+
+.point.shared { width: 54px; height: 54px; min-width: 54px; border-radius: 50%; padding: 0; overflow: hidden; grid-template-rows: 7fr 3fr; gap: 0; }
+.point.shared > span { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 11px; line-height: 1; white-space: nowrap; }
+.point.shared > span:first-child { padding-top: 3px; }
+.point.shared > span:last-child { padding-bottom: 2px; font-size: 10px; }
+.point.shared::after { content: ''; position: absolute; top: 70%; left: 0; right: 0; height: 0; border-top: 1px solid white; box-shadow: 0 -1px white, 0 1px white; pointer-events: none; }
+.point.shared.shared-divider::after { border-top: 1px dashed #475569; }

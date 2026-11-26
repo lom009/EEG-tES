@@ -17,7 +17,7 @@ public sealed class ApplicationConfigurationResetTests
         var defaultBytes = Encoding.UTF8.GetBytes(
             """
             {
-              "_meta": { "schemaVersion": 1 },
+              "_meta": { "schemaVersion": 2 },
               "ApplicationUpdate": { "SourceBaseAddress": "https://updates.example/new" },
               "Value": "默认值"
             }
@@ -25,7 +25,7 @@ public sealed class ApplicationConfigurationResetTests
         );
         var userBytes = Encoding.UTF8.GetBytes(
             """
-            { "_meta": { "schemaVersion": 1 }, "Value": "用户值" }
+            { "_meta": { "schemaVersion": 2 }, "Value": "用户值" }
             """
         );
         File.WriteAllBytes(fixture.DefaultPath, defaultBytes);
@@ -60,7 +60,7 @@ public sealed class ApplicationConfigurationResetTests
     {
         using var fixture = new ResetFixture();
         File.WriteAllBytes(fixture.DefaultPath, ResetFixture.ValidDefaultBytes());
-        File.WriteAllText(fixture.UserPath, "{\"_meta\":{\"schemaVersion\":1},\"Old\":true}");
+        File.WriteAllText(fixture.UserPath, "{\"_meta\":{\"schemaVersion\":2},\"Old\":true}");
         Directory.CreateDirectory(fixture.BackupDirectory);
         for (var index = 0; index < 7; index++)
         {
@@ -87,7 +87,7 @@ public sealed class ApplicationConfigurationResetTests
         using var fixture = new ResetFixture();
         var defaultBytes = ResetFixture.ValidDefaultBytes();
         File.WriteAllBytes(fixture.DefaultPath, defaultBytes);
-        File.WriteAllText(fixture.UserPath, "{\"_meta\":{\"schemaVersion\":1},\"Old\":true}");
+        File.WriteAllText(fixture.UserPath, "{\"_meta\":{\"schemaVersion\":2},\"Old\":true}");
 
         await Task.WhenAll(Enumerable.Range(0, 8).Select(_ => fixture.Service.ResetAsync()));
 
@@ -103,13 +103,13 @@ public sealed class ApplicationConfigurationResetTests
     {
         using var fixture = new ResetFixture();
         var userBytes = Encoding.UTF8.GetBytes(
-            "{\"_meta\":{\"schemaVersion\":1},\"Value\":\"keep\"}"
+            "{\"_meta\":{\"schemaVersion\":2},\"Value\":\"keep\"}"
         );
         File.WriteAllBytes(fixture.UserPath, userBytes);
         if (caseName == "invalid-json")
             File.WriteAllText(fixture.DefaultPath, "not-json");
         else if (caseName == "wrong-schema")
-            File.WriteAllText(fixture.DefaultPath, "{\"_meta\":{\"schemaVersion\":2}}");
+            File.WriteAllText(fixture.DefaultPath, "{\"_meta\":{\"schemaVersion\":3}}");
 
         await Assert.ThrowsAsync<ApplicationConfigurationException>(() =>
             fixture.Service.ResetAsync()
@@ -159,7 +159,7 @@ public sealed class ApplicationConfigurationResetTests
 
         public static byte[] ValidDefaultBytes() =>
             Encoding.UTF8.GetBytes(
-                "{\"_meta\":{\"schemaVersion\":1},\"ApplicationUpdate\":{\"SourceBaseAddress\":\"https://updates.example\"}}"
+                "{\"_meta\":{\"schemaVersion\":2},\"ApplicationUpdate\":{\"SourceBaseAddress\":\"https://updates.example\"}}"
             );
 
         public void Dispose() => Directory.Delete(_directory, recursive: true);

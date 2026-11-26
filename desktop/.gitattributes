@@ -1,0 +1,2 @@
+# These UTF-8 resources have byte-level research baselines; keep checkout bytes stable on Windows.
+EGGtCSPlatform.SpeechTraining/Resources/*/sentences.txt text eol=lf

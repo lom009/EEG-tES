@@ -18,13 +18,18 @@
   Background="#F5F8FE"
 >
   <Window.Resources>
-    <SolidColorBrush x:Key="TextControlBorderBrushFocused" Color="#8294B2" />
-    <SolidColorBrush x:Key="TextControlBorderBrushPointerOver" Color="#C4CFDF" />
-    <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="#80FFFFFF" />
-    <SolidColorBrush x:Key="TextControlBackgroundPointerOver" Color="#80FFFFFF" />
-    <SolidColorBrush x:Key="TextControlForegroundFocused" Color="#364459" />
-    <Thickness x:Key="TextControlBorderThemeThicknessFocused">1</Thickness>
-    <x:Double x:Key="TextControlPlaceholderOpacity">1</x:Double>
+    <ResourceDictionary>
+      <ResourceDictionary.MergedDictionaries>
+        <ResourceInclude Source="/Controls/HistoryControlThemes.axaml" />
+      </ResourceDictionary.MergedDictionaries>
+      <SolidColorBrush x:Key="TextControlBorderBrushFocused" Color="#8294B2" />
+      <SolidColorBrush x:Key="TextControlBorderBrushPointerOver" Color="#C4CFDF" />
+      <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="#80FFFFFF" />
+      <SolidColorBrush x:Key="TextControlBackgroundPointerOver" Color="#80FFFFFF" />
+      <SolidColorBrush x:Key="TextControlForegroundFocused" Color="#364459" />
+      <Thickness x:Key="TextControlBorderThemeThicknessFocused">1</Thickness>
+      <x:Double x:Key="TextControlPlaceholderOpacity">1</x:Double>
+    </ResourceDictionary>
   </Window.Resources>
   <Window.Styles>
     <!-- These styles are scoped to the login window so the application theme is unaffected. -->
@@ -64,51 +69,8 @@
     </Style>
 
     <Style Selector="CheckBox.login-remember">
-      <Setter Property="MinHeight" Value="20" />
-      <Setter Property="Padding" Value="0" />
       <Setter Property="FontSize" Value="{DynamicResource FontSize14}" />
-      <Setter Property="Foreground" Value="#ACB7C8" />
-      <Setter Property="Background" Value="Transparent" />
-      <Setter Property="BorderBrush" Value="#B8C4D7" />
-      <Setter Property="Template">
-        <ControlTemplate>
-          <Grid ColumnDefinitions="24,*">
-            <Border
-              x:Name="CheckBorder"
-              Width="16"
-              Height="16"
-              HorizontalAlignment="Left"
-              VerticalAlignment="Center"
-              Background="{TemplateBinding Background}"
-              BorderBrush="{TemplateBinding BorderBrush}"
-              BorderThickness="1"
-              CornerRadius="1"
-            />
-            <TextBlock
-              x:Name="CheckGlyph"
-              Text="✓"
-              Margin="2,-1,0,0"
-              FontSize="{DynamicResource FontSize12}"
-              Foreground="White"
-              Opacity="0"
-            />
-            <ContentPresenter
-              Grid.Column="1"
-              Content="{TemplateBinding Content}"
-              VerticalAlignment="Center"
-              TextElement.Foreground="{TemplateBinding Foreground}"
-              TextElement.FontSize="{TemplateBinding FontSize}"
-            />
-          </Grid>
-        </ControlTemplate>
-      </Setter>
-    </Style>
-    <Style Selector="CheckBox.login-remember:checked /template/ Border#CheckBorder">
-      <Setter Property="Background" Value="#3941B6" />
-      <Setter Property="BorderBrush" Value="#3941B6" />
-    </Style>
-    <Style Selector="CheckBox.login-remember:checked /template/ TextBlock#CheckGlyph">
-      <Setter Property="Opacity" Value="1" />
+      <Setter Property="Foreground" Value="{DynamicResource ProductStimulusDisabledText}" />
     </Style>
 
     <Style Selector="Button.company-backend-toggle">
@@ -154,7 +116,7 @@
                             HeaderText="账号" Watermark="请输入手机号" InputText="{Binding Username}" />
         <controls:FormInput x:Name="PasswordInput" Canvas.Left="40" Canvas.Top="325" Width="420" Height="96"
                             HeaderText="密码" Watermark="请输入密码" PasswordChar="●" InputText="{Binding Password}" />
-        <CheckBox Canvas.Left="40" Canvas.Top="437" Height="22" Classes="login-remember" Content="记住密码" />
+        <CheckBox Canvas.Left="40" Canvas.Top="437" Height="22" Classes="login-remember" Theme="{StaticResource HistoryCheckBoxTheme}" Content="记住密码" />
         <TextBlock Canvas.Left="390" Canvas.Top="437" Height="22" VerticalAlignment="Center"
                    Cursor="Hand" FontSize="14" Foreground="#3941B6" Text="忘记密码?" />
         <TextBlock Canvas.Left="40" Canvas.Top="471" Width="420" FontSize="13"

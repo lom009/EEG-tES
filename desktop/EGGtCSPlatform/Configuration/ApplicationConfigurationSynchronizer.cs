@@ -180,7 +180,7 @@ internal sealed class UserConfigurationSchemaZeroToOneMigration : IUserConfigura
 
 internal sealed class ApplicationConfigurationSynchronizer
 {
-    public const int CurrentSchemaVersion = 1;
+    public const int CurrentSchemaVersion = 2;
     public const int RetainedBackupCount = 5;
 
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
@@ -200,10 +200,12 @@ internal sealed class ApplicationConfigurationSynchronizer
         var configuredMigrations = new IUserConfigurationMigration[]
         {
             new UserConfigurationSchemaZeroToOneMigration(),
+            new UserConfigurationSchemaOneToTwoMigration(),
         }
             .Concat(migrations ?? [])
             .ToArray();
-        _migrations = configuredMigrations.ToDictionary(migration => migration.FromVersion);
+        _migrations = configuredMigrations.GroupBy(migration => migration.FromVersion)
+            .ToDictionary(group => group.Key, group => group.Last());
         _timeProvider = timeProvider ?? TimeProvider.System;
         _currentSchemaVersion = currentSchemaVersion;
     }
@@ -267,6 +269,8 @@ internal sealed class ApplicationConfigurationSynchronizer
         if (migrationBackupCreated)
             Backup(userPath, backupDirectory);
         Migrate(userRoot, userPath);
+        if (originalSchemaVersion < 2 && _currentSchemaVersion >= 2)
+            UserConfigurationSchemaOneToTwoMigration.AddKnownGeometry(userRoot, defaultRoot);
         var resetPaths = new List<string>();
         var synchronizedRoot = (JsonObject)
             ReconcileNode(defaultRoot, userRoot, string.Empty, resetPaths)!;
@@ -335,6 +339,10 @@ internal sealed class ApplicationConfigurationSynchronizer
         ICollection<string> resetPaths
     )
     {
+        // This is a user-owned catalogue, not an array of default slots. Never insert
+        // default electrodes or borrow geometry from another ID / array index.
+        if (path == "ElectrodePositions:Positions" && userNode is JsonArray)
+            return userNode.DeepClone();
         if (IsForcedDefaultPath(path))
             return defaultNode?.DeepClone();
         if (defaultNode is null)

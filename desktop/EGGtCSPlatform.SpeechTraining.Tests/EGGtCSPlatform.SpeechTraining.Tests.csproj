@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Update="Fixtures\GenericApiBaseline.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="Fixtures\AdaptiveSnrReference.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\scripts\SpeechNoiseHashes.csv" Link="SpeechNoiseHashes.csv" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="Fixtures\AdaptiveSpeechReference.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="Fixtures\SpeechEnvelopeReference.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\scripts\SpeechResourceHashes.csv" Link="SpeechResourceHashes.csv" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Never" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.5.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.5.3" PrivateAssets="all" />
+    <ProjectReference Include="..\EGGtCSPlatform.SpeechTraining\EGGtCSPlatform.SpeechTraining.csproj" />
+    <ProjectReference Include="..\EGGtCSPlatform.Audio.Sdl\EGGtCSPlatform.Audio.Sdl.csproj" />
+  </ItemGroup>
+</Project>

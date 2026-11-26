@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using EGGtCSPlatform.DeviceSdk;
 using EGGtCSPlatform.Interfaces;
 using EGGtCSPlatform.MainApp;
@@ -12,6 +13,135 @@ namespace EGGtCSPlatform.Tests;
 
 public sealed class MainViewModelNavigationTests
 {
+    [Theory]
+    [InlineData("home")]
+    [InlineData("logo")]
+    [InlineData("back")]
+    [InlineData("other")]
+    public async Task ActiveOutputIsCleanedBeforeNavigationReleasesThePage(string destination)
+    {
+        var active = new DeferredPage();
+        var model = new MainViewModel(
+            new PageFactory(
+                (page, _) =>
+                    page == ApplicationPageNames.EnvelopeStimulation ? active : new TestPage(page)
+            ),
+            CreateConnectedContext()
+        );
+        model.Navigate(ApplicationPageNames.StartExperiment);
+        model.Navigate(ApplicationPageNames.EnvelopeStimulation);
+        var basic = Assert.IsType<BasicViewModel>(model.CurrentView);
+        model.Navigate(ApplicationPageNames.EnvelopeStimulation);
+        Assert.Equal(0, active.StopRequests); // Selecting the current page is a no-op.
+        if (destination == "home")
+            model.GoHome();
+        else if (destination == "logo")
+            basic.GoHomeCommand.Execute(null);
+        else if (destination == "back")
+            model.GoBack();
+        else
+            model.Navigate(ApplicationPageNames.DeviceConnection);
+        Assert.Equal(1, active.StopRequests);
+        Assert.Same(active, basic.CurrentPage);
+        Assert.False(active.Left);
+        active.Stopped.SetResult(true);
+        var deadline = DateTime.UtcNow.AddSeconds(5);
+        while (!active.Left && DateTime.UtcNow < deadline)
+            await Task.Delay(10);
+        Assert.True(active.Left);
+    }
+
+    private sealed class DeferredPage()
+        : PageViewModel(ApplicationPageNames.EnvelopeStimulation, "envelope")
+    {
+        public TaskCompletionSource<bool> Stopped { get; } =
+            new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public int StopRequests { get; private set; }
+        public bool Left { get; private set; }
+        public bool AllowBack { get; set; } = true;
+        public override bool CanGoBack => AllowBack;
+        public override bool RequiresAsyncNavigation => true;
+
+        public override Task<bool> PrepareToLeaveAsync()
+        {
+            StopRequests++;
+            return Stopped.Task;
+        }
+
+        public override void OnNavigatedFrom()
+        {
+            Assert.True(Stopped.Task.IsCompletedSuccessfully);
+            Left = true;
+        }
+    }
+
+    [Fact]
+    public void LogoHomeCommandHonorsCurrentPageReturnLock()
+    {
+        var active = new DeferredPage { AllowBack = false };
+        var model = new MainViewModel(new PageFactory((_, _) => active), CreateConnectedContext());
+        model.Navigate(ApplicationPageNames.EnvelopeStimulation);
+        var basic = Assert.IsType<BasicViewModel>(model.CurrentView);
+        basic.GoHomeCommand.Execute(null);
+        Assert.Equal(0, active.StopRequests);
+        Assert.Same(basic, model.CurrentView);
+        active.AllowBack = true;
+        basic.GoHomeCommand.Execute(null);
+        Assert.Equal(1, active.StopRequests);
+        Assert.False(active.Left);
+        active.Stopped.SetResult(false);
+    }
+
+    [Fact]
+    public void NewExperimentIdentityPropagatesThroughTheBackStack()
+    {
+        var model = new MainViewModel(
+            new PageFactory((page, _) => new IdentityPage(page)),
+            CreateConnectedContext()
+        );
+        model.Navigate(ApplicationPageNames.StartExperiment);
+        var basic = Assert.IsType<BasicViewModel>(model.CurrentView);
+        var start = Assert.IsType<IdentityPage>(basic.CurrentPage);
+        model.Navigate(ApplicationPageNames.StimulusConfiguration);
+        var stimulus = Assert.IsType<IdentityPage>(basic.CurrentPage);
+        model.Navigate(ApplicationPageNames.ElectrodeConfiguration);
+        var electrodes = Assert.IsType<IdentityPage>(basic.CurrentPage);
+        model.Navigate(ApplicationPageNames.ExperimentRun);
+        var run = Assert.IsType<IdentityPage>(basic.CurrentPage);
+        model.UpdateExperimentIdentity(1, 2, "EXP-20261012-002");
+        foreach (var page in new[] { start, stimulus, electrodes, run })
+        {
+            Assert.Equal(2, page.Id);
+            Assert.Equal("EXP-20261012-002", page.Code);
+        }
+        model.GoBack();
+        Assert.Same(electrodes, basic.CurrentPage);
+        model.UpdateExperimentIdentity(2, 3, "EXP-20261012-003");
+        Assert.Equal(3, electrodes.Id);
+        Assert.Equal(3, stimulus.Id);
+        Assert.Equal(3, start.Id);
+    }
+
+    private sealed class IdentityPage(ApplicationPageNames page)
+        : PageViewModel(page, page.ToString())
+    {
+        public long Id { get; private set; } = 1;
+        public string Code { get; private set; } = "EXP-20261012-001";
+
+        public override void UpdateExperimentIdentity(
+            long previousId,
+            long id,
+            string code,
+            ExperimentConfigurationTemplate? configuration = null
+        )
+        {
+            if (Id != previousId)
+                return;
+            Id = id;
+            Code = code;
+        }
+    }
+
     [Fact]
     public void IndexExperimentRecordsCommandTargetsHistorySection()
     {

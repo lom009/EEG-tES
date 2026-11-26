@@ -1,0 +1,354 @@
+{
+  "source": "SpeechIntelligibility/psychophysicsFunction.m -> mySoundProcess.m -> SOLA/solafs.m",
+  "arithmetic": "Decimal reference; production uses double; tolerance 1e-12",
+  "cases": [
+    {
+      "name": "pass",
+      "rows": [
+        {
+          "passed": true,
+          "r": 0.5,
+          "multiplier": 1.5,
+          "reversals": 0,
+          "factor": 1.5,
+          "nextR": 0.75
+        },
+        {
+          "passed": true,
+          "r": 0.75,
+          "multiplier": 1.75,
+          "reversals": 0,
+          "factor": 1.5,
+          "nextR": 1.125
+        },
+        {
+          "passed": true,
+          "r": 1.125,
+          "multiplier": 2.125,
+          "reversals": 0,
+          "factor": 1.5,
+          "nextR": 1.6875
+        },
+        {
+          "passed": true,
+          "r": 1.6875,
+          "multiplier": 2.6875,
+          "reversals": 0,
+          "factor": 1.5,
+          "nextR": 2.53125
+        },
+        {
+          "passed": true,
+          "r": 2.53125,
+          "multiplier": 3.53125,
+          "reversals": 0,
+          "factor": 1.5,
+          "nextR": 3.796875
+        },
+        {
+          "passed": true,
+          "r": 3.796875,
+          "multiplier": 4.796875,
+          "reversals": 0,
+          "factor": 1.5,
+          "nextR": 5.6953125
+        },
+        {
+          "passed": true,
+          "r": 5.6953125,
+          "multiplier": 6.6953125,
+          "reversals": 0,
+          "factor": 1.5,
+          "nextR": 8.54296875
+        },
+        {
+          "passed": true,
+          "r": 8.54296875,
+          "multiplier": 9.54296875,
+          "reversals": 0,
+          "factor": 1.5,
+          "nextR": 12.814453125
+        },
+        {
+          "passed": true,
+          "r": 12.814453125,
+          "multiplier": 13.814453125,
+          "reversals": 0,
+          "factor": 1.5,
+          "nextR": 19.2216796875
+        },
+        {
+          "passed": true,
+          "r": 19.2216796875,
+          "multiplier": 20.2216796875,
+          "reversals": 0,
+          "factor": 1.5,
+          "nextR": 28.83251953125
+        }
+      ]
+    },
+    {
+      "name": "fail",
+      "rows": [
+        {
+          "passed": false,
+          "r": 0.5,
+          "multiplier": 1.5,
+          "reversals": 0,
+          "factor": 1.5,
+          "nextR": 0.3333333333333333333333333333
+        },
+        {
+          "passed": false,
+          "r": 0.3333333333333333333333333333,
+          "multiplier": 1.3333333333333333333333333333,
+          "reversals": 0,
+          "factor": 1.5,
+          "nextR": 0.2222222222222222222222222222
+        },
+        {
+          "passed": false,
+          "r": 0.2222222222222222222222222222,
+          "multiplier": 1.2222222222222222222222222222,
+          "reversals": 0,
+          "factor": 1.5,
+          "nextR": 0.1481481481481481481481481481
+        },
+        {
+          "passed": false,
+          "r": 0.1481481481481481481481481481,
+          "multiplier": 1.1481481481481481481481481481,
+          "reversals": 0,
+          "factor": 1.5,
+          "nextR": 0.0987654320987654320987654321
+        },
+        {
+          "passed": false,
+          "r": 0.0987654320987654320987654321,
+          "multiplier": 1.0987654320987654320987654321,
+          "reversals": 0,
+          "factor": 1.5,
+          "nextR": 0.0658436213991769547325102881
+        },
+        {
+          "passed": false,
+          "r": 0.0658436213991769547325102881,
+          "multiplier": 1.0658436213991769547325102881,
+          "reversals": 0,
+          "factor": 1.5,
+          "nextR": 0.0438957475994513031550068587
+        },
+        {
+          "passed": false,
+          "r": 0.0438957475994513031550068587,
+          "multiplier": 1.0438957475994513031550068587,
+          "reversals": 0,
+          "factor": 1.5,
+          "nextR": 0.0292638317329675354366712391
+        },
+        {
+          "passed": false,
+          "r": 0.0292638317329675354366712391,
+          "multiplier": 1.0292638317329675354366712391,
+          "reversals": 0,
+          "factor": 1.5,
+          "nextR": 0.0195092211553116902911141594
+        },
+        {
+          "passed": false,
+          "r": 0.0195092211553116902911141594,
+          "multiplier": 1.0195092211553116902911141594,
+          "reversals": 0,
+          "factor": 1.5,
+          "nextR": 0.0130061474368744601940761063
+        },
+        {
+          "passed": false,
+          "r": 0.0130061474368744601940761063,
+          "multiplier": 1.0130061474368744601940761063,
+          "reversals": 0,
+          "factor": 1.5,
+          "nextR": 0.0086707649579163067960507375
+        }
+      ]
+    },
+    {
+      "name": "alternating",
+      "rows": [
+        {
+          "passed": true,
+          "r": 0.5,
+          "multiplier": 1.5,
+          "reversals": 0,
+          "factor": 1.5,
+          "nextR": 0.75
+        },
+        {
+          "passed": false,
+          "r": 0.75,
+          "multiplier": 1.75,
+          "reversals": 1,
+          "factor": 1.5,
+          "nextR": 0.5
+        },
+        {
+          "passed": true,
+          "r": 0.5,
+          "multiplier": 1.5,
+          "reversals": 2,
+          "factor": 1.26,
+          "nextR": 0.630
+        },
+        {
+          "passed": false,
+          "r": 0.630,
+          "multiplier": 1.630,
+          "reversals": 3,
+          "factor": 1.26,
+          "nextR": 0.5
+        },
+        {
+          "passed": true,
+          "r": 0.5,
+          "multiplier": 1.5,
+          "reversals": 4,
+          "factor": 1.1,
+          "nextR": 0.55
+        },
+        {
+          "passed": false,
+          "r": 0.55,
+          "multiplier": 1.55,
+          "reversals": 5,
+          "factor": 1.1,
+          "nextR": 0.5
+        },
+        {
+          "passed": true,
+          "r": 0.5,
+          "multiplier": 1.5,
+          "reversals": 6,
+          "factor": 1.1,
+          "nextR": 0.55
+        },
+        {
+          "passed": false,
+          "r": 0.55,
+          "multiplier": 1.55,
+          "reversals": 7,
+          "factor": 1.1,
+          "nextR": 0.5
+        },
+        {
+          "passed": true,
+          "r": 0.5,
+          "multiplier": 1.5,
+          "reversals": 8,
+          "factor": 1.1,
+          "nextR": 0.55
+        },
+        {
+          "passed": false,
+          "r": 0.55,
+          "multiplier": 1.55,
+          "reversals": 9,
+          "factor": 1.1,
+          "nextR": 0.5
+        }
+      ]
+    },
+    {
+      "name": "boundaries",
+      "rows": [
+        {
+          "passed": true,
+          "r": 0.5,
+          "multiplier": 1.5,
+          "reversals": 0,
+          "factor": 1.5,
+          "nextR": 0.75
+        },
+        {
+          "passed": true,
+          "r": 0.75,
+          "multiplier": 1.75,
+          "reversals": 0,
+          "factor": 1.5,
+          "nextR": 1.125
+        },
+        {
+          "passed": false,
+          "r": 1.125,
+          "multiplier": 2.125,
+          "reversals": 1,
+          "factor": 1.5,
+          "nextR": 0.75
+        },
+        {
+          "passed": false,
+          "r": 0.75,
+          "multiplier": 1.75,
+          "reversals": 1,
+          "factor": 1.5,
+          "nextR": 0.5
+        },
+        {
+          "passed": true,
+          "r": 0.5,
+          "multiplier": 1.5,
+          "reversals": 2,
+          "factor": 1.26,
+          "nextR": 0.630
+        },
+        {
+          "passed": true,
+          "r": 0.630,
+          "multiplier": 1.630,
+          "reversals": 2,
+          "factor": 1.26,
+          "nextR": 0.79380
+        },
+        {
+          "passed": false,
+          "r": 0.79380,
+          "multiplier": 1.79380,
+          "reversals": 3,
+          "factor": 1.26,
+          "nextR": 0.630
+        },
+        {
+          "passed": false,
+          "r": 0.630,
+          "multiplier": 1.630,
+          "reversals": 3,
+          "factor": 1.26,
+          "nextR": 0.5
+        },
+        {
+          "passed": true,
+          "r": 0.5,
+          "multiplier": 1.5,
+          "reversals": 4,
+          "factor": 1.1,
+          "nextR": 0.55
+        },
+        {
+          "passed": true,
+          "r": 0.55,
+          "multiplier": 1.55,
+          "reversals": 4,
+          "factor": 1.1,
+          "nextR": 0.605
+        },
+        {
+          "passed": false,
+          "r": 0.605,
+          "multiplier": 1.605,
+          "reversals": 5,
+          "factor": 1.1,
+          "nextR": 0.55
+        }
+      ]
+    }
+  ]
+}

@@ -14,7 +14,8 @@ public sealed record EnvelopeParameters(
     double Depth = 0.8,
     double DelayMilliseconds = 0,
     bool IsSham = false,
-    bool IsDeviceSetup = false
+    bool IsDeviceSetup = false,
+    int DebugFrequencyHz = 500
 );
 
 public sealed record SimulationProvenance(

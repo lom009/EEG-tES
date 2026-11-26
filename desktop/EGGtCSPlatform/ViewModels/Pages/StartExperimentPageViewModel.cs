@@ -27,6 +27,7 @@ public enum ExperimentCreationMode
 public partial class StartExperimentPageViewModel : PageViewModel, IDisposable
 {
     private readonly INavigationRouter _router;
+    private readonly ISpeechExperimentService? _speechExperiments;
     private readonly IExperimentPersistenceService _persistence;
     private readonly ISubjectLookupService _subjects;
     private readonly IExperimentPackageSerializer _packages;
@@ -44,6 +45,21 @@ public partial class StartExperimentPageViewModel : PageViewModel, IDisposable
     private CancellationTokenSource? _batchExportCancellation;
     private CancellationTokenSource? _batchDeleteCancellation;
     private long? _draftId;
+
+    public override void UpdateExperimentIdentity(
+        long previousId,
+        long id,
+        string code,
+        EGGtCSPlatform.MainApp.ExperimentConfigurationTemplate? configuration = null
+    )
+    {
+        if (_draftId != previousId)
+            return;
+        _draftId = id;
+        ++_previewGeneration;
+        ExperimentId = code;
+    }
+
     private long _previewGeneration;
     private long _historyLoadGeneration;
     private int _disposed;
@@ -157,11 +173,17 @@ public partial class StartExperimentPageViewModel : PageViewModel, IDisposable
         IExperimentConfigurationTransferContext transferContext,
         IEegBatchExportService? batchExportService = null,
         IExperimentHistoryDeletionService? historyDeletionService = null,
-        ISingleStimulusExperimentDialogService? singleStimulusDialog = null
+        ISingleStimulusExperimentDialogService? singleStimulusDialog = null,
+        ISpeechExperimentService? speechExperiments = null,
+        ITolerancePersistenceService? tolerancePersistence = null
     )
         : base(ApplicationPageNames.StartExperiment, "新建实验")
     {
+        ToleranceHistory = tolerancePersistence is null
+            ? null
+            : new ToleranceHistoryViewModel(tolerancePersistence);
         _router = router;
+        _speechExperiments = speechExperiments;
         _singleStimulusDialog = singleStimulusDialog;
         _persistence = persistence;
         _subjects = subjects;
@@ -201,7 +223,22 @@ public partial class StartExperimentPageViewModel : PageViewModel, IDisposable
         _ = RefreshPreviewAndHistoryAsync();
     }
 
-    public bool IsNewExperimentSelected => !IsHistorySelected;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsNewExperimentSelected))]
+    private bool _isToleranceHistorySelected;
+    public ToleranceHistoryViewModel? ToleranceHistory { get; }
+    public bool IsNewExperimentSelected => !IsHistorySelected && !IsToleranceHistorySelected;
+
+    [RelayCommand]
+    private async Task SelectToleranceHistoryAsync()
+    {
+        IsHistorySelected = false;
+        IsToleranceHistorySelected = true;
+        PageTitle = "历史实验";
+        if (ToleranceHistory is not null)
+            await ToleranceHistory.LoadAsync();
+    }
+
     public string ExperimentDateDisplay => BuildScheduledAt().ToString("yyyy-MM-dd HH:mm");
     private readonly ISingleStimulusExperimentDialogService? _singleStimulusDialog;
 
@@ -247,7 +284,7 @@ public partial class StartExperimentPageViewModel : PageViewModel, IDisposable
         IsBatchDeleting ? BatchDeleteProgressText
         : IsBatchExporting ? BatchExportProgressText
         : HasSelectedHistoryRuns ? $"已选择 {SelectedHistoryRunCount} 条运行记录"
-        : "勾选运行记录后可批量导出或删除";
+        : "勾选实验记录后可批量导出或删除";
     public bool CanGoToPreviousHistoryPage =>
         !IsHistoryLoading && IsHistoryInteractionEnabled && HistoryPageNumber > 1;
     public bool CanGoToNextHistoryPage =>
@@ -262,6 +299,7 @@ public partial class StartExperimentPageViewModel : PageViewModel, IDisposable
     {
         if (routeData.Section == StartExperimentSection.History)
         {
+            IsToleranceHistorySelected = false;
             IsHistorySelected = true;
             PageTitle = "历史实验";
             _ = LoadHistoryAsync();
@@ -274,6 +312,7 @@ public partial class StartExperimentPageViewModel : PageViewModel, IDisposable
     [RelayCommand]
     private void SelectNewExperiment()
     {
+        IsToleranceHistorySelected = false;
         IsHistorySelected = false;
         PageTitle = "新建实验";
     }
@@ -284,6 +323,7 @@ public partial class StartExperimentPageViewModel : PageViewModel, IDisposable
     [RelayCommand]
     private async Task SelectHistoryAsync()
     {
+        IsToleranceHistorySelected = false;
         IsHistorySelected = true;
         PageTitle = "历史实验";
         await LoadHistoryAsync();
@@ -349,7 +389,10 @@ public partial class StartExperimentPageViewModel : PageViewModel, IDisposable
             .Where(_selectedHistoryRuns.ContainsKey)
             .Select(id => _selectedHistoryRuns[id])
             .ToArray();
-        var formatDialog = new BatchExportDialogViewModel(selected.Length);
+        var formatDialog = new BatchExportDialogViewModel(
+            selected.Length,
+            selected.Count(x => x.IsSpeech)
+        );
         await _dialogs.ShowDialog(_dialogHost, formatDialog);
         if (!formatDialog.Confirmed)
             return;
@@ -531,12 +574,32 @@ public partial class StartExperimentPageViewModel : PageViewModel, IDisposable
             return;
         try
         {
-            var template = await _persistence.LoadTemplateAsync(record.DatabaseId);
+            ExperimentConfigurationTemplate template;
+            if (record.IsSpeech)
+            {
+                if (_speechExperiments is null || record.AggregateRun is null)
+                    return;
+                var experiment = await _speechExperiments.LoadAsync(record.AggregateRun.RunId);
+                var rows = experiment.Rounds.Select(x => new SpeechRoundRow(x, _ => { })).ToArray();
+                var dialog = new SpeechCopyDialogViewModel(rows, rows.LastOrDefault());
+                await _dialogs.ShowDialog(_dialogHost, dialog);
+                if (!dialog.Confirmed || dialog.Selected is null)
+                    return;
+                template = SpeechExperimentResultsPageViewModel.CreateCopyTemplate(
+                    experiment.Source,
+                    dialog.Selected.Round
+                );
+            }
+            else
+                template = await _persistence.LoadTemplateAsync(record.DatabaseId);
             if (
-                template.CreationMode != ExperimentCreationMode.AcquisitionOnly
+                !record.IsSpeech
                 && (
-                    template.StimulusConfiguration.Kind == StimulusKind.EnvelopeTAcs
-                    || template.StimulusConfiguration.Envelope is not null
+                    template.CreationMode != ExperimentCreationMode.AcquisitionOnly
+                    && (
+                        template.StimulusConfiguration.Kind == StimulusKind.EnvelopeTAcs
+                        || template.StimulusConfiguration.Envelope is not null
+                    )
                 )
             )
                 throw new InvalidOperationException(
@@ -562,6 +625,11 @@ public partial class StartExperimentPageViewModel : PageViewModel, IDisposable
             return;
         try
         {
+            if (run.IsSpeech)
+            {
+                _router.Navigate(new SpeechExperimentResultsRouteData(run.RunId));
+                return;
+            }
             var route = await _persistence.LoadHistoricalRunAsync(run.RunId);
             var historical =
                 route.HistoricalResult
@@ -620,6 +688,7 @@ public partial class StartExperimentPageViewModel : PageViewModel, IDisposable
                 Remarks
             );
             _draftId = draft.Id;
+            ++_previewGeneration;
             ExperimentId = draft.ExperimentCode;
             if (SelectedExperimentMode == ExperimentCreationMode.AcquisitionOnly)
             {
@@ -802,6 +871,8 @@ public partial class StartExperimentPageViewModel : PageViewModel, IDisposable
 
     private async Task RefreshPreviewAsync(long generation)
     {
+        if (_draftId.HasValue)
+            return;
         try
         {
             var code = await _persistence.PreviewExperimentCodeAsync(BuildScheduledAt());
@@ -896,7 +967,8 @@ public partial class StartExperimentPageViewModel : PageViewModel, IDisposable
                         .ToString("yyyy/MM/dd HH:mm:ss"),
                     FormatRunDuration(run.StartedAtUtc, run.EndedAtUtc),
                     FormatPacketQuality(run.PacketStatistics),
-                    _selectedHistoryRuns.ContainsKey(run.RunId)
+                    _selectedHistoryRuns.ContainsKey(run.RunId),
+                    record.IsSpeech
                 ))
                 .ToArray();
             HistoryRecords.Add(
@@ -904,10 +976,12 @@ public partial class StartExperimentPageViewModel : PageViewModel, IDisposable
                     record.ExperimentId,
                     record.ExperimentCode,
                     record.SubjectCode,
-                    record.StimulusKind == "EnvelopeTAcs" ? "包络-tACS" : record.StimulusKind,
+                    record.IsSpeech ? "言语实验"
+                        : record.StimulusKind == "EnvelopeTAcs" ? "包络-tACS"
+                        : record.StimulusKind,
                     $"{record.TotalCurrentMilliAmps:0.###}mA",
                     record.ElectrodeSites.Select(x => new ElectrodePointViewModel(x)).ToArray(),
-                    $"{record.RunCount}次",
+                    record.IsSpeech ? "言语实验" : $"{record.RunCount}次",
                     record.ScheduledAt.ToLocalTime().ToString("yyyy/MM/dd HH:mm:ss"),
                     runs,
                     HandleHistoryRunSelectionChanged
@@ -944,7 +1018,7 @@ public partial class StartExperimentPageViewModel : PageViewModel, IDisposable
             if (
                 _selectedHistoryRuns.TryAdd(
                     run.RunId,
-                    new SelectedHistoryRun(run.RunId, run.ExperimentId, run.StartedAt)
+                    new SelectedHistoryRun(run.RunId, run.ExperimentId, run.StartedAt, run.IsSpeech)
                 )
             )
                 _selectedHistoryRunOrder.Add(run.RunId);
@@ -1160,6 +1234,7 @@ public partial class StartExperimentPageViewModel : PageViewModel, IDisposable
 
     public void Dispose()
     {
+        ToleranceHistory?.Dispose();
         if (Interlocked.Exchange(ref _disposed, 1) != 0)
             return;
         CancelAndDispose(Interlocked.Exchange(ref _subjectSearchCancellation, null));
@@ -1221,6 +1296,9 @@ public partial class ExperimentHistoryRecordViewModel : ObservableObject
     public string ExperimentCount { get; }
     public string RecordedAt { get; }
     public IReadOnlyList<ExperimentHistoryRunViewModel> Runs { get; }
+    public bool IsSpeech => Runs.FirstOrDefault()?.IsSpeech == true;
+    public bool IsDeviceExperiment => !IsSpeech;
+    public ExperimentHistoryRunViewModel? AggregateRun => IsSpeech ? Runs.FirstOrDefault() : null;
     public bool? SelectionState =>
         Runs.Count == 0 || Runs.All(x => !x.IsSelected) ? false
         : Runs.All(x => x.IsSelected) ? true
@@ -1230,7 +1308,11 @@ public partial class ExperimentHistoryRecordViewModel : ObservableObject
     private bool _isExpanded;
 
     [CommunityToolkit.Mvvm.Input.RelayCommand]
-    private void ToggleExpanded() => IsExpanded = !IsExpanded;
+    private void ToggleExpanded()
+    {
+        if (!IsSpeech)
+            IsExpanded = !IsExpanded;
+    }
 
     [CommunityToolkit.Mvvm.Input.RelayCommand]
     private void ToggleAllRuns() => SetAllRunsSelected(SelectionState != true);
@@ -1267,10 +1349,12 @@ public partial class ExperimentHistoryRunViewModel : ObservableObject
         string startedAt,
         string duration,
         string packetQuality = "暂无统计",
-        bool isSelected = false
+        bool isSelected = false,
+        bool isSpeech = false
     )
     {
         RunId = runId;
+        IsSpeech = isSpeech;
         ExperimentId = experimentId;
         Status = status;
         StartedAt = startedAt;
@@ -1280,6 +1364,7 @@ public partial class ExperimentHistoryRunViewModel : ObservableObject
     }
 
     public Guid RunId { get; }
+    public bool IsSpeech { get; }
     public string ExperimentId { get; }
     public string Status { get; }
     public string StartedAt { get; }
@@ -1315,7 +1400,12 @@ public sealed class ElectrodePointViewModel(string name)
     public string Name { get; } = name;
 }
 
-internal sealed record SelectedHistoryRun(Guid RunId, string ExperimentId, string StartedAt);
+internal sealed record SelectedHistoryRun(
+    Guid RunId,
+    string ExperimentId,
+    string StartedAt,
+    bool IsSpeech = false
+);
 
 internal sealed class CallbackProgress<T>(Action<T> callback) : IProgress<T>
 {

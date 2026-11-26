@@ -56,12 +56,15 @@
               HorizontalContentAlignment="Center"
               VerticalContentAlignment="Center"
             />
-            <Image Width="14" Height="14" Source="{SvgImage /Assets/Images/electrode-icons/role-checked.svg}" x:Name="SelectedCheck" IsVisible="False" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,1,2,0" />
+            <!-- Original role-checked.svg geometry; inherit the semantic selected color. -->
+            <Path Width="14" Height="14" Fill="{TemplateBinding Foreground}"
+                  Data="M6.99984 12.8333C3.77809 12.8333 1.1665 10.2217 1.1665 6.99996C1.1665 3.77821 3.77809 1.16663 6.99984 1.16663C10.2216 1.16663 12.8332 3.77821 12.8332 6.99996C12.8332 10.2217 10.2216 12.8333 6.99984 12.8333ZM6.41825 9.33329L10.5424 5.20854L9.71759 4.38371L6.41825 7.68363L4.768 6.03338L3.94317 6.85821L6.41825 9.33329Z"
+                  x:Name="SelectedCheck" IsVisible="False" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,1,2,0" />
             </Grid>
           </Border>
         </ControlTemplate>
       </Setter>
-      <Style Selector="^:checked /template/ Image#SelectedCheck">
+      <Style Selector="^:checked /template/ Path#SelectedCheck">
         <Setter Property="IsVisible" Value="True" />
       </Style>
       <Style Selector="^:checked /template/ Border#RoleSurface">

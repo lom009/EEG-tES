@@ -1,0 +1,243 @@
+<Styles
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:documents="clr-namespace:Avalonia.Controls.Documents;assembly=Avalonia.Controls"
+>
+  <Style Selector="TextBlock">
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="FontFamily" Value="{DynamicResource AlibabaPuHuiTi}" />
+    <Setter Property="FontSize" Value="14" />
+  </Style>
+  <Style Selector="TextBlock.heading">
+    <Setter Property="FontSize" Value="17" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+  <Style Selector="TextBlock.muted">
+    <Setter Property="Foreground" Value="{DynamicResource ProductTextMuted}" />
+    <Setter Property="FontSize" Value="13" />
+  </Style>
+  <Style Selector="Border.card">
+    <Setter Property="Background" Value="White" />
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="Padding" Value="24" />
+    <Setter Property="BoxShadow" Value="0 4 12 0 #336885B3" />
+  </Style>
+  <Style Selector="Border.soft">
+    <Setter Property="Background" Value="{DynamicResource ProductStimulusTile}" />
+    <Setter Property="CornerRadius" Value="6" />
+    <Setter Property="Padding" Value="14" />
+  </Style>
+  <Style Selector="Button">
+    <Setter Property="MinHeight" Value="34" />
+    <Setter Property="Padding" Value="14,5" />
+    <Setter Property="Background" Value="White" />
+    <Setter Property="BorderBrush" Value="#E0E7F4" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="5" />
+    <Setter Property="FontSize" Value="14" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+  </Style>
+  <Style Selector="Button.speech-score">
+    <Setter Property="MinWidth" Value="0" />
+    <Setter Property="MinHeight" Value="0" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="VerticalContentAlignment" Value="Stretch" />
+  </Style>
+  <Style Selector="Button.primary">
+    <Setter Property="Background" Value="{DynamicResource ProductPrimary}" />
+    <Setter Property="Foreground" Value="White" />
+    <Setter Property="BorderThickness" Value="0" />
+  </Style>
+  <Style Selector="Button.start">
+    <Setter Property="Background" Value="{DynamicResource ProductExcellent}" />
+    <Setter Property="Foreground" Value="White" />
+    <Setter Property="BorderThickness" Value="0" />
+  </Style>
+  <Style Selector="Button.danger">
+    <Setter Property="Background" Value="{DynamicResource ProductTrainingEnd}" />
+    <Setter Property="Foreground" Value="White" />
+    <Setter Property="BorderThickness" Value="0" />
+  </Style>
+  <Style Selector="Button:disabled">
+    <Setter Property="Opacity" Value="0.45" />
+  </Style>
+  <Style Selector="NumericUpDown /template/ TextBox">
+    <Setter Property="Background" Value="White" />
+    <Setter Property="Foreground" Value="{DynamicResource ProductText}" />
+    <Setter Property="BorderBrush" Value="#DFE6F3" />
+    <Setter Property="FontSize" Value="14" />
+  </Style>
+  <Style Selector="ComboBox">
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="MinHeight" Value="36" />
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="BorderBrush" Value="#DFE6F3" />
+    <Setter Property="CornerRadius" Value="5" />
+  </Style>
+  <Style Selector="ComboBox:disabled">
+    <Setter Property="Background" Value="#EDF2F8" />
+  </Style>
+  <!-- Scoped to the training fields/actions; the results page retains its existing styles. -->
+  <Style Selector="Button.speech-action">
+    <Setter Property="CornerRadius" Value="6" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border
+          Background="{TemplateBinding Background}"
+          BorderBrush="{TemplateBinding BorderBrush}"
+          BorderThickness="{TemplateBinding BorderThickness}"
+          CornerRadius="{TemplateBinding CornerRadius}"
+          Padding="{TemplateBinding Padding}"
+        >
+          <StackPanel
+            Orientation="Horizontal"
+            Spacing="8"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+          >
+            <Canvas Width="20" Height="20">
+              <Path
+                Name="ActionIcon"
+                Data="{TemplateBinding Tag}"
+                Fill="{TemplateBinding Foreground}"
+              />
+            </Canvas>
+            <TextBlock
+              Text="{TemplateBinding Content}"
+              Foreground="{TemplateBinding Foreground}"
+              FontSize="{TemplateBinding FontSize}"
+              VerticalAlignment="Center"
+            />
+          </StackPanel>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </Style>
+  <Style Selector="Button.speech-action:not(.primary):not(.danger):not(:disabled)">
+    <Setter Property="Background" Value="White" />
+    <Setter Property="Foreground" Value="{DynamicResource ProductText}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource ProductStimulusInputBorder}" />
+  </Style>
+  <Style Selector="Button.speech-action:not(.primary):not(.danger):not(:disabled) /template/ Path#ActionIcon">
+    <Setter Property="Fill" Value="{DynamicResource ProductTextMuted}" />
+  </Style>
+  <Style Selector="Button.speech-action.primary:not(:disabled)">
+    <Setter Property="Background" Value="{DynamicResource ProductPrimary}" />
+    <Setter Property="Foreground" Value="White" />
+  </Style>
+  <Style Selector="Button.speech-action:disabled">
+    <Setter Property="Background" Value="#ACB7C8" />
+    <Setter Property="BorderBrush" Value="#ACB7C8" />
+    <Setter Property="Foreground" Value="White" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Opacity" Value="1" />
+  </Style>
+  <Style Selector="ComboBox.speech-field">
+    <Setter Property="CornerRadius" Value="6" />
+    <Setter Property="Foreground" Value="{DynamicResource ProductText}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource ProductStimulusInputBorder}" />
+    <Setter Property="ItemTemplate">
+      <DataTemplate x:CompileBindings="False">
+        <TextBlock Text="{Binding}" Foreground="{StaticResource ProductText}" FontSize="13" />
+      </DataTemplate>
+    </Setter>
+  </Style>
+  <Style Selector="ComboBox.speech-field:disabled">
+    <Setter Property="Background" Value="#ECF2F8" />
+    <Setter Property="BorderBrush" Value="{DynamicResource ProductStimulusInputBorder}" />
+    <Setter Property="Foreground" Value="{DynamicResource ProductText}" />
+    <Setter Property="Opacity" Value="1" />
+  </Style>
+  <Style Selector="ComboBox.speech-field /template/ Label#DropDownGlyph">
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="ContentTemplate">
+      <DataTemplate>
+        <Viewbox Width="16" Height="16">
+          <Canvas Width="16" Height="16">
+            <Path
+              Data="M3.54004 6.45964L4.45928 5.54041L7.99966 9.08079L11.54 5.54041L12.4593 6.45964L7.99966 10.9193L3.54004 6.45964Z"
+              Fill="#E6000000"
+            />
+          </Canvas>
+        </Viewbox>
+      </DataTemplate>
+    </Setter>
+  </Style>
+  <Style Selector="NumericUpDown.speech-field">
+    <Setter Property="CornerRadius" Value="6" />
+    <Setter Property="Background" Value="White" />
+    <Setter Property="BorderBrush" Value="{DynamicResource ProductStimulusInputBorder}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <DataValidationErrors>
+          <ButtonSpinner
+            Name="PART_Spinner"
+            Background="Transparent"
+            BorderBrush="Transparent"
+            BorderThickness="0"
+            CornerRadius="{TemplateBinding CornerRadius}"
+            IsTabStop="False"
+            Padding="0"
+            MinWidth="0"
+            HorizontalContentAlignment="Stretch"
+            VerticalContentAlignment="Stretch"
+            AllowSpin="{TemplateBinding AllowSpin}"
+            ShowButtonSpinner="{TemplateBinding ShowButtonSpinner}"
+          >
+            <TextBox
+              Name="PART_TextBox"
+              Margin="0"
+              Padding="{TemplateBinding Padding}"
+              MinWidth="0"
+              CornerRadius="{TemplateBinding CornerRadius}"
+              Background="{TemplateBinding Background}"
+              BorderBrush="{TemplateBinding BorderBrush}"
+              BorderThickness="{TemplateBinding BorderThickness}"
+              Foreground="{DynamicResource ProductText}"
+              IsReadOnly="{TemplateBinding IsReadOnly}"
+              VerticalContentAlignment="Center"
+              HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+              Text="{TemplateBinding Text}"
+              TextAlignment="{TemplateBinding TextAlignment}"
+              AcceptsReturn="False"
+              TextWrapping="NoWrap"
+            />
+          </ButtonSpinner>
+        </DataValidationErrors>
+      </ControlTemplate>
+    </Setter>
+  </Style>
+  <Style Selector="NumericUpDown.speech-field:disabled">
+    <Setter Property="Background" Value="#ECF2F8" />
+    <Setter Property="BorderBrush" Value="{DynamicResource ProductStimulusInputBorder}" />
+    <Setter Property="Opacity" Value="1" />
+  </Style>
+  <Style Selector="NumericUpDown.speech-field /template/ TextBox#PART_TextBox /template/ Border#PART_BorderElement">
+    <Setter Property="Background" Value="White" />
+    <Setter Property="BorderBrush" Value="{DynamicResource ProductStimulusInputBorder}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="6" />
+  </Style>
+  <Style Selector="NumericUpDown.speech-field:disabled /template/ TextBox#PART_TextBox /template/ Border#PART_BorderElement">
+    <Setter Property="Background" Value="#ECF2F8" />
+    <Setter Property="BorderBrush" Value="{DynamicResource ProductStimulusInputBorder}" />
+  </Style>
+  <Style Selector="Button.speech-action:disabled /template/ TextBlock">
+    <Setter Property="Foreground" Value="White" />
+    <Setter Property="Opacity" Value="1" />
+  </Style>
+  <Style Selector="NumericUpDown.speech-field /template/ TextBox#PART_TextBox /template/ TextPresenter#PART_TextPresenter">
+    <Setter Property="documents:TextElement.Foreground" Value="{DynamicResource ProductText}" />
+    <Setter Property="Opacity" Value="1" />
+  </Style>
+  <Style Selector="NumericUpDown.speech-field:disabled /template/ TextBox#PART_TextBox">
+    <Setter Property="Foreground" Value="{DynamicResource ProductText}" />
+    <Setter Property="Opacity" Value="1" />
+  </Style>
+  <Style Selector="Image.scoreDisabled"><Setter Property="IsVisible" Value="False" /></Style>
+  <Style Selector="Button.speech-score:disabled Image.scoreDisabled"><Setter Property="IsVisible" Value="True" /></Style>
+  <Style Selector="Button.speech-score:disabled Grid.scoreEnabled"><Setter Property="IsVisible" Value="False" /></Style>
+  <Style Selector="Button.speech-score:disabled"><Setter Property="Opacity" Value="1" /></Style>
+</Styles>

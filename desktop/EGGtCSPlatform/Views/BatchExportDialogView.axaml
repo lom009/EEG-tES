@@ -7,7 +7,7 @@
   x:Class="EGGtCSPlatform.Views.BatchExportDialogView"
   x:DataType="vm:BatchExportDialogViewModel"
   Width="520"
-  Height="332"
+  Height="390"
   Background="Transparent"
   mc:Ignorable="d"
 >
@@ -56,7 +56,7 @@
 
   <Border
     Width="480"
-    Height="292"
+    Height="350"
     Margin="20"
     Padding="24"
     Background="White"
@@ -93,9 +93,10 @@
         <TextBlock
           FontSize="{DynamicResource FontSize13}"
           Foreground="#64748B"
-          Text="{Binding SelectedCount, StringFormat='已选择 {0} 条运行记录'}"
+          Text="{Binding SelectedCount, StringFormat='已选择 {0} 条实验记录'}"
         />
-        <Border Padding="16,13" Background="#F7F9FC" CornerRadius="6">
+        <TextBlock IsVisible="{Binding HasSpeech}" Text="{Binding SpeechDescription}" TextWrapping="Wrap" Foreground="#64748B" />
+        <Border IsVisible="{Binding HasDeviceRecords}" Padding="16,13" Background="#F7F9FC" CornerRadius="6">
           <StackPanel Spacing="12">
             <CheckBox Content="导出 EDF+ 脑电数据" IsChecked="{Binding ExportEdf, Mode=TwoWay}" />
             <CheckBox

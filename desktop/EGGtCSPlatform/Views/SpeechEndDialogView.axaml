@@ -1,0 +1,18 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ xmlns:vm="clr-namespace:EGGtCSPlatform.ViewModels" x:Class="EGGtCSPlatform.Views.SpeechEndDialogView"
+ x:DataType="vm:SpeechEndDialogViewModel" FontFamily="{DynamicResource AlibabaPuHuiTi}" Foreground="{DynamicResource ProductText}">
+ <Border Background="White" CornerRadius="6" Padding="24" Width="480" MaxWidth="480">
+  <Grid RowDefinitions="Auto,24,Auto,24,Auto">
+   <Grid ColumnDefinitions="22,8,*,24">
+    <Image Source="{SvgImage /Assets/Images/Dialog/risk.svg}" Width="20" Height="20" />
+    <TextBlock Grid.Column="2" Text="结束本次实验？" FontWeight="SemiBold" VerticalAlignment="Center"/>
+    <Button Grid.Column="3" Content="×" Command="{Binding DismissCommand}" Padding="0" Background="Transparent" BorderThickness="0" FontSize="22"/>
+   </Grid>
+   <TextBlock Grid.Row="2" Text="{Binding Message}" TextWrapping="Wrap" LineHeight="24"/>
+   <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+    <Button Content="中断训练" Command="{Binding EndTrainingCommand}" Background="#3941B6" Foreground="White" CornerRadius="6" Padding="12,8"/>
+    <Button Content="结束实验" Command="{Binding EndExperimentCommand}" Background="#E51C23" Foreground="White" CornerRadius="6" Padding="12,8"/>
+   </StackPanel>
+  </Grid>
+ </Border>
+</UserControl>

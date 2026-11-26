@@ -418,18 +418,21 @@ public sealed class StartExperimentPageViewModelTests
     [Fact]
     public async Task SupersededHistoryQueryCannotOverwriteLatestSearchResult()
     {
-        using var model = CreateModel(new DelayedHistoryPersistenceService());
+        var persistence = new DelayedHistoryPersistenceService();
+        using var model = CreateModel(persistence);
         model.ApplyRoute(StartExperimentRouteData.History);
         await model.RefreshHistoryCommand.ExecuteAsync(null);
 
         model.HistorySearchText = "slow";
-        await Task.Delay(350);
+        var slowQuery = model.RefreshHistoryCommand.ExecuteAsync(null);
+        await persistence.SlowStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
         model.HistorySearchText = "fast";
-        await Task.Delay(400);
+        await model.SearchHistoryCommand.ExecuteAsync(null);
 
         Assert.Equal("SUB-FAST", Assert.Single(model.HistoryRecords).PatientId);
 
-        await Task.Delay(200);
+        persistence.CompleteSlow.SetResult();
+        await slowQuery.WaitAsync(TimeSpan.FromSeconds(5));
 
         Assert.Equal("SUB-FAST", Assert.Single(model.HistoryRecords).PatientId);
     }
@@ -513,12 +516,13 @@ public sealed class StartExperimentPageViewModelTests
             return Task.FromResult(new ExperimentDraft(1, "EXP-TEST", subjectCode));
         }
 
-        public Task SaveConfigurationAsync(
+        public Task<ExperimentConfigurationSaveResult> SaveConfigurationAsync(
             long experimentId,
             ExperimentConfigurationTemplate template,
             IReadOnlyList<ImpedanceSnapshotValue> impedances,
             CancellationToken cancellationToken = default
-        ) => Task.CompletedTask;
+        ) =>
+            Task.FromResult(new ExperimentConfigurationSaveResult(experimentId, "EXP-TEST", false));
 
         public Task<ExperimentConfigurationTemplate> LoadTemplateAsync(
             long experimentId,
@@ -534,6 +538,11 @@ public sealed class StartExperimentPageViewModelTests
 
     private sealed class DelayedHistoryPersistenceService : IExperimentPersistenceService
     {
+        public TaskCompletionSource SlowStarted { get; } =
+            new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource CompleteSlow { get; } =
+            new(TaskCreationOptions.RunContinuationsAsynchronously);
+
         public Task<string> PreviewExperimentCodeAsync(
             DateTimeOffset scheduledAt,
             CancellationToken cancellationToken = default
@@ -547,12 +556,13 @@ public sealed class StartExperimentPageViewModelTests
             CancellationToken cancellationToken = default
         ) => Task.FromResult(new ExperimentDraft(1, "EXP-TEST", subjectCode));
 
-        public Task SaveConfigurationAsync(
+        public Task<ExperimentConfigurationSaveResult> SaveConfigurationAsync(
             long experimentId,
             ExperimentConfigurationTemplate template,
             IReadOnlyList<ImpedanceSnapshotValue> impedances,
             CancellationToken cancellationToken = default
-        ) => Task.CompletedTask;
+        ) =>
+            Task.FromResult(new ExperimentConfigurationSaveResult(experimentId, "EXP-TEST", false));
 
         public Task<ExperimentConfigurationTemplate> LoadTemplateAsync(
             long experimentId,
@@ -569,10 +579,12 @@ public sealed class StartExperimentPageViewModelTests
         )
         {
             if (query.SearchText == "slow")
-                await Task.Delay(500);
-            else if (query.SearchText == "fast")
-                await Task.Delay(10, cancellationToken);
-            else
+            {
+                SlowStarted.TrySetResult();
+                // Deliberately ignore cancellation to exercise stale-result protection.
+                await CompleteSlow.Task;
+            }
+            else if (query.SearchText != "fast")
                 return new PagedResult<ExperimentHistoryItem>([], 0, 1, query.PageSize);
 
             var item = CreateHistoryItems(1)[0] with

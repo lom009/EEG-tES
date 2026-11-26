@@ -44,7 +44,8 @@ public sealed class AcquisitionOnlyVisualApp : App
                 .Points.Where(x => x.Role == ElectrodeRole.Acquisition)
                 .ToDictionary(x => x.Name, _ => 8d)
         );
-        var basic = new BasicViewModel(router, electrode, connection);
+        var basic = new BasicViewModel(
+            router, electrode, connection, isNavigationAnimationEnabled: false);
         var content = new BasicView { DataContext = basic };
         var window = new Window
         {
@@ -135,7 +136,8 @@ public sealed class AcquisitionOnlyVisualApp : App
                     route,
                     router,
                     service,
-                    new ImmediateVisualClock()
+                    new ImmediateVisualClock(),
+                    deviceSelection: connection
                 );
                 run.AcquisitionStage.DurationValue = 30;
                 basic.CurrentPage = run;
@@ -144,9 +146,9 @@ public sealed class AcquisitionOnlyVisualApp : App
                     content
                         .GetVisualDescendants()
                         .OfType<ExperimentStageControl>()
-                        .Count(x => x.IsEffectivelyVisible) != 2
+                        .Count(x => x.IsEffectivelyVisible) != 1
                 )
-                    throw new InvalidOperationException("单采集时序没有恰好两个阶段");
+                    throw new InvalidOperationException("单采集时序没有恰好一个采集阶段");
                 if (
                     content
                         .GetVisualDescendants()
@@ -154,20 +156,50 @@ public sealed class AcquisitionOnlyVisualApp : App
                         .Any(x => x.IsEffectivelyVisible && x.Text is "刺激参数配置" or "刺激配置")
                 )
                     throw new InvalidOperationException("单采集仍显示刺激配置");
+                if (content.GetVisualDescendants().OfType<RunModeSelector>()
+                    .Any(x => x.IsEffectivelyVisible))
+                    throw new InvalidOperationException("单采集仍显示模式切换按钮");
+                if (content.GetVisualDescendants().OfType<TextBlock>()
+                    .Any(x => x.IsEffectivelyVisible && x.Text == "手动"))
+                    throw new InvalidOperationException("单采集仍显示手动文本");
                 run.SelectModeCommand.Execute(ExperimentRunMode.Automatic);
                 run.CycleCount = 2;
-                await Capture(content, Path.Combine(output, "AcquisitionOnly.automatic.png"));
-                if (run.TimelineSegments.Count != 4)
-                    throw new InvalidOperationException("自动时序包含多余阶段");
-                run.SelectModeCommand.Execute(ExperimentRunMode.Manual);
+                if (!run.IsManualMode || run.CycleCount != 1 || run.TimelineSegments.Count != 1)
+                    throw new InvalidOperationException("单采集允许自动或循环运行");
                 var running = run.StartAcquisitionCommand.ExecuteAsync(null);
+                await Capture(content, Path.Combine(output, "AcquisitionOnly.running.png"));
+                VerifyNoModeHeader(content);
                 service.ContinueAfterAcquisition();
                 await running.WaitAsync(TimeSpan.FromSeconds(5));
                 if (!run.IsCompleted)
-                    throw new InvalidOperationException("消隐后未结束");
+                    throw new InvalidOperationException("采集后未立即结束");
                 await Capture(content, Path.Combine(output, "AcquisitionOnly.completed.png"));
+                VerifyNoModeHeader(content);
+                VerifyCompletionButtons(content);
+                window.Width = 1024;
+                window.Height = 640;
+                await Capture(content, Path.Combine(output, "AcquisitionOnly.completed-small.png"));
+                VerifyCompletionButtons(content);
+                window.Width = 1440;
+                window.Height = 900;
+                await run.RerunExperimentCommand.ExecuteAsync(null);
                 run.ExecuteFooterPrimaryCommand.Execute(null);
                 await Capture(content, Path.Combine(output, "AcquisitionOnly.results.png"));
+                using var combinedRun = new ExperimentRunPageViewModel(
+                    source, router, service, new ImmediateVisualClock(), deviceSelection: connection);
+                combinedRun.AcquisitionStage.DurationValue = 30;
+                combinedRun.StimulationStage.DurationValue = 30;
+                basic.CurrentPage = combinedRun;
+                await combinedRun.StartAcquisitionCommand.ExecuteAsync(null);
+                service.ContinueAfterStimulation();
+                await combinedRun.StartStimulationCommand.ExecuteAsync(null);
+                await combinedRun.ExecuteFooterPrimaryCommand.ExecuteAsync(null);
+                await Capture(content, Path.Combine(output, "Combined.completed.png"));
+                VerifyCompletionButtons(content);
+                window.Width = 1024;
+                window.Height = 640;
+                await Capture(content, Path.Combine(output, "Combined.completed-small.png"));
+                VerifyCompletionButtons(content);
                 Environment.ExitCode = 0;
             }
             catch (Exception exception)
@@ -183,6 +215,30 @@ public sealed class AcquisitionOnlyVisualApp : App
             }
         };
         window.Show();
+    }
+
+    private static void VerifyNoModeHeader(Control content)
+    {
+        if (content.GetVisualDescendants().OfType<RunModeSelector>().Any(x => x.IsEffectivelyVisible)
+            || content.GetVisualDescendants().OfType<TextBlock>()
+                .Any(x => x.IsEffectivelyVisible && x.Text == "手动"))
+            throw new InvalidOperationException("单采集仍显示模式区域");
+    }
+
+    private static void VerifyCompletionButtons(Control content)
+    {
+        var labels = content.GetVisualDescendants().OfType<TextBlock>()
+            .Where(x => x.IsEffectivelyVisible && x.Text is "结束实验" or "再次运行此次实验")
+            .ToArray();
+        if (labels.Length != 2)
+            throw new InvalidOperationException("完成页未显示两个操作按钮");
+        foreach (var label in labels)
+        {
+            var button = label.GetVisualAncestors().OfType<Button>().First();
+            if (!button.IsEnabled || button.Bounds.Height != 32
+                || label.DesiredSize.Width > label.Bounds.Width + 1)
+                throw new InvalidOperationException("完成页按钮不可用或文字被截断");
+        }
     }
 
     private static async Task Capture(Control view, string path)

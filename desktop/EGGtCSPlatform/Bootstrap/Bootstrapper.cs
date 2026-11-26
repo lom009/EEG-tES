@@ -5,6 +5,7 @@ using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Threading;
+using EGGtCSPlatform.Audio.Sdl;
 using EGGtCSPlatform.Communication.Core;
 using EGGtCSPlatform.Configuration;
 using EGGtCSPlatform.Crash;
@@ -14,6 +15,7 @@ using EGGtCSPlatform.Interfaces;
 using EGGtCSPlatform.MainApp;
 using EGGtCSPlatform.Persistence;
 using EGGtCSPlatform.Services;
+using EGGtCSPlatform.SpeechTraining;
 using EGGtCSPlatform.ViewModels;
 using EGGtCSPlatform.ViewModels.Pages;
 using Microsoft.EntityFrameworkCore;
@@ -78,6 +80,16 @@ public static class Bootstrapper
             .AddOptions<DisplayOptions>()
             .Configure(options =>
             {
+                options.EnvelopePlayheadEnabled =
+                    bool.TryParse(
+                        displaySection[nameof(DisplayOptions.EnvelopePlayheadEnabled)],
+                        out var playhead
+                    ) && playhead;
+                options.EnvelopeWaveformRealtimeEnabled =
+                    !bool.TryParse(
+                        displaySection[nameof(DisplayOptions.EnvelopeWaveformRealtimeEnabled)],
+                        out var realtime
+                    ) || realtime;
                 var configuredPreset = displaySection[nameof(DisplayOptions.FontSizePreset)];
                 options.FontSizePreset =
                     Enum.TryParse<FontSizePreset>(
@@ -132,6 +144,7 @@ public static class Bootstrapper
         collection.AddSingleton<IDatabaseInitializer, DatabaseInitializer>();
         collection.AddSingleton<ISubjectLookupService, SubjectLookupService>();
         collection.AddSingleton<IExperimentPersistenceService, ExperimentPersistenceService>();
+        collection.AddSingleton<ISpeechExperimentService, SpeechExperimentService>();
         collection.AddSingleton<
             IExperimentConfigurationTemplateService,
             ExperimentConfigurationTemplateService
@@ -151,6 +164,9 @@ public static class Bootstrapper
         collection.AddSingleton<IManagedEegMigrationService, ManagedEegMigrationService>();
         collection.AddSingleton<IApplicationShutdownCoordinator, ApplicationShutdownCoordinator>();
         collection.AddSingleton<IFileRevealService, WindowsFileRevealService>();
+        collection
+            .AddOptions<ElectrodeSelectionOptions>()
+            .Bind(configuration.GetSection(ElectrodeSelectionOptions.SectionName));
         collection
             .AddOptions<DeviceHeartbeatOptions>()
             .Bind(configuration.GetSection(DeviceHeartbeatOptions.SectionName))
@@ -224,7 +240,11 @@ public static class Bootstrapper
         collection.AddSingleton<IDeviceCapabilityAvailability, DeviceCapabilityAvailability>();
         collection
             .AddOptions<ElectrodePositionOptions>()
-            .Bind(configuration.GetSection(ElectrodePositionOptions.SectionName))
+            .Configure(options =>
+                options.Positions = ElectrodePositionOptions
+                    .Read(configuration.GetSection(ElectrodePositionOptions.SectionName))
+                    .Positions
+            )
             .Validate(
                 options => options.IsValid(),
                 "ElectrodePositions must contain unique, named positions with valid reference coordinates and default roles."
@@ -239,10 +259,9 @@ public static class Bootstrapper
             )
             .ValidateOnStart();
         var configuredElectrodeIds =
-            configuration
-                .GetSection(ElectrodePositionOptions.SectionName)
-                .Get<ElectrodePositionOptions>()
-                ?.Positions?.Select(position => position.Id)
+            ElectrodePositionOptions
+                .Read(configuration.GetSection(ElectrodePositionOptions.SectionName))
+                .Positions.Select(position => position.Id)
                 .ToHashSet(StringComparer.OrdinalIgnoreCase)
             ?? [];
         var stimulationChannels = configuration.GetSection(StimulationChannelOptions.SectionName);
@@ -402,8 +421,6 @@ public static class Bootstrapper
         collection.AddSingleton<EGGtCSPlatform.DeviceRuntime.IDeviceRuntime>(services =>
             services.GetRequiredService<ConfigurableDeviceBackend>().Runtime
         );
-        collection.AddSingleton<IEnvelopeTrainingExecutionService, EnvelopeTrainingExecutionService>();
-        collection.AddSingleton<IEnvelopeTrainingResultStore>(new EnvelopeTrainingResultStore());
         collection.AddSingleton<IDeviceManager>(services =>
             services.GetRequiredService<ConfigurableDeviceBackend>().DeviceManager
         );
@@ -428,11 +445,26 @@ public static class Bootstrapper
         collection.AddSingleton<IExperimentRunService, DeviceExperimentRunService>();
         collection.AddSingleton<IImpedanceDetectionService, DeviceImpedanceDetectionService>();
         collection.AddSingleton<IExperimentRunClock, SystemExperimentRunClock>();
+        collection.AddSingleton<SpeechOutputLifetime>();
+        collection.AddSingleton<Func<SpeechTrainingSession>>(_ =>
+            () => new SpeechTrainingSession(new FileSpeechCorpusProvider(), new SdlAudioPlayer())
+        );
         collection.AddTransient<LoginViewModel>();
 
         collection.AddTransient<StartExperimentPageViewModel>();
         collection.AddTransient<DeviceConnectionPageViewModel>();
-        collection.AddTransient<ToleranceTestPageViewModel>();
+        collection.AddSingleton<ToleranceEntryService>();
+        collection.AddSingleton<ToleranceSessionLifetime>();
+        collection
+            .AddOptions<ToleranceRunOptions>()
+            .Bind(configuration.GetSection(ToleranceRunOptions.SectionName))
+            .Validate(
+                o => o.DurationSeconds is >= 1 and <= 65535,
+                "ToleranceRun.DurationSeconds must be between 1 and 65535."
+            )
+            .ValidateOnStart();
+        collection.AddSingleton<IToleranceSessionFactory, ToleranceSessionFactory>();
+        collection.AddSingleton<ITolerancePersistenceService, TolerancePersistenceService>();
         collection.AddTransient<PhysicalChannelMappingPageViewModel>();
 
         collection.AddSingleton<Func<ApplicationPageNames, object?, PageViewModel>>(services =>
@@ -445,8 +477,12 @@ public static class Bootstrapper
                     ),
                     ApplicationPageNames.DeviceConnection =>
                         services.GetRequiredService<DeviceConnectionPageViewModel>(),
-                    ApplicationPageNames.ToleranceTest =>
-                        services.GetRequiredService<ToleranceTestPageViewModel>(),
+                    ApplicationPageNames.ToleranceTest => new ToleranceTestPageViewModel(
+                        routeData as ToleranceTestRouteData
+                            ?? throw new InvalidOperationException("缺少耐受度配置。"),
+                        services.GetRequiredService<IToleranceSessionFactory>(),
+                        services.GetRequiredService<ITolerancePersistenceService>()
+                    ),
                     ApplicationPageNames.StimulusConfiguration =>
                         new StimulusConfigurationPageViewModel(
                             routeData as StimulusConfigurationRouteData
@@ -477,7 +513,8 @@ public static class Bootstrapper
                             services.GetRequiredService<IExperimentPersistenceService>(),
                             services.GetRequiredService<IDeviceCapabilityAvailability>(),
                             services.GetRequiredService<IEegPhysicalChannelMappingService>(),
-                            services.GetRequiredService<ISingleStimulusExperimentDialogService>()
+                            services.GetRequiredService<ISingleStimulusExperimentDialogService>(),
+                            services.GetRequiredService<IOptions<ElectrodeSelectionOptions>>().Value
                         ),
                     ApplicationPageNames.PhysicalChannelMapping =>
                         services.GetRequiredService<PhysicalChannelMappingPageViewModel>(),
@@ -497,6 +534,9 @@ public static class Bootstrapper
                         services.GetRequiredService<IDeviceSelectionContext>(),
                         services.GetRequiredService<IOptions<DisplayOptions>>().Value
                     ),
+                    ApplicationPageNames.PictureNaming => new PictureNamingPageViewModel(
+                        routeData as ExperimentRunRouteData ?? throw new InvalidOperationException("缺少图片命名配置。")
+                    ),
                     ApplicationPageNames.EnvelopeStimulation =>
                         new EnvelopeStimulationPageViewModel(
                             routeData as EnvelopeStimulationRouteData
@@ -505,8 +545,58 @@ public static class Bootstrapper
                                     nameof(routeData)
                                 ),
                             services.GetRequiredService<INavigationRouter>(),
-                            services.GetRequiredService<IEnvelopeTrainingExecutionService>(),
-                            services.GetRequiredService<IEnvelopeTrainingResultStore>()
+                            services.GetRequiredService<Func<SpeechTrainingSession>>(),
+                            route => new DeviceEnvelopeOutput(
+                                services.GetRequiredService<IDeviceManager>(),
+                                route.DeviceId,
+                                services.GetRequiredService<IDeviceHeartbeatPauseService>(),
+                                services
+                                    .GetRequiredService<IOptions<V101RequestTimeoutOptions>>()
+                                    .Value.CreateProtocolOptions()
+                                    .GetTimeout(typeof(ControlEnvelopeStimulationRequest)),
+                                currentPolicy: services.GetRequiredService<StimulationCurrentPolicy>()
+                            ),
+                            services.GetRequiredService<SpeechOutputLifetime>(),
+                            message =>
+                                services
+                                    .GetRequiredService<DialogService>()
+                                    .ShowDialog(
+                                        services.GetRequiredService<IDialogProvider>(),
+                                        new ConfirmDialogViewModel(DialogKind.Error)
+                                        {
+                                            Title = "设备停止未确认",
+                                            Message = message,
+                                            ConfirmText = "前往重新连接",
+                                            ShowCancelButton = false,
+                                        }
+                                    ),
+                            services.GetRequiredService<ISpeechExperimentService>(),
+                            dialog =>
+                                services
+                                    .GetRequiredService<DialogService>()
+                                    .ShowDialog(
+                                        services.GetRequiredService<IDialogProvider>(),
+                                        dialog
+                                    ),
+                            services.GetRequiredService<IOptions<DisplayOptions>>().Value
+                        ),
+                    ApplicationPageNames.SpeechTrainingResults
+                        when routeData is SpeechExperimentResultsRouteData speech =>
+                        new SpeechExperimentResultsPageViewModel(
+                            speech,
+                            services.GetRequiredService<ISpeechExperimentService>(),
+                            services.GetRequiredService<INavigationRouter>(),
+                            services.GetRequiredService<DialogService>(),
+                            services.GetRequiredService<IDialogProvider>(),
+                            services.GetRequiredService<IExperimentConfigurationTransferContext>()
+                        ),
+                    ApplicationPageNames.SpeechTrainingResults =>
+                        new SpeechTrainingResultsPageViewModel(
+                            routeData as SpeechTrainingResultsRouteData
+                                ?? throw new ArgumentException(
+                                    "言语训练结果不可用。",
+                                    nameof(routeData)
+                                )
                         ),
                     _ => throw new ArgumentOutOfRangeException(
                         nameof(route),
@@ -535,6 +625,7 @@ public static class Bootstrapper
         _ = services.GetRequiredService<IOptions<ExperimentRunTimingOptions>>().Value;
         _ = services.GetRequiredService<IOptions<EegAcquisitionOptions>>().Value;
         _ = services.GetRequiredService<IOptions<StimulationRunOptions>>().Value;
+        _ = services.GetRequiredService<IOptions<ToleranceRunOptions>>().Value;
         _ = services.GetRequiredService<IOptions<DeviceBackendOptions>>().Value;
         _ = services.GetRequiredService<IOptions<ElectrodePositionOptions>>().Value;
         _ = services.GetRequiredService<IOptions<StimulationCurrentOptions>>().Value;

@@ -19,7 +19,7 @@ using Xunit;
 
 namespace EGGtCSPlatform.Tests;
 
-public sealed class SingleStimulusExperimentTests
+public sealed partial class SingleStimulusExperimentTests
 {
     [Fact]
     public async Task EnvelopeSetupRoundTripsThroughDatabaseWithoutCreatingRun()
@@ -128,12 +128,12 @@ public sealed class SingleStimulusExperimentTests
                 DurationMinimumMilliseconds = 1,
                 DurationStepMilliseconds = 1,
             },
-            persistence: coordinator
+            persistence: coordinator,
+            eegChannelMappings: fixture.Mapping
         );
-        if (mode == ExperimentRunMode.Manual)
-            await model.StartAcquisitionCommand.ExecuteAsync(null);
-        else
-            await model.StartAutomaticExperimentCommand.ExecuteAsync(null);
+        Assert.True(model.IsManualMode);
+        Assert.Equal(1, model.CycleCount);
+        await model.StartAcquisitionCommand.ExecuteAsync(null);
         Assert.True(model.IsCompleted);
 
         await using var db = fixture.Factory.CreateDbContext();
@@ -142,24 +142,19 @@ public sealed class SingleStimulusExperimentTests
         Assert.Equal(0, run.StimulationDurationMilliseconds);
         Assert.Equal(0, run.RecoveryDurationMilliseconds);
         var events = await db.ExperimentEvents.OrderBy(x => x.Sequence).ToListAsync();
-        Assert.Equal(cycles * 2, events.Count);
-        Assert.Equal(
-            Enumerable
-                .Range(1, cycles)
-                .SelectMany(_ =>
-                    new[] { ExperimentEventKind.Acquisition, ExperimentEventKind.Blanking }
-                ),
-            events.Select(x => x.Kind)
-        );
+        Assert.Equal(ExperimentEventKind.Acquisition, Assert.Single(events).Kind);
+        Assert.Equal(ExperimentRunMode.Manual.ToString(), run.RunMode);
+        Assert.Equal(1, run.CycleCount);
+        Assert.Equal(0, run.BlankingDurationMilliseconds);
         var history = await persistence.LoadHistoricalRunAsync(run.Id);
-        Assert.Equal(cycles * 2, history.HistoricalResult!.StageIntervals.Count);
-        Assert.Equal(cycles * 0.15, history.HistoricalResult.StageIntervals.Last().EndSeconds, 8);
+        Assert.Single(history.HistoricalResult!.StageIntervals);
+        Assert.Equal(0.1, history.HistoricalResult.StageIntervals.Last().EndSeconds, 8);
         using var replay = new ExperimentRunPageViewModel(
             history,
             new AcquisitionTestRouter(),
             service
         );
-        Assert.Equal(cycles * 2, replay.TimelineSegments.Count);
+        Assert.Single(replay.TimelineSegments);
 
         var serializer = new ExperimentPackageSerializer(
             StimulusCapabilityProfile.Default,
@@ -184,17 +179,25 @@ public sealed class SingleStimulusExperimentTests
         );
         var imported = await serializer.ReadAsync(Assert.Single(result.Paths));
         Assert.Equal(ExperimentCreationMode.AcquisitionOnly, imported.CreationMode);
-        Assert.Equal(template.Timing, imported.Timing);
+        Assert.Equal(
+            AcquisitionOnlyConfiguration.NormalizeTiming(template.Timing),
+            imported.Timing
+        );
         Assert.Empty(imported.StimulusElectrodes);
         Assert.Equal(new[] { "C3" }, imported.AcquisitionChannels);
 
         var json = JsonNode.Parse(await File.ReadAllTextAsync(result.Paths[0]))!.AsObject();
+        json["timing"]!["mode"] = (int)mode;
+        json["timing"]!["cycleCount"] = cycles;
+        json["timing"]!["blankingMilliseconds"] = 50;
         json.Remove("stimulus");
         var missingStimulusFile = Path.Combine(fixture.Directory, "missing-stimulus.expp");
         await File.WriteAllTextAsync(missingStimulusFile, json.ToJsonString());
+        var legacyImported = await serializer.ReadAsync(missingStimulusFile);
+        Assert.Equal(ExperimentCreationMode.AcquisitionOnly, legacyImported.CreationMode);
         Assert.Equal(
-            ExperimentCreationMode.AcquisitionOnly,
-            (await serializer.ReadAsync(missingStimulusFile)).CreationMode
+            AcquisitionOnlyConfiguration.NormalizeTiming(template.Timing),
+            legacyImported.Timing
         );
     }
 
@@ -779,7 +782,7 @@ public sealed class SingleStimulusExperimentTests
     private static ExperimentEntity CreateExperiment() =>
         new()
         {
-            ExperimentCode = Guid.NewGuid().ToString("N"),
+            ExperimentCode = "EXP-20261012-001",
             ScheduledAt = DateTimeOffset.UtcNow,
             Remarks = "",
             Operator = new OperatorEntity

@@ -10,4 +10,6 @@ public enum ApplicationPageNames
     PhysicalChannelMapping = 7,
     ExperimentRun = 8,
     EnvelopeStimulation = 9,
+    SpeechTrainingResults = 10,
+    PictureNaming = 11,
 }

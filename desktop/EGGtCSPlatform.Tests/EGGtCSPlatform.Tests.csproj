@@ -14,6 +14,7 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\EGGtCSPlatform.SpeechTraining.Tests\ControllableSpeechAudioPlayer.cs" Link="TestSupport\ControllableSpeechAudioPlayer.cs" />
     <ProjectReference Include="..\EGGtCSPlatform\EGGtCSPlatform.csproj" />
     <ProjectReference Include="..\EGGtCSPlatform.Communication.Core\EGGtCSPlatform.Communication.Core.csproj" />
     <ProjectReference Include="..\EGGtCSPlatform.Communication.Udp\EGGtCSPlatform.Communication.Udp.csproj" />

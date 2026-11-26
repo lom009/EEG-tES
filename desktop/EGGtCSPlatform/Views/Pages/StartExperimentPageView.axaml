@@ -4,6 +4,7 @@
   xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
   xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
   xmlns:controls="clr-namespace:EGGtCSPlatform.Controls"
+  xmlns:views="clr-namespace:EGGtCSPlatform.Views.Pages"
   xmlns:pages="clr-namespace:EGGtCSPlatform.ViewModels.Pages"
   x:Class="EGGtCSPlatform.Views.Pages.StartExperimentPageView"
   x:Name="Root"
@@ -16,38 +17,10 @@
   d:DesignHeight="768"
 >
   <UserControl.Resources>
-    <ControlTheme x:Key="ExperimentButtonTheme" TargetType="Button">
-      <Setter Property="Padding" Value="0" />
-      <Setter Property="Background" Value="Transparent" />
-      <Setter Property="BorderBrush" Value="Transparent" />
-      <Setter Property="BorderThickness" Value="0" />
-      <Setter Property="CornerRadius" Value="0" />
-      <Setter Property="Cursor" Value="Hand" />
-      <Setter Property="Effect" Value="{x:Null}" />
-      <Setter Property="HorizontalContentAlignment" Value="Center" />
-      <Setter Property="VerticalContentAlignment" Value="Center" />
-      <Setter Property="Template">
-        <ControlTemplate>
-          <Border
-            x:Name="ButtonBorder"
-            Padding="{TemplateBinding Padding}"
-            Background="{TemplateBinding Background}"
-            BorderBrush="{TemplateBinding BorderBrush}"
-            BorderThickness="{TemplateBinding BorderThickness}"
-            CornerRadius="{TemplateBinding CornerRadius}"
-          >
-            <ContentPresenter
-              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-              Content="{TemplateBinding Content}"
-            />
-          </Border>
-        </ControlTemplate>
-      </Setter>
-      <Style Selector="^:pointerover /template/ Border#ButtonBorder">
-        <Setter Property="Opacity" Value="0.82" />
-      </Style>
-    </ControlTheme>
+    <ResourceDictionary>
+      <ResourceDictionary.MergedDictionaries>
+        <ResourceInclude Source="/Controls/HistoryControlThemes.axaml"/>
+      </ResourceDictionary.MergedDictionaries>
     <ControlTheme x:Key="ExperimentModeOptionTheme" TargetType="RadioButton">
       <Setter Property="VerticalAlignment" Value="Stretch" />
       <Setter Property="Padding" Value="0" />
@@ -87,6 +60,7 @@
         <Setter Property="Foreground" Value="White" />
       </Style>
     </ControlTheme>
+      </ResourceDictionary>
   </UserControl.Resources>
 
   <UserControl.Styles>
@@ -97,9 +71,16 @@
       <Setter Property="Foreground" Value="#3941B6" />
     </Style>
     <Style Selector="Border.page-tab-indicator">
-      <Setter Property="RenderTransform" Value="translate(0px, 0px)" />
+      <Setter Property="Width" Value="64"/>
+      <Setter Property="Margin" Value="16,0,0,0"/>
+      <Setter Property="RenderTransform" Value="translate(16px, 0px)" />
       <Setter Property="Transitions">
         <Transitions>
+          <DoubleTransition
+            Property="Width"
+            Duration="0:0:0.28"
+            Easing="CubicEaseInOut"
+          />
           <TransformOperationsTransition
             Property="RenderTransform"
             Duration="0:0:0.28"
@@ -109,25 +90,16 @@
       </Setter>
     </Style>
     <Style Selector="Border.page-tab-indicator.history-selected">
+      <Setter Property="Width" Value="96"/>
       <Setter Property="RenderTransform" Value="translate(96px, 0px)" />
     </Style>
-    <Style Selector="TextBox.experiment-input">
-      <Setter Property="Height" Value="32" />
-      <Setter Property="Padding" Value="12,4" />
-      <Setter Property="Background" Value="White" />
-      <Setter Property="BorderBrush" Value="#D9DEE6" />
-      <Setter Property="BorderThickness" Value="1" />
-      <Setter Property="CornerRadius" Value="0" />
-      <Setter Property="FontFamily" Value="{DynamicResource AlibabaPuHuiTi}" />
-      <Setter Property="FontSize" Value="{DynamicResource FontSize14}" />
-      <Setter Property="Foreground" Value="#232B38" />
-      <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Style Selector="Border.page-tab-indicator.tolerance-selected">
+      <Setter Property="Width" Value="112"/>
+      <Setter Property="RenderTransform" Value="translate(192px, 0px)" />
     </Style>
-    <Style Selector="TextBox.experiment-input:focus /template/ Border#PART_BorderElement">
-      <Setter Property="BorderBrush" Value="#3941B6" />
-      <Setter Property="BorderThickness" Value="1" />
-      <Setter Property="Background" Value="White" />
-    </Style>
+    <StyleInclude Source="/Controls/ExperimentInputStyles.axaml"/>
+
+    <StyleInclude Source="/Controls/HistoryStyles.axaml"/>
   </UserControl.Styles>
 
   <Border Margin="24,0,24,24" Background="White" BoxShadow="0 4 12 0 #246885B3" CornerRadius="8">
@@ -174,16 +146,17 @@
               Text="历史记录"
             />
           </Button>
+          <Button Width="112" Height="56" Classes="page-tab" Classes.active="{Binding IsToleranceHistorySelected}"
+            Command="{Binding SelectToleranceHistoryCommand}" Theme="{StaticResource ExperimentButtonTheme}"><TextBlock Text="耐受度记录" FontSize="{DynamicResource FontSize16}" FontWeight="Medium"/></Button>
         </StackPanel>
         <Border
-          Width="64"
           Height="2"
-          Margin="32,0,0,0"
           HorizontalAlignment="Left"
           VerticalAlignment="Bottom"
           Background="#3941B6"
           Classes="page-tab-indicator"
           Classes.history-selected="{Binding IsHistorySelected}"
+          Classes.tolerance-selected="{Binding IsToleranceHistorySelected}"
           IsHitTestVisible="False"
         />
       </Grid>
@@ -582,506 +555,460 @@
         </Button>
       </Grid>
 
+
+      <!-- Figma 248:3704. Keep all existing filters, commands and row bindings. -->
       <Grid
         Grid.Row="1"
         Margin="16,16,16,20"
-        RowDefinitions="72,12,56,12,*,12,36"
+        Classes="history-page"
+        RowDefinitions="32,16,Auto,16,*,16,32"
         IsVisible="{Binding IsHistorySelected}"
       >
         <Grid
           x:Name="HistoryFilterBar"
-          RowDefinitions="42,8,32"
-          ColumnDefinitions="240,12,120,12,140,*,Auto"
+          ColumnDefinitions="1.2*,10,0.85*,10,0.85*,10,2*,10,64,8,64"
           IsEnabled="{Binding IsHistoryInteractionEnabled}"
         >
-          <TextBox
-            x:Name="HistorySearchBox"
-            Height="32"
-            Padding="12,4"
-            VerticalContentAlignment="Center"
-            PlaceholderText="搜索实验ID或被试ID"
-            Text="{Binding HistorySearchText, Mode=TwoWay}"
-          >
-            <TextBox.KeyBindings>
-              <KeyBinding Gesture="Enter" Command="{Binding SearchHistoryCommand}" />
-            </TextBox.KeyBindings>
-          </TextBox>
+          <Grid>
+            <TextBox
+              x:Name="HistorySearchBox"
+              Classes="history-search"
+              PlaceholderText="搜索实验ID或被试ID"
+              Text="{Binding HistorySearchText, Mode=TwoWay}"
+            >
+              <TextBox.KeyBindings>
+                <KeyBinding Gesture="Enter" Command="{Binding SearchHistoryCommand}"/>
+              </TextBox.KeyBindings>
+            </TextBox>
+            <Image
+              Width="20"
+              Height="20"
+              Margin="0,0,8,0"
+              HorizontalAlignment="Right"
+              IsHitTestVisible="False"
+              Source="{SvgImage /Assets/Images/history/search.svg}"
+            />
+          </Grid>
           <ComboBox
+            x:Name="HistoryStimulusFilter"
             Grid.Column="2"
-            VerticalAlignment="Center"
+            Theme="{StaticResource HistoryComboBoxTheme}"
+            ItemContainerTheme="{StaticResource HistoryComboBoxItemTheme}"
             ItemsSource="{Binding HistoryStimulusFilters}"
             SelectedItem="{Binding SelectedHistoryStimulusFilter, Mode=TwoWay}"
           >
             <ComboBox.ItemTemplate>
               <DataTemplate x:DataType="pages:HistoryStimulusFilterOption">
-                <TextBlock Text="{Binding Label}" />
+                <TextBlock Text="{Binding Label}"/>
               </DataTemplate>
             </ComboBox.ItemTemplate>
             <ComboBox.SelectionBoxItemTemplate>
               <DataTemplate x:DataType="pages:HistoryStimulusFilterOption">
-                <TextBlock Height="20" Text="{Binding Label}" />
+                <TextBlock Text="{Binding Label}"/>
               </DataTemplate>
             </ComboBox.SelectionBoxItemTemplate>
           </ComboBox>
           <ComboBox
+            x:Name="HistoryStatusFilter"
             Grid.Column="4"
-            VerticalAlignment="Center"
+            Theme="{StaticResource HistoryComboBoxTheme}"
+            ItemContainerTheme="{StaticResource HistoryComboBoxItemTheme}"
             ItemsSource="{Binding HistoryRunStatusFilters}"
             SelectedItem="{Binding SelectedHistoryRunStatusFilter, Mode=TwoWay}"
           >
             <ComboBox.ItemTemplate>
               <DataTemplate x:DataType="pages:HistoryRunStatusFilterOption">
-                <TextBlock Text="{Binding Label}" />
+                <TextBlock Text="{Binding Label}"/>
               </DataTemplate>
             </ComboBox.ItemTemplate>
             <ComboBox.SelectionBoxItemTemplate>
               <DataTemplate x:DataType="pages:HistoryRunStatusFilterOption">
-                <TextBlock Height="20" Text="{Binding Label}" />
+                <TextBlock Text="{Binding Label}"/>
               </DataTemplate>
             </ComboBox.SelectionBoxItemTemplate>
           </ComboBox>
-          <Grid Grid.Row="2" Grid.ColumnSpan="7" ColumnDefinitions="180,25,300,25,320,1*">
-            <TextBlock
-              VerticalAlignment="Center"
-              FontSize="{DynamicResource FontSize13}"
-              Foreground="#52647D"
-              Text="计划日期（包含起止日）"
-            />
-            <controls:DateSelectionPicker
-              x:Name="HistoryStartDatePicker"
-              Grid.Column="2"
-              SelectedDate="{Binding HistoryStartDate, Mode=TwoWay}"
-            />
-            <TextBlock
-              Grid.Column="3"
-              HorizontalAlignment="Center"
-              VerticalAlignment="Center"
-              FontSize="{DynamicResource FontSize12}"
-              Foreground="#7889A1"
-              Text="至"
-            />
-            <controls:DateSelectionPicker
-              x:Name="HistoryEndDatePicker"
-              Grid.Column="4"
-              SelectedDate="{Binding HistoryEndDate, Mode=TwoWay}"
-            />
-          </Grid>
-          <Button
+          <Border
             Grid.Column="6"
-            Height="32"
-            Padding="14,0"
-            Background="White"
-            BorderBrush="#D9DEE6"
+            BorderBrush="{DynamicResource ProductStimulusInputBorder}"
             BorderThickness="1"
-            CornerRadius="6"
+            CornerRadius="4"
+            ToolTip.Tip="计划日期（包含起止日）"
+          >
+            <Grid Margin="1,0,0,0" ColumnDefinitions="*,18,*">
+              <controls:DateSelectionPicker
+                x:Name="HistoryStartDatePicker"
+                Theme="{StaticResource HistoryDatePickerTheme}"
+                SelectedDate="{Binding HistoryStartDate, Mode=TwoWay}"
+              />
+              <TextBlock
+                Grid.Column="1"
+                Text="～"
+                Classes="history-muted"
+                VerticalAlignment="Center"
+                HorizontalAlignment="Center"
+              />
+              <controls:DateSelectionPicker
+                x:Name="HistoryEndDatePicker"
+                Grid.Column="2"
+                Theme="{StaticResource HistoryDatePickerTheme}"
+                SelectedDate="{Binding HistoryEndDate, Mode=TwoWay}"
+              />
+            </Grid>
+          </Border>
+          <Button
+            Grid.Column="8"
+            Classes="history-action history-primary"
+            Command="{Binding SearchHistoryCommand}"
+            Theme="{StaticResource ExperimentButtonTheme}"
+          >
+            <TextBlock Text="查询"/>
+          </Button>
+          <Button
+            Grid.Column="10"
+            Classes="history-action"
             Command="{Binding ResetHistoryFiltersCommand}"
             Theme="{StaticResource ExperimentButtonTheme}"
           >
-            <TextBlock FontSize="{DynamicResource FontSize13}" Text="重置" />
+            <TextBlock Text="重置"/>
           </Button>
         </Grid>
-
         <Grid Grid.Row="2" ColumnDefinitions="*,Auto">
-          <StackPanel VerticalAlignment="Center">
-            <CheckBox
-              Margin="0,0,0,4"
-              VerticalAlignment="Center"
-              Command="{Binding ToggleCurrentPageHistorySelectionCommand}"
-              Content="全选本页"
-              IsChecked="{Binding HistoryPageSelectionState, Mode=OneWay}"
-              IsEnabled="{Binding IsHistoryInteractionEnabled}"
-              IsThreeState="True"
-              IsVisible="{Binding HasHistoryResults}"
-              ToolTip.Tip="选择或取消当前页的全部运行记录"
-            />
+          <StackPanel VerticalAlignment="Center" Spacing="4">
+            <StackPanel Orientation="Horizontal" Spacing="16">
+              <CheckBox
+                Theme="{StaticResource HistoryCheckBoxTheme}"
+                Content="全选本页"
+                IsThreeState="True"
+                IsChecked="{Binding HistoryPageSelectionState, Mode=OneWay}"
+                Command="{Binding ToggleCurrentPageHistorySelectionCommand}"
+                IsEnabled="{Binding IsHistoryInteractionEnabled}"
+                IsVisible="{Binding HasHistoryResults}"
+                ToolTip.Tip="选择或取消当前页的全部运行记录"
+              />
+              <TextBlock
+                Text="{Binding HistoryStatusText}"
+                Classes="history-muted"
+                IsVisible="{Binding !HasHistoryValidationError}"
+                VerticalAlignment="Center"
+              />
+            </StackPanel>
             <TextBlock
-              FontSize="{DynamicResource FontSize12}"
-              Foreground="#7889A1"
-              IsVisible="{Binding !HasHistoryValidationError}"
-              Text="{Binding HistoryStatusText}"
-            />
-            <TextBlock
-              FontSize="{DynamicResource FontSize12}"
-              Foreground="#E55252"
-              IsVisible="{Binding HasHistoryValidationError}"
               Text="{Binding HistoryValidationText}"
+              Classes="history-error"
+              IsVisible="{Binding HasHistoryValidationError}"
             />
             <TextBlock
-              FontSize="{DynamicResource FontSize12}"
-              Foreground="#4F8A63"
+              IsVisible="{Binding BatchExportStatusText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
               Text="{Binding BatchExportStatusText}"
+              Classes="history-success"
               TextTrimming="CharacterEllipsis"
             />
             <TextBlock
-              FontSize="{DynamicResource FontSize12}"
-              Foreground="#B43D3D"
+              IsVisible="{Binding BatchDeleteStatusText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
               Text="{Binding BatchDeleteStatusText}"
+              Classes="history-error"
               TextTrimming="CharacterEllipsis"
             />
           </StackPanel>
-          <StackPanel
-            Grid.Column="1"
-            VerticalAlignment="Center"
-            Orientation="Horizontal"
-            Spacing="10"
-          >
+          <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="16" VerticalAlignment="Top">
             <TextBlock
-              VerticalAlignment="Center"
-              FontSize="{DynamicResource FontSize12}"
-              Foreground="#64748B"
               Text="{Binding HistorySelectionText}"
+              Classes="history-muted"
+              VerticalAlignment="Center"
             />
             <Button
-              Height="32"
-              Padding="14,0"
-              Background="#3941B6"
-              Foreground="White"
-              CornerRadius="6"
+              Classes="history-action history-primary"
               Command="{Binding BatchExportHistoryCommand}"
               Theme="{StaticResource ExperimentButtonTheme}"
             >
-              <TextBlock
-                FontSize="{DynamicResource FontSize13}"
-                Foreground="White"
-                Text="批量导出…"
-              />
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <Image Width="20" Height="20" Source="{SvgImage /Assets/Images/history/export.svg}"/>
+                <TextBlock Text="批量导出…" VerticalAlignment="Center"/>
+              </StackPanel>
             </Button>
             <Button
-              Height="32"
-              Padding="14,0"
-              Background="#E55252"
-              Foreground="White"
-              CornerRadius="6"
+              Classes="history-action history-danger"
               Command="{Binding BatchDeleteHistoryCommand}"
               Theme="{StaticResource ExperimentButtonTheme}"
             >
-              <TextBlock
-                FontSize="{DynamicResource FontSize13}"
-                Foreground="White"
-                Text="批量删除"
-              />
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <Image Width="20" Height="20" Source="{SvgImage /Assets/Images/history/delete.svg}"/>
+                <TextBlock Text="批量删除" VerticalAlignment="Center"/>
+              </StackPanel>
             </Button>
             <Button
-              Height="32"
-              Padding="14,0"
-              Background="White"
-              BorderBrush="#D9DEE6"
-              BorderThickness="1"
-              CornerRadius="6"
-              Command="{Binding RefreshHistoryCommand}"
+              Classes="history-action"
               IsEnabled="{Binding IsHistoryInteractionEnabled}"
+              Command="{Binding RefreshHistoryCommand}"
               Theme="{StaticResource ExperimentButtonTheme}"
             >
-              <TextBlock FontSize="{DynamicResource FontSize13}" Text="刷新" />
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <Image Width="20" Height="20" Source="{SvgImage /Assets/Images/history/refresh.svg}"/>
+                <TextBlock Text="刷新" VerticalAlignment="Center"/>
+              </StackPanel>
             </Button>
           </StackPanel>
         </Grid>
-
         <ScrollViewer
+          x:Name="HistoryTableScroll"
           Grid.Row="4"
-          HorizontalScrollBarVisibility="Disabled"
-          IsEnabled="{Binding IsHistoryInteractionEnabled}"
-          VerticalScrollBarVisibility="Auto"
+          HorizontalScrollBarVisibility="Auto"
+          VerticalScrollBarVisibility="Disabled"
         >
-          <ItemsControl ItemsSource="{Binding HistoryRecords}">
-            <ItemsControl.ItemTemplate>
-              <DataTemplate x:DataType="pages:ExperimentHistoryRecordViewModel">
-                <Border
-                  Margin="0,0,0,10"
-                  Padding="16"
-                  Background="White"
-                  BorderBrush="#DDE5EF"
-                  BorderThickness="1"
-                  CornerRadius="8"
-                >
-                  <Grid
-                    RowDefinitions="Auto,Auto"
-                    ColumnDefinitions="32,1.2*,1*,0.9*,0.8*,1.5*,0.7*,1.55*,Auto,12,Auto"
-                  >
-                    <CheckBox
-                      Grid.Column="0"
-                      VerticalAlignment="Center"
-                      Command="{Binding ToggleAllRunsCommand}"
-                      IsChecked="{Binding SelectionState, Mode=OneWay}"
-                      IsThreeState="True"
-                      ToolTip.Tip="选择或取消该实验的全部运行记录"
-                    />
-                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                      <TextBlock
-                        FontFamily="{DynamicResource AlibabaPuHuiTi}"
-                        FontWeight="Medium"
-                        FontSize="{DynamicResource FontSize14}"
-                        Text="{Binding ExperimentId}"
-                        TextTrimming="CharacterEllipsis"
-                        ToolTip.Tip="{Binding ExperimentId}"
-                      />
-                    </StackPanel>
-                    <TextBlock
-                      Grid.Column="2"
-                      VerticalAlignment="Center"
-                      FontSize="{DynamicResource FontSize13}"
-                      Text="{Binding PatientId}"
-                      TextTrimming="CharacterEllipsis"
-                      ToolTip.Tip="{Binding PatientId}"
-                    />
-                    <StackPanel Grid.Column="3" VerticalAlignment="Center">
-                      <TextBlock
-                        VerticalAlignment="Center"
-                        FontSize="{DynamicResource FontSize13}"
-                        Text="{Binding StimulationProtocol}"
-                        TextTrimming="CharacterEllipsis"
-                        ToolTip.Tip="{Binding StimulationProtocol}"
-                      />
-                    </StackPanel>
-                    <StackPanel Grid.Column="4" VerticalAlignment="Center">
-                      <TextBlock
-                        VerticalAlignment="Center"
-                        FontSize="{DynamicResource FontSize13}"
-                        Text="{Binding StimulationCurrent}"
-                      />
-                    </StackPanel>
-
-                    <ItemsControl
-                      Grid.Column="5"
-                      VerticalAlignment="Center"
-                      ItemsSource="{Binding ElectrodePoints}"
-                    >
-                      <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                          <WrapPanel Orientation="Horizontal" />
-                        </ItemsPanelTemplate>
-                      </ItemsControl.ItemsPanel>
-                      <ItemsControl.ItemTemplate>
-                        <DataTemplate x:DataType="pages:ElectrodePointViewModel">
-                          <Border Padding="7,2" Background="#EEF2F7" CornerRadius="10">
+          <Grid Width="{Binding #HistoryTableScroll.Viewport.Width}" MinWidth="1240" RowDefinitions="52,8,*">
+            <!-- These columns are also used by every record, including wrapped point tags. -->
+            <Border Classes="history-table-header">
+              <Grid x:Name="HistoryTableHeader" ColumnDefinitions="200,0.85*,1.05*,100,1.55*,94,1.65*,200">
+                <TextBlock
+                  Grid.Column="0"
+                  Text="实验ID"
+                  Margin="16,0"
+                  VerticalAlignment="Center"
+                  Classes="history-muted"
+                  FontWeight="Medium"
+                />
+                <TextBlock
+                  Grid.Column="1"
+                  Text="被试ID"
+                  Margin="16,0"
+                  VerticalAlignment="Center"
+                  Classes="history-muted"
+                  FontWeight="Medium"
+                />
+                <TextBlock
+                  Grid.Column="2"
+                  Text="刺激配置方案"
+                  Margin="16,0"
+                  VerticalAlignment="Center"
+                  Classes="history-muted"
+                  FontWeight="Medium"
+                />
+                <TextBlock
+                  Grid.Column="3"
+                  Text="刺激电流"
+                  Margin="16,0"
+                  VerticalAlignment="Center"
+                  Classes="history-muted"
+                  FontWeight="Medium"
+                />
+                <TextBlock
+                  Grid.Column="4"
+                  Text="选中点位"
+                  Margin="16,0"
+                  VerticalAlignment="Center"
+                  Classes="history-muted"
+                  FontWeight="Medium"
+                />
+                <TextBlock
+                  Grid.Column="5"
+                  Text="实验次数"
+                  Margin="16,0"
+                  VerticalAlignment="Center"
+                  Classes="history-muted"
+                  FontWeight="Medium"
+                />
+                <TextBlock
+                  Grid.Column="6"
+                  Text="计划时间"
+                  Margin="16,0"
+                  VerticalAlignment="Center"
+                  Classes="history-muted"
+                  FontWeight="Medium"
+                />
+                <TextBlock
+                  Grid.Column="7"
+                  Text="操作"
+                  Margin="16,0"
+                  VerticalAlignment="Center"
+                  Classes="history-muted"
+                  FontWeight="Medium"
+                />
+              </Grid>
+            </Border>
+            <ScrollViewer
+              Grid.Row="2"
+              HorizontalScrollBarVisibility="Disabled"
+              VerticalScrollBarVisibility="Auto"
+              IsEnabled="{Binding IsHistoryInteractionEnabled}"
+            >
+              <ItemsControl ItemsSource="{Binding HistoryRecords}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="pages:ExperimentHistoryRecordViewModel">
+                    <Border Classes="history-group">
+                      <Grid RowDefinitions="Auto,Auto">
+                        <Border Classes="history-group-header">
+                          <Grid MinHeight="52" ColumnDefinitions="200,0.85*,1.05*,100,1.55*,94,1.65*,200">
+                            <Grid Margin="16,0" ColumnDefinitions="16,8,*">
+                              <CheckBox
+                                Theme="{StaticResource HistoryCheckBoxTheme}"
+                                IsThreeState="True"
+                                IsChecked="{Binding SelectionState, Mode=OneWay}"
+                                Command="{Binding ToggleAllRunsCommand}"
+                                ToolTip.Tip="选择或取消该实验的全部运行记录"
+                              />
+                              <TextBlock
+                                Grid.Column="2"
+                                Text="{Binding ExperimentId}"
+                                TextTrimming="CharacterEllipsis"
+                                ToolTip.Tip="{Binding ExperimentId}"
+                                VerticalAlignment="Center"
+                              />
+                            </Grid>
                             <TextBlock
-                              FontSize="{DynamicResource FontSize11}"
-                              Text="{Binding Name}"
+                              Grid.Column="1"
+                              Margin="16,0"
+                              Text="{Binding PatientId}"
+                              TextTrimming="CharacterEllipsis"
+                              ToolTip.Tip="{Binding PatientId}"
+                              VerticalAlignment="Center"
                             />
-                          </Border>
-                        </DataTemplate>
-                      </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                    <StackPanel Grid.Column="6" Orientation="Horizontal">
-                      <TextBlock
-                        VerticalAlignment="Center"
-                        FontSize="{DynamicResource FontSize13}"
-                        Foreground="#3941B6"
-                        Text="次数："
-                      />
-                      <TextBlock
-                        VerticalAlignment="Center"
-                        FontSize="{DynamicResource FontSize13}"
-                        Foreground="#3941B6"
-                        Text="{Binding ExperimentCount}"
-                      />
-                    </StackPanel>
-
-                    <StackPanel Orientation="Horizontal" Grid.Column="7">
-                      <TextBlock
-                        VerticalAlignment="Center"
-                        FontSize="{DynamicResource FontSize12}"
-                        Text="计划时间："
-                      />
-                      <TextBlock
-                        VerticalAlignment="Center"
-                        FontSize="{DynamicResource FontSize12}"
-                        Text="{Binding RecordedAt}"
-                      />
-                    </StackPanel>
-                    <Button
-                      Grid.Column="8"
-                      Width="80"
-                      Height="32"
-                      Background="White"
-                      BorderBrush="#D9DEE6"
-                      BorderThickness="1"
-                      CornerRadius="6"
-                      Theme="{StaticResource ExperimentButtonTheme}"
-                      Command="{Binding #Root.((pages:StartExperimentPageViewModel)DataContext).CopyHistoryConfigurationCommand}"
-                      CommandParameter="{Binding}"
-                    >
-                      <TextBlock FontSize="{DynamicResource FontSize13}" Text="复制配置" />
-                    </Button>
-                    <Button
-                      Grid.Column="10"
-                      Width="80"
-                      Height="32"
-                      Background="White"
-                      BorderBrush="#D9DEE6"
-                      BorderThickness="1"
-                      CornerRadius="6"
-                      Theme="{StaticResource ExperimentButtonTheme}"
-                      Command="{Binding ToggleExpandedCommand}"
-                    >
-                      <TextBlock FontSize="{DynamicResource FontSize13}" Text="运行记录" />
-                    </Button>
-
-                    <controls:AnimatedExpander
-                      x:Name="RunHistoryExpander"
-                      Grid.Row="1"
-                      Grid.ColumnSpan="11"
-                      IsExpanded="{Binding IsExpanded}"
-                    >
-                      <ItemsControl ItemsSource="{Binding Runs}">
-                        <ItemsControl.ItemTemplate>
-                          <DataTemplate x:DataType="pages:ExperimentHistoryRunViewModel">
-                            <Border
-                              Margin="0,4,0,0"
-                              Padding="12,8"
-                              Background="#F6F8FB"
-                              CornerRadius="5"
+                            <TextBlock
+                              Grid.Column="2"
+                              Margin="16,0"
+                              Text="{Binding StimulationProtocol}"
+                              TextTrimming="CharacterEllipsis"
+                              ToolTip.Tip="{Binding StimulationProtocol}"
+                              VerticalAlignment="Center"
+                            />
+                            <TextBlock
+                              Grid.Column="3"
+                              Margin="16,0"
+                              Text="{Binding StimulationCurrent}"
+                              VerticalAlignment="Center"
+                            />
+                            <ItemsControl
+                              Grid.Column="4"
+                              Margin="16,8"
+                              VerticalAlignment="Center"
+                              ItemsSource="{Binding ElectrodePoints}"
+                              ItemTemplate="{StaticResource HistoryElectrodePointTemplate}"
                             >
-                              <Grid ColumnDefinitions="30,260,199,310,150,1*,Auto">
-                                <CheckBox
-                                  VerticalAlignment="Center"
-                                  IsChecked="{Binding IsSelected, Mode=TwoWay}"
-                                  ToolTip.Tip="选择此运行记录"
-                                />
-                                <StackPanel Grid.Column="1" Orientation="Horizontal">
-                                  <TextBlock
-                                    VerticalAlignment="Center"
-                                    FontSize="{DynamicResource FontSize12}"
-                                    Text="开始时刻："
-                                  />
-                                  <TextBlock
-                                    VerticalAlignment="Center"
-                                    FontSize="{DynamicResource FontSize12}"
-                                    Text="{Binding StartedAt}"
-                                  />
-                                </StackPanel>
-                                <StackPanel Grid.Column="2" Orientation="Horizontal">
-                                  <TextBlock
-                                    VerticalAlignment="Center"
-                                    FontSize="{DynamicResource FontSize12}"
-                                    Text="结束方式："
-                                  />
-                                  <TextBlock
-                                    VerticalAlignment="Center"
-                                    FontSize="{DynamicResource FontSize12}"
-                                    Text="{Binding Status}"
-                                  />
-                                </StackPanel>
-                                <StackPanel Grid.Column="3" Orientation="Horizontal">
-                                  <TextBlock
-                                    VerticalAlignment="Center"
-                                    FontSize="{DynamicResource FontSize12}"
-                                    Text="持续时间："
-                                  />
-                                  <TextBlock
-                                    VerticalAlignment="Center"
-                                    FontSize="{DynamicResource FontSize12}"
-                                    Text="{Binding Duration}"
-                                  />
-                                </StackPanel>
-
-                                <TextBlock
-                                  Grid.Column="4"
-                                  VerticalAlignment="Center"
-                                  FontSize="{DynamicResource FontSize12}"
-                                  Foreground="#66758A"
-                                  Text="{Binding PacketQuality}"
-                                />
-                                <Button
-                                  Grid.Column="6"
-                                  Height="30"
-                                  Padding="14,0"
-                                  Background="White"
-                                  BorderBrush="#3941B6"
-                                  BorderThickness="1"
-                                  CornerRadius="5"
-                                  Command="{Binding #Root.((pages:StartExperimentPageViewModel)DataContext).ViewHistoryResultCommand}"
-                                  CommandParameter="{Binding}"
-                                  Theme="{StaticResource ExperimentButtonTheme}"
-                                >
-                                  <TextBlock
-                                    FontSize="{DynamicResource FontSize12}"
-                                    Foreground="#3941B6"
-                                    Text="查看结果"
-                                  />
+                              <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                  <WrapPanel Orientation="Horizontal"/>
+                                </ItemsPanelTemplate>
+                              </ItemsControl.ItemsPanel>
+                            </ItemsControl>
+                            <TextBlock
+                              Grid.Column="5"
+                              Margin="16,0"
+                              Text="{Binding ExperimentCount}"
+                              Classes="history-count"
+                              VerticalAlignment="Center"
+                            />
+                            <TextBlock
+                              Grid.Column="6"
+                              Margin="16,0"
+                              Text="{Binding RecordedAt}"
+                              VerticalAlignment="Center"
+                              TextTrimming="CharacterEllipsis"
+                              ToolTip.Tip="{Binding RecordedAt}"
+                            />
+                            <StackPanel
+                              Grid.Column="7"
+                              Margin="16,0"
+                              Orientation="Horizontal"
+                              Spacing="8"
+                              VerticalAlignment="Center"
+                            >
+                              <Button
+                                Width="80"
+                                Classes="history-action"
+                                Theme="{StaticResource ExperimentButtonTheme}"
+                                Command="{Binding #Root.((pages:StartExperimentPageViewModel)DataContext).CopyHistoryConfigurationCommand}"
+                                CommandParameter="{Binding}"
+                              >
+                                <TextBlock Text="复制配置"/>
+                              </Button>
+                              <Button
+                                Width="80"
+                                Classes="history-action"
+                                Theme="{StaticResource ExperimentButtonTheme}"
+                                Command="{Binding ToggleExpandedCommand}"
+                                  IsVisible="{Binding IsDeviceExperiment}"
+                              >
+                                <TextBlock Text="运行记录"/>
+                              </Button>
+                                <Button Width="80" Classes="history-action" Theme="{StaticResource ExperimentButtonTheme}" IsVisible="{Binding IsSpeech}"
+                                  Command="{Binding #Root.((pages:StartExperimentPageViewModel)DataContext).ViewHistoryResultCommand}" CommandParameter="{Binding AggregateRun}">
+                                  <TextBlock Text="查看结果"/>
                                 </Button>
-                              </Grid>
-                            </Border>
-                          </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                      </ItemsControl>
-                    </controls:AnimatedExpander>
-                  </Grid>
-                </Border>
-              </DataTemplate>
-            </ItemsControl.ItemTemplate>
-          </ItemsControl>
+                            </StackPanel>
+                          </Grid>
+                        </Border>
+                        <controls:AnimatedExpander
+                          x:Name="RunHistoryExpander"
+                          Grid.Row="1"
+                          IsExpanded="{Binding IsExpanded}"
+                        >
+                          <ItemsControl Margin="16,8,16,0" ItemsSource="{Binding Runs}">
+                            <ItemsControl.ItemTemplate>
+                              <DataTemplate x:DataType="pages:ExperimentHistoryRunViewModel">
+                                <Border Classes="history-child-row">
+                                  <Grid MinHeight="42" ColumnDefinitions="24,2.25*,1.5*,1.5*,1.6*,Auto">
+                                    <CheckBox
+                                      Theme="{StaticResource HistoryCheckBoxTheme}"
+                                      IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                      ToolTip.Tip="选择此运行记录"
+                                    />
+                                    <TextBlock Grid.Column="1" Margin="8,0" VerticalAlignment="Center">
+                                      <Run Text="开始时刻："/>
+                                      <Run Text="{Binding StartedAt}"/>
+                                    </TextBlock>
+                                    <TextBlock Grid.Column="2" Margin="8,0" VerticalAlignment="Center">
+                                      <Run Text="结束方式："/>
+                                      <Run Text="{Binding Status}"/>
+                                    </TextBlock>
+                                    <TextBlock Grid.Column="3" Margin="8,0" VerticalAlignment="Center">
+                                      <Run Text="持续时间："/>
+                                      <Run Text="{Binding Duration}"/>
+                                    </TextBlock>
+                                    <TextBlock
+                                      Grid.Column="4"
+                                      Margin="8,0"
+                                      Text="{Binding PacketQuality}"
+                                      VerticalAlignment="Center"
+                                      TextTrimming="CharacterEllipsis"
+                                      ToolTip.Tip="{Binding PacketQuality}"
+                                    />
+                                    <Button
+                                      Grid.Column="5"
+                                      Padding="0"
+                                      Theme="{StaticResource ExperimentButtonTheme}"
+                                      Command="{Binding #Root.((pages:StartExperimentPageViewModel)DataContext).ViewHistoryResultCommand}"
+                                      CommandParameter="{Binding}"
+                                    >
+                                      <TextBlock Text="查看结果" Classes="history-count"/>
+                                    </Button>
+                                  </Grid>
+                                </Border>
+                              </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                          </ItemsControl>
+                        </controls:AnimatedExpander>
+                      </Grid>
+                    </Border>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </ScrollViewer>
+          </Grid>
         </ScrollViewer>
-
-        <Grid
+        <controls:HistoryPagination
           x:Name="HistoryPaginationBar"
           Grid.Row="6"
-          ColumnDefinitions="*,Auto,*"
           IsEnabled="{Binding IsHistoryInteractionEnabled}"
           IsVisible="{Binding HasHistoryResults}"
-        >
-          <StackPanel VerticalAlignment="Center" Orientation="Horizontal" Spacing="8">
-            <TextBlock
-              VerticalAlignment="Center"
-              FontSize="{DynamicResource FontSize12}"
-              Foreground="#7889A1"
-              Text="每页"
-            />
-            <ComboBox
-              Width="72"
-              VerticalContentAlignment="Center"
-              Height="35"
-              ClipToBounds="False"
-              ItemsSource="{Binding HistoryPageSizes}"
-              SelectedItem="{Binding HistoryPageSize, Mode=TwoWay}"
-            />
-            <TextBlock
-              VerticalAlignment="Center"
-              FontSize="{DynamicResource FontSize12}"
-              Foreground="#7889A1"
-              Text="条"
-            />
-          </StackPanel>
-          <TextBlock
-            Grid.Column="1"
-            VerticalAlignment="Center"
-            FontSize="{DynamicResource FontSize12}"
-            Foreground="#64748B"
-            Text="{Binding HistoryPageDisplay}"
-          />
-          <StackPanel
-            Grid.Column="2"
-            HorizontalAlignment="Right"
-            Orientation="Horizontal"
-            Spacing="8"
-          >
-            <Button
-              Height="32"
-              Padding="14,0"
-              Background="White"
-              BorderBrush="#D9DEE6"
-              BorderThickness="1"
-              CornerRadius="6"
-              Command="{Binding PreviousHistoryPageCommand}"
-              Theme="{StaticResource ExperimentButtonTheme}"
-            >
-              <TextBlock FontSize="{DynamicResource FontSize13}" Text="上一页" />
-            </Button>
-            <Button
-              Height="32"
-              Padding="14,0"
-              Background="White"
-              BorderBrush="#D9DEE6"
-              BorderThickness="1"
-              CornerRadius="6"
-              Command="{Binding NextHistoryPageCommand}"
-              Theme="{StaticResource ExperimentButtonTheme}"
-            >
-              <TextBlock FontSize="{DynamicResource FontSize13}" Text="下一页" />
-            </Button>
-          </StackPanel>
-        </Grid>
+          PageNumber="{Binding HistoryPageNumber}"
+          PageSize="{Binding HistoryPageSize, Mode=TwoWay}"
+          PageSizes="{Binding HistoryPageSizes}"
+          TotalCount="{Binding HistoryTotalCount}"
+          IsBusy="{Binding IsHistoryLoading}"
+          PreviousCommand="{Binding PreviousHistoryPageCommand}"
+          NextCommand="{Binding NextHistoryPageCommand}"
+        />
       </Grid>
+      <Grid Grid.Row="1" IsVisible="{Binding IsToleranceHistorySelected}"><views:ToleranceHistoryView DataContext="{Binding ToleranceHistory}"/></Grid>
     </Grid>
   </Border>
 </UserControl>

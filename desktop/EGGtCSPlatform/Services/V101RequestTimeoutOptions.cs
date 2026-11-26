@@ -23,6 +23,8 @@ public sealed class V101RequestTimeoutOptions
     public TimeSpan AdjustCurrent { get; set; } = DefaultTimeout;
 
     public TimeSpan ConfigureStimulationImpedance { get; set; } = DefaultTimeout;
+    public TimeSpan ConfigureEnvelopeStimulation { get; set; } = DefaultTimeout;
+    public TimeSpan ControlEnvelopeStimulation { get; set; } = DefaultTimeout;
 
     public bool IsValid() => CreateConfiguredTimeouts().Values.All(value => value > TimeSpan.Zero);
 
@@ -56,6 +58,8 @@ public sealed class V101RequestTimeoutOptions
             [typeof(ControlStimulationRequest)] = ControlStimulation,
             [typeof(AdjustCurrentRequest)] = AdjustCurrent,
             [typeof(ConfigureStimulationImpedanceRequest)] = ConfigureStimulationImpedance,
+            [typeof(ConfigureEnvelopeStimulationRequest)] = ConfigureEnvelopeStimulation,
+            [typeof(ControlEnvelopeStimulationRequest)] = ControlEnvelopeStimulation,
         };
 
     private static IReadOnlyDictionary<Type, string> EnvironmentVariables { get; } =
@@ -66,6 +70,9 @@ public sealed class V101RequestTimeoutOptions
             [typeof(ControlAcquisitionRequest)] = "EGGTCS_V101_TIMEOUT_ACQUISITION_MS",
             [typeof(ControlStimulationRequest)] = "EGGTCS_V101_TIMEOUT_STIMULATION_MS",
             [typeof(AdjustCurrentRequest)] = "EGGTCS_V101_TIMEOUT_CURRENT_MS",
+            [typeof(ConfigureEnvelopeStimulationRequest)] =
+                "EGGTCS_V101_TIMEOUT_ENVELOPE_CONFIG_MS",
+            [typeof(ControlEnvelopeStimulationRequest)] = "EGGTCS_V101_TIMEOUT_ENVELOPE_CONTROL_MS",
             [typeof(ConfigureStimulationImpedanceRequest)] =
                 "EGGTCS_V101_TIMEOUT_STIMULATION_CONFIG_MS",
         };

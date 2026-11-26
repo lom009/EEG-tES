@@ -31,7 +31,8 @@ public sealed record HistoricalExperimentRunContext(
             Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
         )
     ]
-        SimulationProvenance? Simulation = null
+        SimulationProvenance? Simulation = null,
+    string? ConfigurationWarning = null
 );
 
 public sealed record ExperimentRerunRouteData(ExperimentRunRouteData RouteData);
@@ -199,7 +200,7 @@ public sealed record ExperimentRunRouteData
             );
     }
 
-    public string ExperimentId { get; }
+    public string ExperimentId { get; init; }
     public ExperimentCreationMode CreationMode { get; }
 
     public string SubjectId { get; }
@@ -218,13 +219,13 @@ public sealed record ExperimentRunRouteData
 
     public string DeviceId { get; }
 
-    public long ExperimentDatabaseId { get; }
+    public long ExperimentDatabaseId { get; init; }
 
     public DateTimeOffset? ScheduledAt { get; }
 
     public string Remarks { get; }
 
-    public ExperimentTimingTemplate? ImportedTiming { get; }
+    public ExperimentTimingTemplate? ImportedTiming { get; init; }
 
     public HistoricalExperimentRunContext? HistoricalResult { get; }
 

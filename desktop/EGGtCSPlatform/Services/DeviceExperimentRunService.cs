@@ -673,6 +673,8 @@ public sealed class DeviceExperimentRunService : IExperimentRunService, IDisposa
         CancellationToken cancellationToken = default
     )
     {
+        if (request.CreationMode == ExperimentCreationMode.AcquisitionOnly)
+            throw new NotSupportedException("单采集模式仅支持手动采集。");
         var device = GetDevice(request.DeviceId);
         _ =
             device.EegAcquisition

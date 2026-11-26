@@ -47,50 +47,102 @@ internal static class EnvelopeWaveformRenderer
         DrawingContext context,
         Size size,
         WaveformDescriptor descriptor,
-        bool compact
+        bool compact,
+        bool showWaveform = true,
+        bool speechTraining = false,
+        bool showTimeAxis = true,
+        double trainingMaximumAmplitude = 2
     )
     {
         if (size.Width < 100 || size.Height < 60)
             return;
-        var plot = compact
-            ? new Rect(5, 4, size.Width - 10, size.Height - 8)
-            : new Rect(46, 12, size.Width - 62, size.Height - 55);
+        var maximumAmplitude = speechTraining && !compact ? trainingMaximumAmplitude : 2;
+        var plot =
+            compact ? new Rect(5, 4, size.Width - 10, size.Height - 8)
+            : speechTraining && !showTimeAxis ? new Rect(46, 24, size.Width - 64, size.Height - 36)
+            : new Rect(46, 12, size.Width - (speechTraining ? 64 : 62), size.Height - 55);
         if (!compact)
         {
             for (var i = 0; i <= 4; i++)
             {
                 var y = plot.Top + plot.Height * i / 4;
                 context.DrawLine(GridPen, new(plot.Left, y), new(plot.Right, y));
-                Text(
-                    context,
-                    (2 - i).ToString(CultureInfo.InvariantCulture),
-                    new(plot.Left - 22, y - 7)
-                );
+                if (!speechTraining)
+                    Text(
+                        context,
+                        (2 - i).ToString(CultureInfo.InvariantCulture),
+                        new(plot.Left - 22, y - 7)
+                    );
             }
             context.DrawLine(GridPen, plot.TopLeft, plot.BottomLeft);
-            var ticks = TimeTicks(descriptor.DelayMilliseconds);
+            var ticks = speechTraining
+                ? Enumerable.Range(0, 9).Select(i => i * 1.5).ToArray()
+                : TimeTicks(descriptor.DelayMilliseconds);
             for (var i = 0; i < ticks.Length; i++)
             {
                 var label = FormatTimeTick(ticks[i]);
+                if (speechTraining)
+                    context.DrawLine(
+                        GridPen,
+                        new(plot.Left + plot.Width * i / (ticks.Length - 1), plot.Top),
+                        new(plot.Left + plot.Width * i / (ticks.Length - 1), plot.Bottom)
+                    );
+                if (showTimeAxis)
+                    Text(
+                        context,
+                        label,
+                        new(
+                            plot.Left + plot.Width * i / (ticks.Length - 1) - label.Length * 2.6,
+                            plot.Bottom + 8
+                        )
+                    );
+            }
+            if (showTimeAxis)
                 Text(
                     context,
+                    speechTraining ? "时间(s)" : "时间(ms)",
+                    new(plot.Right - 55, plot.Bottom + 27)
+                );
+            if (speechTraining)
+                Text(context, "mA", new(0, speechTraining && !showTimeAxis ? 5 : 0));
+            else
+                using (
+                    context.PushTransform(
+                        Matrix.CreateRotation(-Math.PI / 2)
+                            * Matrix.CreateTranslation(12, plot.Top + 55)
+                    )
+                )
+                    Text(context, "电流(mA)", new(0, 0));
+        }
+        if (showWaveform)
+            using (context.PushClip(plot))
+            {
+                var offset = speechTraining ? descriptor.DelayMilliseconds / 12000 : 0;
+                Draw(context, plot, Points(false, descriptor.Current), UpperPen, offset, maximumAmplitude);
+                Draw(context, plot, Points(true, descriptor.Current), LowerPen, offset, maximumAmplitude);
+            }
+        // Paint the training axis last so neither grids nor curves obscure the short ticks.
+        if (speechTraining && !compact)
+        {
+            var pen = new Pen(AxisBrush, 1);
+            context.DrawLine(pen, plot.TopLeft, plot.BottomLeft);
+            for (var i = 0; i <= 4; i++)
+            {
+                var y = plot.Top + plot.Height * i / 4;
+                var label = new FormattedText(
+                    (maximumAmplitude * (1 - i * 0.5)).ToString("0.####", CultureInfo.InvariantCulture),
+                    CultureInfo.InvariantCulture,
+                    FlowDirection.LeftToRight,
+                    Typeface.Default,
+                    11,
+                    AxisBrush
+                );
+                context.DrawLine(pen, new Point(plot.Left, y), new Point(plot.Left + 4, y));
+                context.DrawText(
                     label,
-                    new(plot.Left + plot.Width * i / 10 - label.Length * 2.6, plot.Bottom + 8)
+                    new Point(plot.Left - 6 - label.Width, y - label.Height / 2)
                 );
             }
-            Text(context, "时间(ms)", new(plot.Right - 55, plot.Bottom + 27));
-            using (
-                context.PushTransform(
-                    Matrix.CreateRotation(-Math.PI / 2)
-                        * Matrix.CreateTranslation(12, plot.Top + 55)
-                )
-            )
-                Text(context, "电流(mA)", new(0, 0));
-        }
-        using (context.PushClip(plot))
-        {
-            Draw(context, plot, Points(false, descriptor.Current), UpperPen);
-            Draw(context, plot, Points(true, descriptor.Current), LowerPen);
         }
     }
 
@@ -98,7 +150,9 @@ internal static class EnvelopeWaveformRenderer
         DrawingContext context,
         Rect plot,
         IReadOnlyList<Point> points,
-        IPen pen
+        IPen pen,
+        double timeOffset = 0,
+        double maximumAmplitude = 2
     )
     {
         var geometry = new StreamGeometry();
@@ -107,8 +161,8 @@ internal static class EnvelopeWaveformRenderer
             for (var i = 0; i < points.Count; i++)
             {
                 var point = new Point(
-                    plot.Left + points[i].X * plot.Width,
-                    plot.Top + (2 - points[i].Y) / 4 * plot.Height
+                    plot.Left + (points[i].X + timeOffset) * plot.Width,
+                    plot.Top + (0.5 - points[i].Y / (2 * maximumAmplitude)) * plot.Height
                 );
                 if (i == 0)
                     stream.BeginFigure(point, false);

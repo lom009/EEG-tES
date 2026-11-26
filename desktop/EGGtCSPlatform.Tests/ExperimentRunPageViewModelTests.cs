@@ -435,8 +435,9 @@ public sealed partial class ExperimentRunPageViewModelTests
         Assert.Equal(42, rerun.ExperimentDatabaseId);
         Assert.Equal("rerun-test", rerun.Remarks);
         Assert.Equal(route.AcquisitionChannels, rerun.AcquisitionChannels);
-        Assert.Equal(ExperimentRunMode.Automatic, rerun.ImportedTiming!.Mode);
-        Assert.Equal(4, rerun.ImportedTiming.CycleCount);
+        Assert.Equal(ExperimentRunMode.Manual, rerun.ImportedTiming!.Mode);
+        Assert.Equal(1, rerun.ImportedTiming.CycleCount);
+        Assert.Equal(0, rerun.ImportedTiming.BlankingMilliseconds);
         Assert.Equal(2_000, rerun.ImportedTiming.AcquisitionMilliseconds);
         Assert.Equal(mapping, rerun.PhysicalChannelNames);
         Assert.Equal(ExperimentCreationMode.AcquisitionOnly, rerun.CreationMode);
@@ -486,6 +487,69 @@ public sealed partial class ExperimentRunPageViewModelTests
         Assert.Equal(16_000, rerun.ImportedTiming.StimulationMilliseconds);
         Assert.Empty(service.Calls);
         Assert.Null(service.RecordingMetadata);
+    }
+
+    [Theory]
+    [InlineData(ExperimentCreationMode.AcquisitionOnly)]
+    [InlineData(ExperimentCreationMode.AcquisitionAndStimulation)]
+    public async Task CompletedRerunPreservesTimingAndDoesNotStartDevice(ExperimentCreationMode mode)
+    {
+        var router = new FakeRouter();
+        var service = new FakeRunService();
+        var device = new DeviceSelectionContext();
+        device.SetConnectedDevice("device-current", "Current Device");
+        using var model = CreateModel(CreateRoute(creationMode: mode),
+            service: service, router: router, deviceSelection: device);
+        Assert.Equal(mode == ExperimentCreationMode.AcquisitionOnly, model.HeaderAction is null);
+        Assert.False(model.RerunExperimentCommand.CanExecute(null));
+        model.AcquisitionStage.DurationValue = 2;
+        if (mode == ExperimentCreationMode.AcquisitionOnly)
+            await model.StartAcquisitionCommand.ExecuteAsync(null);
+        else
+        {
+            model.StimulationStage.DurationValue = 16;
+            model.SelectModeCommand.Execute(ExperimentRunMode.Automatic);
+            model.CycleCount = 3;
+            await model.StartAutomaticExperimentCommand.ExecuteAsync(null);
+        }
+        Assert.True(model.IsCompleted);
+        Assert.True(model.RerunExperimentCommand.CanExecute(null));
+        Assert.Equal("结束实验", model.FooterPrimaryText);
+        var calls = service.Calls.ToArray();
+        await model.RerunExperimentCommand.ExecuteAsync(null);
+        Assert.Equal(calls, service.Calls);
+        var route = Assert.IsType<ExperimentRerunRouteData>(router.RerunRoute).RouteData;
+        Assert.Equal(mode, route.CreationMode);
+        Assert.Equal(model.SelectedMode, route.ImportedTiming!.Mode);
+        Assert.Equal(model.CycleCount, route.ImportedTiming.CycleCount);
+        Assert.Equal(2000, route.ImportedTiming.AcquisitionMilliseconds);
+        Assert.Equal(model.RouteData.AcquisitionChannels, route.AcquisitionChannels);
+        Assert.Equal(mode == ExperimentCreationMode.AcquisitionOnly ? 0 : 16000,
+            route.ImportedTiming.StimulationMilliseconds);
+        using var replacement = CreateModel(route);
+        Assert.True(replacement.IsTimingSetup);
+        await model.ExecuteFooterPrimaryCommand.ExecuteAsync(null);
+        Assert.True(model.IsResults);
+        Assert.True(model.RerunExperimentCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public async Task CompletedRerunWithoutConnectionStaysCompleted()
+    {
+        var router = new FakeRouter();
+        var dialogs = new FakeErrorDialogService();
+        using var model = CreateModel(CreateRoute(creationMode: ExperimentCreationMode.AcquisitionOnly),
+            router: router, errorDialogService: dialogs, deviceSelection: new DeviceSelectionContext());
+        model.AcquisitionStage.DurationValue = 2;
+        await model.StartAcquisitionCommand.ExecuteAsync(null);
+        await model.RerunExperimentCommand.ExecuteAsync(null);
+        Assert.True(model.IsCompleted);
+        Assert.Null(router.RerunRoute);
+        Assert.Contains("连接设备", dialogs.Message);
+        model.PageState = ExperimentRunPageState.Running;
+        Assert.False(model.RerunExperimentCommand.CanExecute(null));
+        model.PageState = ExperimentRunPageState.EmergencyStopped;
+        Assert.False(model.RerunExperimentCommand.CanExecute(null));
     }
 
     [Fact]
@@ -953,7 +1017,7 @@ public sealed partial class ExperimentRunPageViewModelTests
     }
 
     [Fact]
-    public void ChannelsUseStrictOddPurpleEvenOrangePalette()
+    public void ChannelsUseUpdatedPaletteAndAlternatingSurfaces()
     {
         using var model = CreateModel();
 
@@ -961,7 +1025,7 @@ public sealed partial class ExperimentRunPageViewModelTests
         Assert.Equal("#FFFFFF", model.WaveformChannels[0].Background);
         Assert.False(model.WaveformChannels[0].IsEven);
         Assert.Equal("#FD5B38", model.WaveformChannels[1].Stroke);
-        Assert.Equal("#F5F8FC", model.WaveformChannels[1].Background);
+        Assert.Equal("#F5F7FA", model.WaveformChannels[1].Background);
         Assert.True(model.WaveformChannels[1].IsEven);
     }
 
@@ -1086,7 +1150,7 @@ public sealed partial class ExperimentRunPageViewModelTests
         await model.ExecuteFooterPrimaryCommand.ExecuteAsync(null);
 
         Assert.Equal(ExperimentRunPageState.Completed, model.PageState);
-        Assert.Equal("结束实验并查看结果", model.FooterPrimaryText);
+        Assert.Equal("结束实验", model.FooterPrimaryText);
         Assert.True(model.IsCompletionActionVisible);
         Assert.False(model.IsStandardFooterVisible);
         Assert.False(model.IsEmergencyActionEnabled);
@@ -2179,6 +2243,8 @@ public sealed partial class ExperimentRunPageViewModelTests
 
         public bool BlockAutomatic { get; init; }
 
+        public bool BlockAcquisition { get; init; }
+
         public Exception? AutomaticException { get; init; }
 
         public Exception? AcquisitionException { get; init; }
@@ -2222,6 +2288,8 @@ public sealed partial class ExperimentRunPageViewModelTests
         {
             Calls.Add("Acquisition");
             AcquisitionRequests.Add(request);
+            if (BlockAcquisition)
+                return Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
             if (AcquisitionException is not null)
                 throw AcquisitionException;
             if (

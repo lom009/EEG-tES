@@ -43,7 +43,7 @@ public sealed partial class ExperimentRunPageViewModelTests
             source.GroundChannel,
             source.SampleRateHz,
             importedTiming: new ExperimentTimingTemplate(
-                ExperimentRunMode.Manual,
+                ExperimentRunMode.Automatic,
                 2000,
                 1000,
                 15000,
@@ -56,10 +56,12 @@ public sealed partial class ExperimentRunPageViewModelTests
         using var model = CreateModel(route);
         Assert.Equal(intervals.Select(x => x.Stage), model.TimelineSegments.Select(x => x.Stage));
         Assert.Equal(21, model.TimelineMaximum);
+        Assert.Equal(ExperimentRunMode.Automatic, model.SelectedMode);
+        Assert.Equal(1000, route.ImportedTiming!.BlankingMilliseconds);
     }
 
     [Fact]
-    public async Task AcquisitionOnlyManualCompletesAfterBlankingWithoutStimulationOrFinalAcquisition()
+    public async Task AcquisitionOnlyManualCompletesImmediatelyWithoutBlankingOrFinalAcquisition()
     {
         var service = new FakeRunService { PublishAcquisitionTelemetry = true };
         using var model = CreateModel(
@@ -73,18 +75,18 @@ public sealed partial class ExperimentRunPageViewModelTests
         model.AcquisitionStage.DurationValue = 2;
 
         Assert.Equal(
-            new[] { ExperimentRunStage.Acquisition, ExperimentRunStage.Blanking },
+            new[] { ExperimentRunStage.Acquisition },
             model.Stages.Select(x => x.Stage)
         );
         Assert.Equal("采集", model.AcquisitionStage.Title);
-        Assert.Equal(2, model.TimelineSegments.Count);
+        Assert.Single(model.TimelineSegments);
         Assert.True(model.StartAcquisitionCommand.CanExecute(null));
         await model.StartAcquisitionCommand.ExecuteAsync(null);
 
         Assert.True(model.IsCompleted);
         Assert.Equal(new[] { "Acquisition" }, service.Calls);
         Assert.Single(service.AcquisitionRequests);
-        Assert.Equal(TimeSpan.FromSeconds(3), model.Elapsed);
+        Assert.Equal(TimeSpan.FromSeconds(2), model.Elapsed);
         Assert.False(model.IsManualStimulusReady);
         Assert.False(model.IsManualFinalAcquisitionReady);
         Assert.False(model.StartStimulationCommand.CanExecute(null));
@@ -93,64 +95,50 @@ public sealed partial class ExperimentRunPageViewModelTests
         Assert.Equal(new[] { "Acquisition" }, service.Calls);
     }
 
-    [Fact]
-    public async Task AcquisitionOnlyAutomaticUsesTwoStagesPerCycleWithoutFinalAcquisition()
+    [Theory]
+    [InlineData(0)]
+    [InlineData(2)]
+    public async Task AcquisitionOnlyRejectsAutomaticModeAndDirectCommand(int cycles)
     {
         var service = new FakeRunService();
         using var model = CreateModel(
-            CreateRoute(creationMode: ExperimentCreationMode.AcquisitionOnly),
-            service
-        );
+            CreateRoute(creationMode: ExperimentCreationMode.AcquisitionOnly), service);
         model.AcquisitionStage.DurationValue = 2;
         model.SelectModeCommand.Execute(ExperimentRunMode.Automatic);
-        model.CycleCount = 2;
-        Assert.Equal(
-            new[]
-            {
-                ExperimentRunStage.Acquisition,
-                ExperimentRunStage.Blanking,
-                ExperimentRunStage.Acquisition,
-                ExperimentRunStage.Blanking,
-            },
-            model.TimelineSegments.Select(x => x.Stage)
-        );
-        Assert.Equal(6, model.TimelineMaximum);
-
+        Assert.True(model.IsManualMode);
+        model.SelectedMode = ExperimentRunMode.Automatic;
+        model.CycleCount = cycles;
+        Assert.True(model.IsManualMode);
+        Assert.Equal(1, model.CycleCount);
+        Assert.False(model.IsCycleCountVisible);
+        Assert.Single(model.TimelineSegments);
+        Assert.Equal(2, model.TimelineMaximum);
+        Assert.False(model.StartAutomaticExperimentCommand.CanExecute(null));
         await model.StartAutomaticExperimentCommand.ExecuteAsync(null);
-
-        Assert.True(model.IsCompleted);
-        Assert.Empty(service.AcquisitionRequests);
-        Assert.Equal(
-            ExperimentCreationMode.AcquisitionOnly,
-            service.AutomaticRequest!.CreationMode
-        );
-        Assert.Equal(TimeSpan.Zero, service.AutomaticRequest.StimulationDuration);
-        Assert.Equal(TimeSpan.Zero, service.AutomaticRequest.RecoveryDuration);
-        Assert.Equal(0, service.AutomaticRequest.TargetCurrentMilliAmps);
-        Assert.Equal(TimeSpan.FromSeconds(6), model.Elapsed);
+        Assert.Empty(service.Calls);
+        Assert.True(model.IsTimingSetup);
     }
 
     [Fact]
-    public async Task AcquisitionOnlyInfiniteRunCanBeStoppedWithoutAppendingAcquisition()
+    public async Task AcquisitionOnlyManualRunCanBeStoppedWithoutAppendingStages()
     {
-        var service = new FakeRunService { BlockAutomatic = true };
+        var service = new FakeRunService { BlockAcquisition = true };
         using var model = CreateModel(
             CreateRoute(creationMode: ExperimentCreationMode.AcquisitionOnly),
             service
         );
         model.AcquisitionStage.DurationValue = 2;
-        model.SelectModeCommand.Execute(ExperimentRunMode.Automatic);
-        model.CycleCount = 0;
-        var running = model.StartAutomaticExperimentCommand.ExecuteAsync(null);
+        var running = model.StartAcquisitionCommand.ExecuteAsync(null);
         Assert.True(model.IsRunning);
         await model.EmergencyStopCommand.ExecuteAsync(null);
         await running;
         Assert.True(model.IsEmergencyStopped);
         Assert.True(service.EmergencyStopCalled);
-        Assert.Empty(service.AcquisitionRequests);
+        Assert.Single(service.AcquisitionRequests);
+        Assert.False(model.IsCompleted);
         Assert.DoesNotContain(
             model.TimelineSegments,
-            x => x.Stage is ExperimentRunStage.Stimulation or ExperimentRunStage.Recovery
+            x => x.Stage is ExperimentRunStage.Blanking or ExperimentRunStage.Stimulation or ExperimentRunStage.Recovery
         );
     }
 

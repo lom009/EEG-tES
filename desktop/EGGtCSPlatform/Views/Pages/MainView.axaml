@@ -5,6 +5,7 @@
   xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
   xmlns:design="clr-namespace:EGGtCSPlatform.Design"
   xmlns:pages="clr-namespace:EGGtCSPlatform.ViewModels.Pages"
+  xmlns:dialogs="clr-namespace:EGGtCSPlatform.Dialog"
   x:Class="EGGtCSPlatform.Views.Pages.MainView"
   x:DataType="pages:MainViewModel"
   mc:Ignorable="d"
@@ -27,7 +28,7 @@
     </Style>
   </UserControl.Styles>
 
-  <Grid x:Name="DialogAdornedRoot">
+  <Grid x:Name="DialogAdornedRoot" dialogs:NativeContentModalState.IsBlocked="{Binding !!DialogStack.Count}">
     <TransitioningContentControl
       HorizontalContentAlignment="Stretch"
       VerticalContentAlignment="Stretch"

@@ -187,7 +187,9 @@ public sealed class ApplicationShutdownCoordinator(
     IExperimentRunService runService,
     ITemporaryEegCleanupService cleanup,
     IDbContextFactory<AppDbContext> contextFactory,
-    ApplicationSessionState applicationSession
+    ApplicationSessionState applicationSession,
+    SpeechOutputLifetime? speechOutput = null,
+    ToleranceSessionLifetime? toleranceSessions = null
 ) : IApplicationShutdownCoordinator
 {
     private readonly object _sync = new();
@@ -243,6 +245,20 @@ public sealed class ApplicationShutdownCoordinator(
                 activeRunId.ToString(),
                 error
             );
+        }
+
+        if (speechOutput is not null)
+            await speechOutput.StopAllAsync();
+        if (toleranceSessions is not null)
+        {
+            try
+            {
+                await toleranceSessions.StopAllAsync();
+            }
+            catch (Exception error)
+            {
+                ReportFailure("tolerance-stop", error);
+            }
         }
 
         if (persistence.IsActive)

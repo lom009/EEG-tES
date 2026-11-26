@@ -15,24 +15,156 @@ namespace EGGtCSPlatform.Tests;
 
 public sealed class EnvelopeConfigurationTests
 {
+    internal static ExperimentRunRouteData EnvelopeRoute(
+        int fixedChannel = 1,
+        int selectableChannel = 5
+    )
+    {
+        var original = ExperimentRunRouteDataDefaults.Create();
+        var id = original.StimulusConfiguration.Targets.Single().TargetId;
+        var configuration = original.StimulusConfiguration with
+        {
+            Kind = StimulusKind.EnvelopeTAcs,
+            ArrayMode = StimulusArrayMode.DualChannel,
+            Direction = StimulusDirection.Bidirectional,
+            Envelope = new(DelayMilliseconds: 300, IsDeviceSetup: true),
+            Targets =
+            [
+                new(
+                    id,
+                    1,
+                    2,
+                    fixedChannel,
+                    [
+                        new(fixedChannel, StimulationChannelRole.FixedActive, 2),
+                        new(selectableChannel, StimulationChannelRole.Selectable, 2),
+                    ]
+                ),
+            ],
+        };
+        return new(
+            original.ExperimentId,
+            original.SubjectId,
+            configuration,
+            [
+                new("Fz", id, fixedChannel, StimulationChannelRole.FixedActive),
+                new("CP4", id, selectableChannel, StimulationChannelRole.Selectable),
+            ],
+            [],
+            "",
+            "",
+            500,
+            creationMode: ExperimentCreationMode.StimulusOnly
+        );
+    }
+
+    [Theory]
+    [InlineData(1, 5, 0x10)]
+    [InlineData(5, 1, 0x01)]
+    [InlineData(1, 8, 0x80)]
+    public void EnvelopeMaskSelectsOnlySelectableRole(
+        int fixedChannel,
+        int selectableChannel,
+        byte expected
+    )
+    {
+        var route = EnvelopeRoute(fixedChannel, selectableChannel);
+        var settings = DeviceEnvelopeOutput.Settings(route);
+        Assert.Equal(expected, settings.ChannelMask);
+        Assert.Equal(0, settings.ChannelMask & (1 << (fixedChannel - 1)));
+        Assert.Equal(2, route.StimulusElectrodes.Count);
+        Assert.Equal(2m, settings.MaximumCurrent);
+        Assert.Equal(500, settings.DebugFrequencyHz);
+        Assert.Equal(300, settings.DelayMilliseconds);
+    }
+
+    [Theory]
+    [InlineData(1, 1)]
+    [InlineData(0, 5)]
+    [InlineData(9, 5)]
+    [InlineData(1, 0)]
+    [InlineData(1, 9)]
+    public void InvalidPhysicalChannelsStillReject(int fixedChannel, int selectableChannel) =>
+        Assert.Throws<ArgumentException>(() =>
+            DeviceEnvelopeOutput.Settings(EnvelopeRoute(fixedChannel, selectableChannel))
+        );
+
+    [Theory]
+    [InlineData("missing")]
+    [InlineData("role")]
+    [InlineData("channel")]
+    [InlineData("target")]
+    public void IncompleteOrMismatchedAssignmentsStillReject(string invalid)
+    {
+        var route = EnvelopeRoute();
+        var assignments = route.StimulusElectrodes.ToArray();
+        if (invalid == "missing")
+            assignments = assignments.Take(1).ToArray();
+        else
+            assignments[1] = invalid switch
+            {
+                "role" => assignments[1] with { Role = StimulationChannelRole.FixedActive },
+                "channel" => assignments[1] with { PhysicalChannelId = 6 },
+                _ => assignments[1] with { TargetId = Guid.NewGuid() },
+            };
+        var invalidRoute = new ExperimentRunRouteData(
+            route.ExperimentId,
+            route.SubjectId,
+            route.StimulusConfiguration,
+            assignments,
+            [],
+            "",
+            "",
+            500,
+            creationMode: ExperimentCreationMode.StimulusOnly
+        );
+        Assert.Throws<ArgumentException>(() => DeviceEnvelopeOutput.Settings(invalidRoute));
+    }
+
+    [Fact]
+    public void LegacyEnvelopeWithoutDebugFrequencyKeepsItsOriginalMeaning()
+    {
+        var legacy = SimulationJson.Read<EnvelopeParameters>(
+            "{\"ModulationHz\":7,\"Depth\":0.5,\"DelayMilliseconds\":40}"
+        )!;
+        Assert.Equal(500, legacy.DebugFrequencyHz);
+        Assert.Equal(7, legacy.ModulationHz);
+        Assert.Equal(.5, legacy.Depth);
+        Assert.False(legacy.IsDeviceSetup);
+    }
+
     [Theory]
     [InlineData(0, 1.8, "0 ms (0 s)", "1.8 mA")]
     [InlineData(40, 0.04, "40 ms (0.04 s)", "0.04 mA")]
     [InlineData(300, 2, "300 ms (0.3 s)", "2 mA")]
     public async Task ConfirmationUsesConfiguredParametersAndChannelRoles(
-        double delay, double current, string expectedDelay, string expectedCurrent)
+        double delay,
+        double current,
+        string expectedDelay,
+        string expectedCurrent
+    )
     {
         var router = new Router();
         var capability = StimulusCapabilityProfile.FromOptions(
-            new StimulationChannelOptions { FixedActivePhysicalChannelIds = [4] });
+            new StimulationChannelOptions { FixedActivePhysicalChannelIds = [4] }
+        );
         var page = new StimulusConfigurationPageViewModel(
             new("EXP", "SUBJECT", CreationMode: ExperimentCreationMode.StimulusOnly),
-            router, new DialogService(() => null), new Host(), capability);
+            router,
+            new DialogService(() => null),
+            new Host(),
+            capability
+        );
         page.CurrentConfiguration.DelayMilliseconds = delay;
         page.CurrentConfiguration.Current = current;
         await page.SaveConfigurationCommand.ExecuteAsync(null);
         using var electrodes = new ElectrodeConfigurationPageViewModel(
-            router.Saved!, router, new DialogService(() => null), new Host(), capability);
+            router.Saved!,
+            router,
+            new DialogService(() => null),
+            new Host(),
+            capability
+        );
         var sites = electrodes.Points.Where(p => p.CanStimulate).Reverse().Take(2).ToArray();
         var index = 0;
         foreach (var option in electrodes.StimulusSelectionOptions)
@@ -43,24 +175,55 @@ public sealed class EnvelopeConfigurationTests
         foreach (var row in electrodes.CurrentImpedanceItems)
             row.SelectedStimulationChannel = row.StimulationChannels.First();
 
-        var data = Assert.IsType<EnvelopeConfirmationData>(electrodes.CreateEnvelopeConfirmationData());
+        var data = Assert.IsType<EnvelopeConfirmationData>(
+            electrodes.CreateEnvelopeConfirmationData()
+        );
         Assert.Equal(expectedDelay, data.StartupDelay);
         Assert.Equal(expectedCurrent, data.MaximumCurrent);
-        var fixedSite = sites.Single(p => p.StimulationChannelRole == StimulationChannelRole.FixedActive);
-        var selectableSite = sites.Single(p => p.StimulationChannelRole == StimulationChannelRole.Selectable);
+        var fixedSite = sites.Single(p =>
+            p.StimulationChannelRole == StimulationChannelRole.FixedActive
+        );
+        var selectableSite = sites.Single(p =>
+            p.StimulationChannelRole == StimulationChannelRole.Selectable
+        );
         Assert.Equal($"{fixedSite.PositionName} / CH4", data.FixedChannel);
-        Assert.Equal($"{selectableSite.PositionName} / CH{selectableSite.StimulationPhysicalChannelId}", data.SelectableChannel);
+        Assert.Equal(
+            $"{selectableSite.PositionName} / CH{selectableSite.StimulationPhysicalChannelId}",
+            data.SelectableChannel
+        );
 
         using var ordinary = new ElectrodeConfigurationPageViewModel(
-            ElectrodeConfigurationRouteDataDefaults.Create(), router,
-            new DialogService(() => null), new Host(), capability);
+            ElectrodeConfigurationRouteDataDefaults.Create(),
+            router,
+            new DialogService(() => null),
+            new Host(),
+            capability
+        );
         Assert.Null(ordinary.CreateEnvelopeConfirmationData());
+    }
+
+    [Theory]
+    [InlineData(ExperimentCreationMode.StimulusOnly, StimulusKind.TDcs, false, true)]
+    [InlineData(ExperimentCreationMode.StimulusOnly, StimulusKind.TDcs, true, false)]
+    [InlineData(ExperimentCreationMode.StimulusOnly, StimulusKind.EnvelopeTAcs, false, false)]
+    [InlineData(ExperimentCreationMode.AcquisitionAndStimulation, StimulusKind.TDcs, false, false)]
+    public void PictureNamingChoiceBelongsToOrdinarySingleTdcs(ExperimentCreationMode mode, StimulusKind kind, bool tolerance, bool expected)
+    {
+        var template = ElectrodeConfigurationRouteDataDefaults.Create();
+        using var page = new ElectrodeConfigurationPageViewModel(template with {
+            CreationMode = mode, StimulusConfiguration = template.StimulusConfiguration with { Kind = kind },
+            Tolerance = tolerance ? new ToleranceTestContext("S-001", "") : null
+        }, new Router(), new DialogService(() => null), new Host());
+        Assert.Equal(expected, page.CanChoosePictureNaming);
+        Assert.False(page.UsePictureNaming);
     }
 
     [Fact]
     public void DelayBoundsAndFixedArrayCannotProduceInvalidSetup()
     {
         var configuration = new StimulusModeConfigurationViewModel(StimulusKind.EnvelopeTAcs);
+        Assert.Equal(0, configuration.DelayMilliseconds);
+        Assert.Equal(500, configuration.DebugFrequencyHz);
         configuration.DelayMilliseconds = -1;
         Assert.Equal(0, configuration.DelayMilliseconds);
         configuration.DelayMilliseconds = 301;
@@ -100,13 +263,14 @@ public sealed class EnvelopeConfigurationTests
         var configuration = page.CurrentConfiguration;
         Assert.Equal(StimulusKind.EnvelopeTAcs, configuration.Kind);
         Assert.Equal(2, configuration.Current);
-        Assert.Equal(40, configuration.DelayMilliseconds);
+        Assert.Equal(0, configuration.DelayMilliseconds);
         Assert.False(configuration.ShowSelectionSection);
         Assert.False(configuration.ShowFrequencyParameter);
         Assert.False(configuration.ShowRampParameter);
         Assert.Equal(StimulusDirection.Bidirectional, configuration.Direction);
         configuration.Current = 1;
         configuration.DelayMilliseconds = 125;
+        configuration.DebugFrequencyHz = 800;
         page.Modes[1].SelectCommand.Execute(null);
         page.Modes[0].SelectCommand.Execute(null);
         Assert.Same(configuration, page.CurrentConfiguration);
@@ -118,6 +282,7 @@ public sealed class EnvelopeConfigurationTests
         Assert.Equal(1, copy.Targets.Single().PeakCurrent);
         Assert.Equal(125, copy.Envelope!.DelayMilliseconds);
         Assert.True(copy.Envelope.IsDeviceSetup);
+        Assert.Equal(800, copy.Envelope.DebugFrequencyHz);
         Assert.Equal(StimulusArrayMode.DualChannel, copy.ArrayMode);
     }
 

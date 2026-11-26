@@ -32,7 +32,8 @@ public sealed record ExperimentConfigurationTemplate(
         )
     ]
         SimulationProvenance? Simulation = null,
-    ExperimentCreationMode CreationMode = ExperimentCreationMode.AcquisitionAndStimulation
+    ExperimentCreationMode CreationMode = ExperimentCreationMode.AcquisitionAndStimulation,
+    SpeechTraining.SpeechTrainingSettings? SpeechTrainingPreset = null
 );
 
 public interface IExperimentConfigurationTransferContext
@@ -97,7 +98,7 @@ public static class SingleStimulusConfiguration
         );
         return new ExperimentConfigurationTemplate(
             stimulus,
-            route.StimulusElectrodes,
+            route.StimulusElectrodes.ToArray(),
             [],
             "",
             "",
@@ -112,6 +113,34 @@ public static class SingleStimulusConfiguration
             ),
             route.ExperimentId,
             CreationMode: ExperimentCreationMode.StimulusOnly
+        );
+    }
+}
+
+public static class ExperimentRunConfiguration
+{
+    public static ExperimentConfigurationTemplate Snapshot(
+        ExperimentRunRouteData route,
+        ExperimentTimingTemplate timing,
+        IReadOnlyDictionary<int, string>? physicalChannels = null
+    )
+    {
+        var stimulus = SingleStimulusConfiguration.Snapshot(
+            route,
+            TimeSpan.FromMilliseconds(timing.StimulationMilliseconds)
+        );
+        return AcquisitionOnlyConfiguration.Normalize(
+            stimulus with
+            {
+                CreationMode = route.CreationMode,
+                Timing = timing,
+                AcquisitionChannels = route.AcquisitionChannels.ToArray(),
+                ReferenceChannel = route.ReferenceChannel,
+                GroundChannel = route.GroundChannel,
+                PhysicalChannels = (physicalChannels ?? route.PhysicalChannelNames)
+                    ?.Select(p => new EegPhysicalChannelMapping(p.Value, p.Key))
+                    .ToArray(),
+            }
         );
     }
 }

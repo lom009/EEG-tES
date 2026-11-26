@@ -20,22 +20,43 @@
           Value="{TemplateBinding Value}"
         >
           <Track.DecreaseButton>
-            <Button
+            <Button Name="ActiveTrack"
               Background="{TemplateBinding Foreground}"
               Theme="{StaticResource StimulusSliderTrackButtonTheme}"
             />
           </Track.DecreaseButton>
           <Track.IncreaseButton>
-            <Button
+            <Button Name="InactiveTrack"
               Background="{TemplateBinding Background}"
               Theme="{StaticResource StimulusSliderTrackButtonTheme}"
             />
           </Track.IncreaseButton>
           <Track.Thumb>
-            <Thumb Theme="{StaticResource StimulusSliderThumbTheme}" />
+            <Thumb ZIndex="1" Theme="{StaticResource StimulusSliderThumbTheme}" />
           </Track.Thumb>
         </Track>
       </ControlTemplate>
     </Setter>
+    <!-- Half the 25.3333-wide thumb: both fills meet underneath its opaque center. -->
+    <Style Selector="^ /template/ Button#ActiveTrack">
+      <Setter Property="controls:SliderTrackAppearance.FillMargin" Value="0,0,-12.66665,0" />
+    </Style>
+    <Style Selector="^ /template/ Button#InactiveTrack">
+      <Setter Property="controls:SliderTrackAppearance.FillMargin" Value="-12.66665,0,0,0" />
+    </Style>
+    <Style Selector="^[IsDirectionReversed=True] /template/ Button#ActiveTrack">
+      <Setter Property="controls:SliderTrackAppearance.FillMargin" Value="-12.66665,0,0,0" />
+    </Style>
+    <Style Selector="^[IsDirectionReversed=True] /template/ Button#InactiveTrack">
+      <Setter Property="controls:SliderTrackAppearance.FillMargin" Value="0,0,-12.66665,0" />
+    </Style>
+    <Style Selector="^.compact /template/ Button#ActiveTrack">
+      <Setter Property="controls:SliderTrackAppearance.Height" Value="7" />
+      <Setter Property="controls:SliderTrackAppearance.CornerRadius" Value="3.5" />
+    </Style>
+    <Style Selector="^.compact /template/ Button#InactiveTrack">
+      <Setter Property="controls:SliderTrackAppearance.Height" Value="6" />
+      <Setter Property="controls:SliderTrackAppearance.CornerRadius" Value="3" />
+    </Style>
   </ControlTheme>
 </ResourceDictionary>

@@ -193,6 +193,13 @@ public sealed record StimulusParameterPolicy(
         if (template.CreationMode == ExperimentCreationMode.AcquisitionOnly)
             return null;
         var s = template.StimulusConfiguration;
+        if (
+            template.CreationMode == ExperimentCreationMode.StimulusOnly
+            && s.Kind == StimulusKind.EnvelopeTAcs
+            && s.Envelope is { IsDeviceSetup: true }
+            && template.SpeechTrainingPreset is not null
+        )
+            return null;
         if (s.Envelope is not null)
             return "包络-tACS 仅支持数据生成与历史回放，不能下发设备。";
         return Validate(s.Kind, s.ShamMode, s.Frequency, s.RampSeconds, s.DutyPercent, true)

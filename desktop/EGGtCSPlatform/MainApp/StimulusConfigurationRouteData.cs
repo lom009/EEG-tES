@@ -9,5 +9,6 @@ public sealed record StimulusConfigurationRouteData(
     long ExperimentDatabaseId = 0,
     DateTimeOffset? ScheduledAt = null,
     string Remarks = "",
-    ExperimentCreationMode CreationMode = ExperimentCreationMode.AcquisitionAndStimulation
+    ExperimentCreationMode CreationMode = ExperimentCreationMode.AcquisitionAndStimulation,
+    ToleranceTestContext? Tolerance = null
 );

@@ -23,6 +23,24 @@ namespace EGGtCSPlatform.Controls;
 internal sealed class WaveformPlotSurface : Control
 {
     private WaveformHoverState? _observedHoverState;
+    public static readonly StyledProperty<int> GridColumnsProperty = AvaloniaProperty.Register<
+        WaveformPlotSurface,
+        int
+    >(nameof(GridColumns), 9);
+    public static readonly StyledProperty<int> GridRowsProperty = AvaloniaProperty.Register<
+        WaveformPlotSurface,
+        int
+    >(nameof(GridRows), WaveformAmplitudeScale.IntervalCount);
+    public int GridColumns
+    {
+        get => GetValue(GridColumnsProperty);
+        set => SetValue(GridColumnsProperty, value);
+    }
+    public int GridRows
+    {
+        get => GetValue(GridRowsProperty);
+        set => SetValue(GridRowsProperty, value);
+    }
 
     public static readonly StyledProperty<IReadOnlyList<TimedWaveformPoint>?> SamplesProperty =
         AvaloniaProperty.Register<WaveformPlotSurface, IReadOnlyList<TimedWaveformPoint>?>(
@@ -50,6 +68,16 @@ internal sealed class WaveformPlotSurface : Control
 
     public static readonly StyledProperty<double> MaximumAmplitudeProperty =
         AvaloniaProperty.Register<WaveformPlotSurface, double>(nameof(MaximumAmplitude), 200d);
+
+    public static readonly StyledProperty<double> MinimumAmplitudeProperty =
+        AvaloniaProperty.Register<WaveformPlotSurface, double>(nameof(MinimumAmplitude), 1d,
+            validate: value => double.IsFinite(value) && value > 0);
+
+    public double MinimumAmplitude
+    {
+        get => GetValue(MinimumAmplitudeProperty);
+        set => SetValue(MinimumAmplitudeProperty, value);
+    }
 
     public static readonly StyledProperty<bool> ShowXCursorProperty = AvaloniaProperty.Register<
         WaveformPlotSurface,
@@ -210,14 +238,16 @@ internal sealed class WaveformPlotSurface : Control
         DrawRevealedStimulationIntervals(context, width, height);
 
         var gridPen = new Pen(GridBrush ?? new SolidColorBrush(Color.Parse("#DCE6F4")), 1d);
-        for (var column = 0; column <= 9; column++)
+        var columns = Math.Max(1, GridColumns);
+        var rows = Math.Max(1, GridRows);
+        for (var column = 0; column <= columns; column++)
         {
-            var x = width * column / 9d;
+            var x = width * column / columns;
             context.DrawLine(gridPen, new Point(x, 0), new Point(x, height));
         }
-        for (var row = 0; row <= WaveformAmplitudeScale.IntervalCount; row++)
+        for (var row = 0; row <= rows; row++)
         {
-            var y = height * row / WaveformAmplitudeScale.IntervalCount;
+            var y = height * row / rows;
             context.DrawLine(gridPen, new Point(0, y), new Point(width, y));
         }
 
@@ -234,7 +264,7 @@ internal sealed class WaveformPlotSurface : Control
                         (sample.TimeSeconds - ViewStart)
                         / Math.Max(0.001d, ViewEnd - ViewStart)
                         * width;
-                    var y = WaveformAmplitudeScale.ToY(sample.Value, MaximumAmplitude, height);
+                    var y = ToY(sample.Value, height);
                     if (!hasFigure || sample.StartsNewSegment)
                     {
                         geometryContext.BeginFigure(new Point(x, y), false);
@@ -326,9 +356,12 @@ internal sealed class WaveformPlotSurface : Control
     {
         base.OnPropertyChanged(change);
         if (
-            change.Property == SamplesProperty
+            change.Property == GridColumnsProperty
+            || change.Property == GridRowsProperty
+            || change.Property == SamplesProperty
             || change.Property == SampleLookupProperty
             || change.Property == MaximumAmplitudeProperty
+            || change.Property == MinimumAmplitudeProperty
             || change.Property == ShowXCursorProperty
             || change.Property == ShowYCursorProperty
             || change.Property == ContinuousStimulationOverlayProperty
@@ -455,7 +488,7 @@ internal sealed class WaveformPlotSurface : Control
     }
 
     private double ToY(double value, double height) =>
-        WaveformAmplitudeScale.ToY(value, MaximumAmplitude, height);
+        WaveformAmplitudeScale.ToY(value, MaximumAmplitude, height, MinimumAmplitude);
 
     private void ObserveHoverState(WaveformHoverState? state)
     {

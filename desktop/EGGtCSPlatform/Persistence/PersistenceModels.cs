@@ -121,6 +121,7 @@ public sealed class SubjectEntity
 
 public sealed class ExperimentEntity
 {
+    public SpeechExperimentEntity? SpeechExperiment { get; set; }
     public ExperimentCreationMode CreationMode { get; set; } =
         ExperimentCreationMode.AcquisitionAndStimulation;
     public string? GenerationJson { get; set; }

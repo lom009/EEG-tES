@@ -77,7 +77,7 @@ public sealed class SessionEggtCsDevice : IEggtCsDevice, IDeviceCapabilitySource
         var response = await _session
             .SendAsync(new ReadDeviceStatusRequest(), cancellationToken)
             .ConfigureAwait(false);
-        UpdateState(response.Operation, response.BatteryPercent);
+        UpdateStatus(response);
         return response;
     }
 
@@ -109,7 +109,7 @@ public sealed class SessionEggtCsDevice : IEggtCsDevice, IDeviceCapabilitySource
 
     public void ApplyStatus(DeviceStatusResponse status)
     {
-        UpdateState(status.Operation, status.BatteryPercent);
+        UpdateStatus(status);
         if (!_terminal)
             _ = _events.PublishAsync(
                 new(
@@ -224,6 +224,14 @@ public sealed class SessionEggtCsDevice : IEggtCsDevice, IDeviceCapabilitySource
                 Fault = null,
             }
         );
+
+    private void UpdateStatus(DeviceStatusResponse status)
+    {
+        if (status.HasOperationState)
+            UpdateState(status.Operation, status.BatteryPercent);
+        else
+            UpdateBattery(status.BatteryPercent);
+    }
 
     private void UpdateBattery(int batteryPercent) =>
         ChangeState(state =>
@@ -572,6 +580,26 @@ public sealed class SessionEggtCsDevice : IEggtCsDevice, IDeviceCapabilitySource
     private sealed class SessionToleranceCapability(SessionEggtCsDevice owner)
         : IToleranceCapability
     {
+        public async Task<DeviceCommandResult> StartAsync(
+            CancellationToken cancellationToken = default
+        )
+        {
+            owner.EnsureCapability(owner.Capabilities.CanRunToleranceTest, "Tolerance test");
+            owner.EnsureCapability(owner.Capabilities.CanStimulate, "Stimulation");
+            var result = await owner
+                .Session.SendAsync(
+                    new ControlStimulationRequest(RunControl.Start, TimeSpan.Zero)
+                    {
+                        StartMode = StimulationStartMode.Tolerance,
+                    },
+                    cancellationToken
+                )
+                .ConfigureAwait(false);
+            if (result.IsSuccess)
+                owner.UpdateState(DeviceOperationState.Stimulating);
+            return result;
+        }
+
         public Task<CurrentAdjustmentResponse> AdjustCurrentAsync(
             CurrentAdjustment adjustment,
             CancellationToken cancellationToken = default

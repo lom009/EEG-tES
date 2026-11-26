@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using EGGtCSPlatform.MainApp;
 using EGGtCSPlatform.Persistence;
 using EGGtCSPlatform.Protocol.EggtCs.Gen1;
 using EGGtCSPlatform.Services;
@@ -214,7 +215,11 @@ public sealed class PersistenceAndArtifactTests
                     TimeSpan.FromSeconds(1),
                     TimeSpan.FromSeconds(1),
                     TimeSpan.FromSeconds(1),
-                    TimeSpan.FromSeconds(1)
+                    TimeSpan.FromSeconds(1),
+                    Configuration: SingleStimulusConfiguration.Snapshot(
+                        ExperimentRunRouteDataDefaults.Create(),
+                        TimeSpan.FromSeconds(1)
+                    )
                 ),
                 "device"
             );
@@ -304,7 +309,11 @@ public sealed class PersistenceAndArtifactTests
                     TimeSpan.FromSeconds(15),
                     TimeSpan.FromSeconds(1),
                     TimeSpan.FromSeconds(15),
-                    TimeSpan.FromSeconds(1)
+                    TimeSpan.FromSeconds(1),
+                    Configuration: SingleStimulusConfiguration.Snapshot(
+                        ExperimentRunRouteDataDefaults.Create(),
+                        TimeSpan.FromSeconds(1)
+                    )
                 ),
                 "device"
             );
@@ -361,7 +370,7 @@ public sealed class PersistenceAndArtifactTests
     }
 
     [Fact]
-    public async Task RerunCreatesAnotherRunWithoutChangingPreviousRawFileRecord()
+    public async Task LegacyRerunForksNumberWithoutChangingPreviousRawFileRecord()
     {
         var directory = CreateTemporaryDirectory();
         try
@@ -425,10 +434,14 @@ public sealed class PersistenceAndArtifactTests
                     "Automatic",
                     1,
                     500,
-                    TimeSpan.FromSeconds(1),
+                    TimeSpan.FromSeconds(15),
                     TimeSpan.FromSeconds(1),
                     TimeSpan.FromSeconds(15),
-                    TimeSpan.FromSeconds(1)
+                    TimeSpan.FromSeconds(1),
+                    Configuration: SingleStimulusConfiguration.Snapshot(
+                        ExperimentRunRouteDataDefaults.Create(),
+                        TimeSpan.FromSeconds(1)
+                    )
                 ),
                 "device-rerun"
             );
@@ -436,9 +449,10 @@ public sealed class PersistenceAndArtifactTests
             await using var assertionDb = factory.CreateDbContext();
             var runs = await assertionDb
                 .ExperimentRuns.Include(x => x.Files)
-                .Where(x => x.ExperimentId == experimentId)
+                .Where(x => x.Id == previousRunId || x.Id == nextRunId)
                 .ToListAsync();
             Assert.Equal(2, runs.Count);
+            Assert.NotEqual(experimentId, runs.Single(x => x.Id == nextRunId).ExperimentId);
             Assert.Equal(
                 previousRawPath,
                 Assert.Single(runs.Single(x => x.Id == previousRunId).Files).Path
@@ -753,7 +767,11 @@ public sealed class PersistenceAndArtifactTests
                         TimeSpan.FromSeconds(1),
                         TimeSpan.Zero,
                         TimeSpan.Zero,
-                        TimeSpan.Zero
+                        TimeSpan.Zero,
+                        Configuration: SingleStimulusConfiguration.Snapshot(
+                            ExperimentRunRouteDataDefaults.Create(),
+                            TimeSpan.FromSeconds(1)
+                        )
                     ),
                     "device"
                 );

@@ -15,16 +15,15 @@
   d:DesignHeight="768"
 >
 
-
   <Grid>
     <Image Margin="0,44,0,0" Source="{SvgImage /Assets/Images/electrode-background.svg}" Stretch="UniformToFill" />
 
     <Grid Margin="24,0,24,24" ColumnDefinitions="*,5,400">
-      <Grid Margin="0,44,0,0" RowDefinitions="38,*">
+      <Grid Margin="0,44,0,0" RowDefinitions="38,Auto,*">
         <Grid ColumnDefinitions="Auto,*,Auto">
           <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4">
             <RadioButton x:Name="View2D" Content="2D" IsChecked="True" GroupName="HeadViewMode" Click="Show2D" Theme="{StaticResource ElectrodeRoleButtonTheme}" Width="48" />
-            <RadioButton x:Name="View3D" Content="3D" GroupName="HeadViewMode" Click="Show3D" Theme="{StaticResource ElectrodeRoleButtonTheme}" Width="48" />
+            <RadioButton x:Name="View3D" Content="3D" GroupName="HeadViewMode" Click="Show3D" IsEnabled="{Binding CanShowHead3D}" ToolTip.Tip="{Binding Head3DConfigurationError}" Theme="{StaticResource ElectrodeRoleButtonTheme}" Width="48" />
             <Button x:Name="Reset3D" Content="重置视角" IsVisible="False" Click="ResetHead3D" Theme="{StaticResource ElectrodeSmallButtonTheme}" />
           </StackPanel>
           <Button
@@ -65,7 +64,15 @@
 
         </Grid>
 
-        <Grid Grid.Row="1">
+        <Border Grid.Row="1" IsVisible="{Binding !CanShowHead3D}" Background="#FFFFE7E3" Padding="10" Margin="0,4" CornerRadius="8">
+          <ScrollViewer MaxHeight="100">
+            <StackPanel Spacing="4">
+              <TextBlock Text="3D 配置不可用，可继续使用 2D。请修正以下点位配置并重启：" TextWrapping="Wrap" />
+              <TextBlock Text="{Binding Head3DConfigurationError}" TextWrapping="Wrap" />
+            </StackPanel>
+          </ScrollViewer>
+        </Border>
+        <Grid Grid.Row="2">
           <ContentControl x:Name="Head3DHost" Margin="0,0,160,0" IsVisible="False" />
           <controls:ElectrodeHeadMap
             x:Name="Head2D"
@@ -238,7 +245,7 @@
                                   Spacing="6"
                                 >
                                   <Grid Width="16" Height="16"><Image Width="16" Height="16" Source="{SvgImage /Assets/Images/electrode-icons/role-anode.svg}" IsVisible="{Binding UsesBlueColor}" /><Image Width="16" Height="16" Source="{SvgImage /Assets/Images/electrode-icons/role-cathode.svg}" IsVisible="{Binding UsesRedColor}" /></Grid>
-                                  <TextBlock Text="{Binding Label}" />
+                                  <TextBlock Text="{Binding UiLabel}" />
                                   <TextBlock
                                     FontSize="{DynamicResource FontSize12}"
                                     Foreground="{DynamicResource ProductTextMuted}"
@@ -418,6 +425,8 @@
           />
 
           <StackPanel Grid.Row="3" Spacing="6">
+            <CheckBox Name="PictureNamingOption" Content="图片命名训练" IsVisible="{Binding CanChoosePictureNaming}"
+                      IsChecked="{Binding UsePictureNaming, Mode=TwoWay}" />
             <TextBlock
               HorizontalAlignment="Center"
               FontSize="{DynamicResource FontSize12}"
@@ -426,10 +435,10 @@
             />
             <Button
               Command="{Binding OpenConfirmationCommand}"
-              
+
               IsEnabled="{Binding CanOpenConfirmation}"
               Theme="{StaticResource ElectrodePrimaryButtonTheme}">
-              <StackPanel Orientation="Horizontal" Spacing="8"><Image Width="20" Height="20" Source="{SvgImage /Assets/Images/electrode-icons/confirm.svg}"  /><TextBlock Text="查看并确认实验配置" VerticalAlignment="Center" /></StackPanel>
+              <StackPanel Orientation="Horizontal" Spacing="8"><Image Width="20" Height="20" Source="{SvgImage /Assets/Images/check-double-line.svg}"  /><TextBlock Text="查看并确认实验配置" VerticalAlignment="Center" /></StackPanel>
             </Button>
           </StackPanel>
         </Grid>

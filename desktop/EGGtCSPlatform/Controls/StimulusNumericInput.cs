@@ -9,12 +9,13 @@ using Avalonia.Interactivity;
 namespace EGGtCSPlatform.Controls;
 
 /// <summary>
-/// Numeric editor used by stimulus parameters. It deliberately accepts only
-/// unsigned decimal input because all stimulus ranges exposed by the UI are
-/// non-negative; polarity is selected separately.
+/// Numeric editor. Stimulus parameters remain unsigned by default; signed SNR
+/// inputs explicitly opt in with AllowNegative.
 /// </summary>
-public class StimulusNumericInput : NumericUpDown
+public class StimulusNumericInput : StepNumericUpDown
 {
+    protected override Type StyleKeyOverride => typeof(StimulusNumericInput);
+
     private const decimal BoundaryTolerance = 0.000000000001m;
 
     public static readonly StyledProperty<int> DecimalPlacesProperty = AvaloniaProperty.Register<
@@ -26,6 +27,17 @@ public class StimulusNumericInput : NumericUpDown
         StimulusNumericInput,
         string?
     >(nameof(Unit));
+
+    public static readonly StyledProperty<bool> AllowNegativeProperty = AvaloniaProperty.Register<
+        StimulusNumericInput,
+        bool
+    >(nameof(AllowNegative));
+
+    public bool AllowNegative
+    {
+        get => GetValue(AllowNegativeProperty);
+        set => SetValue(AllowNegativeProperty, value);
+    }
 
     private TextBox? _textBox;
     private ButtonSpinner? _spinner;
@@ -96,6 +108,18 @@ public class StimulusNumericInput : NumericUpDown
         }
     }
 
+    protected override void OnTextChanged(string? oldValue, string? newValue)
+    {
+        // TextBox.TextChanged is deferred; reject malformed paste before NumericUpDown
+        // parses it or an immediate Enter commits it to the view model.
+        if (!IsValidText(newValue))
+        {
+            SetCurrentValue(TextProperty, IsValidText(oldValue) ? oldValue : _lastValidText);
+            return;
+        }
+        base.OnTextChanged(oldValue, newValue);
+    }
+
     private void OnTextInput(object? sender, TextInputEventArgs e)
     {
         if (_textBox is null || string.IsNullOrEmpty(e.Text))
@@ -132,6 +156,10 @@ public class StimulusNumericInput : NumericUpDown
     {
         if (string.IsNullOrEmpty(text))
             return true;
+
+        var negativeSign = CultureInfo.CurrentCulture.NumberFormat.NegativeSign;
+        if (AllowNegative && text.StartsWith(negativeSign, StringComparison.Ordinal))
+            text = text[negativeSign.Length..];
 
         var separator = CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator;
         var separatorIndex = text.IndexOf(separator, StringComparison.CurrentCulture);

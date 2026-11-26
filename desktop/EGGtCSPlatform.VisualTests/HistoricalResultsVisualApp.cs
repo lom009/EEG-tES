@@ -58,7 +58,10 @@ public sealed class HistoricalResultsVisualApp : App
                     new(ExperimentRunStage.Stimulation, 1, 40, 90),
                     new(ExperimentRunStage.Recovery, 1, 90, 100),
                     new(ExperimentRunStage.Acquisition, 2, 100, 120),
-                ]
+                ],
+                ConfigurationWarning: VisualTestOptions.Current.Scenario.EndsWith("-legacy")
+                    ? ExperimentConfigurationIdentity.LegacyWarning
+                    : null
             )
         );
         var viewModel = new ExperimentRunPageViewModel(

@@ -231,8 +231,6 @@ public sealed class ExperimentRecoveryService(IDbContextFactory<AppDbContext> co
             .ApplicationSessions.Where(x => x.ClosedAtUtc == null)
             .ToListAsync(cancellationToken);
         var sessionIds = sessions.Select(x => x.Id).ToArray();
-        if (sessionIds.Length == 0)
-            return;
 
         var runs = await db
             .ExperimentRuns.Include(x => x.Events)
@@ -281,6 +279,27 @@ public sealed class ExperimentRecoveryService(IDbContextFactory<AppDbContext> co
                 }
             );
         }
+        var speech = await db
+            .SpeechExperiments.Include(x => x.Experiment)
+            .Include(x => x.Rounds)
+            .Where(x => x.Status == ExperimentRunStatus.Running)
+            .ToListAsync(cancellationToken);
+        foreach (var experiment in speech)
+        {
+            experiment.Status = ExperimentRunStatus.RecoveredAfterCrash;
+            experiment.EndedAt = recoveredAtUtc;
+            experiment.Experiment.Status = ExperimentStatus.Interrupted;
+            experiment.Experiment.UpdatedAtUtc = recoveredAtUtc;
+            foreach (
+                var round in experiment.Rounds.Where(x =>
+                    x.Status == EGGtCSPlatform.MainApp.SpeechRoundStatus.Running
+                )
+            )
+            {
+                round.Status = EGGtCSPlatform.MainApp.SpeechRoundStatus.Interrupted;
+                round.EndedAt = recoveredAtUtc;
+            }
+        }
         foreach (var session in sessions)
             session.ClosedAtUtc = session.LastHeartbeatAtUtc;
         await db.SaveChangesAsync(cancellationToken);
@@ -313,7 +332,8 @@ public sealed class SubjectLookupService(IDbContextFactory<AppDbContext> context
         return await db
             .Subjects.AsNoTracking()
             .Where(x =>
-                x.Experiments.Any(e => e.Runs.Any()) && x.NormalizedSubjectCode.Contains(normalized)
+                x.Experiments.Any(e => e.Runs.Any() || e.SpeechExperiment != null)
+                && x.NormalizedSubjectCode.Contains(normalized)
             )
             .OrderBy(x => x.NormalizedSubjectCode.StartsWith(normalized) ? 0 : 1)
             .ThenBy(x => x.SubjectCode)

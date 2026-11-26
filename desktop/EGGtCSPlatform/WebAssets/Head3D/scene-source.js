@@ -2,8 +2,9 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { ELECTRODE_COLORS, placeElectrodeLabel, shouldUpdateLabels } from './electrode-visuals.js';
+import { ELECTRODE_COLORS, placeElectrodeLabel, shouldUpdateLabels, renderElectrodeLabel } from './electrode-visuals.js';
 import { applyNeckFade } from './neck-fade.js';
+import { keyOf, modelPosition, modelNormal, extractElectrodeTemplate, placeElectrode } from './electrode-layout.js';
 
 
 const stage = document.querySelector('#stage');
@@ -70,8 +71,8 @@ const selected = new Set();
 const checking = new Set();
 const entries = [];
 window.isHead3DAnimating = id => {
-  const entry = entries.find(item => item.id === id);
-  return !!entry && checking.has(id) && entry.effect.holder.visible
+  const entry = entries.find(item => keyOf(item.id) === keyOf(id));
+  return !!entry && checking.has(keyOf(id)) && entry.effect.holder.visible
     && entry.effect.particles.every(particle => particle.visible);
 };
 const electrodeMeshes = [];
@@ -95,24 +96,32 @@ function syncSummary() {
 
 let hostPoints = new Map();
 let hostStimulationMode = false;
+let electrodeTemplate = null;
+let layoutSignature = null;
+let hostStateApplied = false;
+let scenePresented = false;
 function send(message) { window.invokeCSharpAction?.(JSON.stringify(message)); }
 window.applyHostState = state => {
- hostPoints = new Map(state.points.map(p => [p.id, p]));
+ try {
+ hostPoints = new Map(state.points.map(p => [keyOf(p.id), p]));
  hostStimulationMode = !!state.stimulationMode;
  selected.clear(); checking.clear();
- for (const p of state.points) if (p.assigned) selected.add(p.id);
- for (const id of state.checkingIds ?? []) checking.add(id);
+ for (const p of state.points) if (p.assigned) selected.add(keyOf(p.id));
+ for (const id of state.checkingIds ?? []) checking.add(keyOf(id));
+ syncLayout(state.points);
  for (const entry of entries) paintEntry(entry);
  syncSummary();
  labelsDirty = true;
+ hostStateApplied = true;
+ } catch (error) { send({type:'error', message:error.message}); }
 };
 function paintEntry(entry) {
- const p = hostPoints.get(entry.id);
+ const p = hostPoints.get(keyOf(entry.id));
  const color = p?.color ?? '#f8fbff';
- const isChecking = checking.has(entry.id);
- entry.button.textContent = p?.label?.replace('\n',' ') ?? entry.id;
+ const isChecking = checking.has(keyOf(entry.id));
+ renderElectrodeLabel(entry.button, p, entry.id);
  entry.button.disabled = !p?.available;
- entry.button.hidden = hostStimulationMode && !!p && !p.available && !p.assigned;
+ entry.button.hidden = hostStimulationMode && !!p && !p.dimmed && !p.available && !p.assigned;
  entry.button.setAttribute('aria-pressed', String(!!p?.assigned));
  entry.button.setAttribute('aria-current', String(!!p?.focused));
  entry.button.style.outline = p?.focused ? '2px solid #4148c5' : 'none';
@@ -120,7 +129,7 @@ function paintEntry(entry) {
  entry.button.dataset.state = isChecking ? 'checking' : p?.assigned ? 'selected' : 'default';
  entry.button.style.setProperty('--point-state', color);
  entry.button.style.background = color;
- entry.button.style.color = p?.assigned ? '#ffffff' : '#232B38';
+ entry.button.style.color = p?.foreground ?? '#232B38';
  entry.button.style.opacity = p && !p.available && !p.assigned ? '0.45' : '1';
  if (entry.hostColor !== color) {
   entry.transition = entry.hostColor ? {
@@ -141,9 +150,14 @@ function paintEntry(entry) {
 }
 
 function select(id) {
- if (hostPoints.get(id)?.available) send({type:'select', id});
+ if (hostPoints.get(keyOf(id))?.available) send({type:'select', id});
 }
 window.resetHeadView = () => reset();
+// Read-only diagnostics for the native visual regression host.
+window.getHead3DState = () => ({
+ camera: camera.position.toArray(), target: controls.target.toArray(),
+ points: entries.map(e => ({id:e.id, position:e.position.toArray(), normal:e.normal.toArray(), transform:e.button.style.transform})),
+});
 
 function reset() {
   const isWide = camera.aspect > 1.45;
@@ -214,7 +228,7 @@ function createCheckingEffect(entry, hub) {
 function animateEffects(now) {
   const seconds = now / 1000;
   for (const entry of entries) {
-    if (checking.has(entry.id)) {
+    if (checking.has(keyOf(entry.id))) {
       entry.effect.arc.rotation.z = seconds * 4.5;
       const pulse = 0.5 + 0.5 * Math.sin(seconds * Math.PI * 3.1 + entry.index * 0.45);
       entry.effect.holder.scale.setScalar(1 + pulse * 0.055);
@@ -257,13 +271,7 @@ resize();
 reset();
 
 try {
-  const [gltf, data] = await Promise.all([
-    new GLTFLoader().loadAsync('./eeg-head-34.glb'),
-    fetch('./points-34.json', { cache: 'no-store' }).then((response) => {
-      if (!response.ok) throw Error('点位加载失败');
-      return response.json();
-    }),
-  ]);
+  const gltf = await new GLTFLoader().loadAsync('./eeg-head.glb');
   scene.add(gltf.scene);
   gltf.scene.updateMatrixWorld(true);
   labelsDirty = true;
@@ -333,25 +341,49 @@ try {
   });
   for (const [parent, colorMesh] of fadedHeads) parent.add(colorMesh);
 
-  for (const [index, [id, point]] of Object.entries(data.points).entries()) {
-    const group = gltf.scene.getObjectByName(`E_${id}`);
-    if (!group) throw Error(`模型缺少点位 ${id}`);
+  electrodeTemplate = extractElectrodeTemplate(gltf.scene);
+  syncLayout([...hostPoints.values()]);
+  send({type:'ready'});
+} catch (error) {
+  status.textContent = `加载失败：${error.message}`;
+  console.error(error);
+  send({type:'error',message:error.message});
+}
+
+function syncLayout(points) {
+  if (!electrodeTemplate) return;
+  const signature = JSON.stringify(points.map(p => [p.id, p.position, p.normal]));
+  if (signature === layoutSignature) return;
+  for (const entry of entries) {
+    entry.button.remove();
+    entry.group.removeFromParent();
+    entry.group.traverse(mesh => { if (mesh.isMesh) mesh.material.dispose(); });
+    for (const object of [entry.effect.holder, ...entry.effect.particles]) {
+      object.removeFromParent();
+      object.traverse(mesh => { if (mesh.isMesh) { mesh.geometry.dispose(); mesh.material.dispose(); } });
+    }
+  }
+  entries.length = 0;
+  electrodeMeshes.length = 0;
+  for (const [index, point] of points.entries()) {
+    const id = point.id;
+    const group = placeElectrode(electrodeTemplate, point);
+    scene.add(group);
     const button = document.createElement('button');
     button.className = 'point';
     button.hidden = true;
-    button.textContent = id === 'FCz' ? 'FCz REF' : id === 'AFz' ? 'AFz GND' : id;
+    button.textContent = point.label ?? id;
+    button.dataset.electrodeId = id;
     button.setAttribute('aria-pressed', 'false');
     button.onclick = () => select(id);
     labels.append(button);
 
     const highlight = [];
-    const anchor = new THREE.Vector3(...point.position);
+    const anchor = modelPosition(point.position);
     group.traverse((object) => {
       if (!object.isMesh) return;
       electrodeMeshes.push(object);
-      if (/Electrode_Face/.test(object.name)) object.getWorldPosition(anchor);
       if (/Base|Face/.test(object.name)) {
-        object.material = object.material.clone();
         highlight.push({ material: object.material });
       }
     });
@@ -361,24 +393,21 @@ try {
       group,
       button,
       position: anchor,
-      normal: new THREE.Vector3(...point.normal).normalize(),
+      normal: modelNormal(point.normal, point.position),
       highlight,
       transition: null,
       effect: null,
     });
   }
 
-  const hub = entries.find((entry) => entry.id === 'Cz') ?? entries[0];
+  const hub = entries.find((entry) => keyOf(entry.id) === 'CZ') ?? entries[0];
   for (const entry of entries) {
     entry.effect = createCheckingEffect(entry, hub);
     paintEntry(entry);
   }
   syncSummary();
-  send({type:'ready', count:entries.length});
-} catch (error) {
-  status.textContent = `加载失败：${error.message}`;
-  console.error(error);
-  send({type:'error',message:error.message});
+  layoutSignature = signature;
+  labelsDirty = true;
 }
 
 renderer.domElement.addEventListener('pointerdown', (event) => {
@@ -396,7 +425,7 @@ renderer.domElement.addEventListener('pointerup', (event) => {
   while (object && !entries.some((entry) => entry.group === object)) {
     object = object.parent;
   }
-  if (object) select(object.name.slice(2));
+  if (object) select(object.userData.electrodeId);
 });
 
 const projected = new THREE.Vector3();
@@ -436,7 +465,7 @@ function updateLabels() {
         y: (1 - projected.y) * innerHeight / 2,
       },
       z: projected.z,
-      active: selected.has(entry.id),
+      active: selected.has(keyOf(entry.id)),
     });
   }
 
@@ -448,8 +477,8 @@ function updateLabels() {
       stageCenter,
       viewport: { width: innerWidth, height: innerHeight },
       occupied,
-      labelWidth: 44,
-      labelHeight: 34,
+      labelWidth: candidate.entry.button.classList.contains("shared") ? 54 : 44,
+      labelHeight: candidate.entry.button.classList.contains("shared") ? 54 : 34,
     });
     if (!placement) continue;
     const { entry } = candidate;
@@ -468,4 +497,10 @@ renderer.setAnimationLoop((now) => {
     labelsDirty = false;
   }
   renderer.render(scene, camera);
+  if (!scenePresented && electrodeTemplate && hostStateApplied) {
+    scenePresented = true;
+    document.querySelector('#loading')?.remove();
+    stage.inert = false;
+    send({type:'scenePresented'});
+  }
 });

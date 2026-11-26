@@ -58,7 +58,7 @@ public sealed class ProtocolRegistrationTests
             runtime.ConnectVerifiedAsync(second with { Identity = first.Identity })
         );
         await Assert.ThrowsAsync<NotSupportedException>(() =>
-            runtime.ConnectVerifiedAsync(first with { ProtocolVersion = "1.0.2" })
+            runtime.ConnectVerifiedAsync(first with { ProtocolVersion = "9.9.9" })
         );
     }
 
@@ -71,7 +71,7 @@ public sealed class ProtocolRegistrationTests
                 new EggtCsDeviceConnector(
                     factory,
                     new EggtCsUnverifiedFixedChecksum(),
-                    EggtCsProtocolOptions.CreateTestDefaults(),
+                    EggtCsProtocolOptions.CreateTestDefaults().ForRevision(EggtCsRevisions.V101),
                     true,
                     sessionOptions: new() { HeartbeatPolicy = null }
                 )

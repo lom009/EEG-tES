@@ -19,19 +19,16 @@ public partial class BasicViewModel(
     [ObservableProperty]
     private bool _isTransitionReversed;
 
-    public int PageContentRow => CurrentPage is ElectrodeConfigurationPageViewModel or EnvelopeStimulationPageViewModel ? 1 : 2;
-    public Avalonia.Thickness PageContentMargin => CurrentPage is ElectrodeConfigurationPageViewModel
-        ? new Avalonia.Thickness(0, 24, 0, 0) : CurrentPage is EnvelopeStimulationPageViewModel
-        ? new Avalonia.Thickness(0, 16, 0, 0) : default;
-
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(PageContentRow))]
-    [NotifyPropertyChangedFor(nameof(PageContentMargin))]
     private PageViewModel _currentPage = currentPage;
 
     [RelayCommand]
     private void GoBack() => router.GoBack();
 
     [RelayCommand]
-    private void GoHome() => router.GoHome();
+    private void GoHome()
+    {
+        if (CurrentPage.CanGoBack)
+            router.GoHome();
+    }
 }

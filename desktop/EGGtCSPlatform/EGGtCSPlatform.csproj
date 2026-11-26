@@ -21,7 +21,10 @@
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.11" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.11" />
-    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.11" />
+    <PackageReference
+      Include="Microsoft.Extensions.Options.ConfigurationExtensions"
+      Version="10.0.11"
+    />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.11" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.11">
       <PrivateAssets>all</PrivateAssets>
@@ -36,7 +39,16 @@
     </None>
   </ItemGroup>
 
+  <!-- Local speech scoring model (macOS). Copied into the output when models/SpeechAsr exists. -->
+  <ItemGroup Condition="Exists('$(MSBuildThisFileDirectory)..\..\models\SpeechAsr')">
+    <None Include="$(MSBuildThisFileDirectory)..\..\models\SpeechAsr\**\*" LinkBase="SpeechAsr">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
   <ItemGroup>
+    <ProjectReference Include="..\EGGtCSPlatform.SpeechTraining\EGGtCSPlatform.SpeechTraining.csproj" />
+    <ProjectReference Include="..\EGGtCSPlatform.Audio.Sdl\EGGtCSPlatform.Audio.Sdl.csproj" />
     <ProjectReference Include="..\EGGtCSPlatform.DeviceSdk\EGGtCSPlatform.DeviceSdk.csproj" />
     <ProjectReference Include="..\EGGtCSPlatform.DeviceRuntime\EGGtCSPlatform.DeviceRuntime.csproj" />
     <ProjectReference Include="..\EGGtCSPlatform.Communication.Udp\EGGtCSPlatform.Communication.Udp.csproj" />
@@ -71,8 +83,7 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Assets/Training/*.wav" />
-    <EmbeddedResource Include="WebAssets/Home/*" Exclude="WebAssets/Home/*.mp4" />
-    <EmbeddedResource Include="WebAssets/Head3D/*" Exclude="WebAssets/Head3D/scene-source.js;WebAssets/Head3D/electrode-visuals.js" />
+    <AvaloniaResource Include="Assets/Fonts/home/*.ttf" />
+    <EmbeddedResource Include="WebAssets/Head3D/index.html;WebAssets/Head3D/style.css;WebAssets/Head3D/scene.js;WebAssets/Head3D/eeg-head.glb" />
   </ItemGroup>
 </Project>

@@ -11,6 +11,36 @@ namespace EGGtCSPlatform.Tests;
 
 public sealed class SimulatedEggtCsDeviceTests
 {
+    [Fact]
+    public async Task ToleranceStartsAtZeroAndDoesNotPublishPeriodicProgress()
+    {
+        await using var device = new SimulatedEggtCsDevice();
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        await using var events = device.ReadEventsAsync(timeout.Token).GetAsyncEnumerator();
+        var next = events.MoveNextAsync().AsTask();
+        Assert.True((await device.Tolerance.StartAsync()).IsSuccess);
+        Assert.Equal(DeviceOperationState.Stimulating, device.State.Operation);
+        var zero = await device.Tolerance.AdjustCurrentAsync(CurrentAdjustment.Decrease);
+        Assert.Equal(DeviceCommandStatus.MinimumReached, zero.Status);
+        Assert.Equal(0m, zero.CurrentMilliAmps);
+        var increased = await device.Tolerance.AdjustCurrentAsync(CurrentAdjustment.Increase);
+        Assert.Equal(.04m, increased.CurrentMilliAmps);
+        timeout.CancelAfter(TimeSpan.FromMilliseconds(350));
+        var received = new List<DeviceEvent>();
+        try
+        {
+            while (await next)
+            {
+                received.Add(events.Current.Event);
+                next = events.MoveNextAsync().AsTask();
+            }
+        }
+        catch (OperationCanceledException) when (timeout.IsCancellationRequested) { }
+        Assert.DoesNotContain(received, e => e is DeviceProgressEvent or StimulationCompletedEvent);
+        Assert.True((await device.Stimulation.StopAsync()).IsSuccess);
+        Assert.Equal(DeviceOperationState.Ready, device.State.Operation);
+    }
+
     [Theory]
     [InlineData(250, 15_000, 3_750)]
     [InlineData(500, 15_000, 7_500)]

@@ -4,7 +4,6 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using EGGtCSPlatform.Persistence;
@@ -65,26 +64,53 @@ public sealed class EegExportService(
             var destinationRoot = Path.GetFullPath(targetDirectory);
 
             await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
+            if (await db.SpeechExperiments.AnyAsync(x => x.Id == runId, cancellationToken))
+            {
+                var speech = await new SpeechExperimentService(contextFactory).LoadAsync(
+                    runId,
+                    cancellationToken
+                );
+                var path = await SpeechExperimentExportService.ExportAsync(
+                    speech,
+                    destinationRoot,
+                    cancellationToken
+                );
+                if (revealResult)
+                    fileReveal.Reveal(path);
+                return new([path], path);
+            }
             var run = await db
                 .ExperimentRuns.AsNoTracking()
                 .Include(x => x.Experiment)
-                    .ThenInclude(x => x.StimulusParadigm)
-                        .ThenInclude(x => x!.Targets)
                 .SingleAsync(x => x.Id == runId, cancellationToken);
+            var savedConfiguration = run.ConfigurationJson is { } savedJson
+                ? ExperimentConfigurationIdentity.Read(savedJson)
+                : null;
+            if (savedConfiguration is null)
+                run.Experiment.StimulusParadigm = await db
+                    .StimulusParadigms.AsNoTracking()
+                    .Include(x => x.Targets)
+                    .SingleOrDefaultAsync(
+                        x => x.ExperimentId == run.ExperimentId,
+                        cancellationToken
+                    );
+            var creationMode = savedConfiguration?.CreationMode ?? run.Experiment.CreationMode;
+            var isEnvelope = savedConfiguration is not null
+                ? savedConfiguration.StimulusConfiguration.Kind
+                    == ViewModels.Pages.StimulusKind.EnvelopeTAcs
+                    || savedConfiguration.StimulusConfiguration.Envelope is not null
+                : run.Experiment.StimulusParadigm?.Kind == "EnvelopeTAcs"
+                    || run.Experiment.StimulusParadigm?.EnvelopeJson is not null;
             if (
                 selection.ExperimentPackage
-                && run.Experiment.CreationMode
-                    != ViewModels.Pages.ExperimentCreationMode.AcquisitionOnly
-                && (
-                    run.Experiment.StimulusParadigm?.Kind == "EnvelopeTAcs"
-                    || run.Experiment.StimulusParadigm?.EnvelopeJson is not null
-                )
+                && creationMode != ViewModels.Pages.ExperimentCreationMode.AcquisitionOnly
+                && isEnvelope
             )
                 throw new InvalidOperationException(
                     "包络-tACS 不能导出为设备配置，请仅选择 EEG / CSV 数据格式。"
                 );
             if (
-                run.Experiment.CreationMode == ViewModels.Pages.ExperimentCreationMode.StimulusOnly
+                creationMode == ViewModels.Pages.ExperimentCreationMode.StimulusOnly
                 && (selection.Edf || selection.Csv)
             )
                 throw new InvalidOperationException(
@@ -120,10 +146,12 @@ public sealed class EegExportService(
 
             var exportTime = DateTimeOffset.Now;
             var totalCurrent =
-                run.Experiment.StimulusParadigm?.Targets.Sum(x => x.PeakCurrentMilliAmps) ?? 0d;
+                savedConfiguration?.StimulusConfiguration.Targets.Sum(x => x.PeakCurrent)
+                ?? run.Experiment.StimulusParadigm?.Targets.Sum(x => x.PeakCurrentMilliAmps)
+                ?? 0d;
             var baseStem = SanitizeFileName(
                 $"{run.Experiment.ScheduledAt.ToLocalTime():yyyyMMdd}_{exportTime:yyyyMMdd_HHmmss}_"
-                    + $"{run.Experiment.ExperimentCode}_{run.Experiment.StimulusParadigm?.Kind ?? "Unknown"}_"
+                    + $"{run.Experiment.ExperimentCode}_{savedConfiguration?.StimulusConfiguration.Kind.ToString() ?? run.Experiment.StimulusParadigm?.Kind ?? "Unknown"}_"
                     + $"{totalCurrent.ToString("0.###", CultureInfo.InvariantCulture)}mA"
             );
             var extensions = new List<string>();
@@ -169,22 +197,21 @@ public sealed class EegExportService(
                 {
                     var destination = Path.Combine(destinationRoot, stem + ".expp");
                     attemptedPaths.Add(destination);
-                    var template = run.ConfigurationJson is { } configurationJson
-                        ? JsonSerializer.Deserialize<MainApp.ExperimentConfigurationTemplate>(
-                            configurationJson
-                        ) ?? throw new InvalidDataException("运行配置快照无效。")
-                        : await experiments.LoadTemplateAsync(run.ExperimentId, cancellationToken);
-                    template = template with
-                    {
-                        Timing = new MainApp.ExperimentTimingTemplate(
-                            Enum.Parse<ViewModels.Pages.ExperimentRunMode>(run.RunMode),
-                            run.AcquisitionDurationMilliseconds,
-                            run.BlankingDurationMilliseconds,
-                            run.StimulationDurationMilliseconds,
-                            run.RecoveryDurationMilliseconds,
-                            run.CycleCount
-                        ),
-                    };
+                    var template =
+                        savedConfiguration
+                        ?? await experiments.LoadTemplateAsync(run.ExperimentId, cancellationToken);
+                    if (savedConfiguration is null)
+                        template = template with
+                        {
+                            Timing = new MainApp.ExperimentTimingTemplate(
+                                Enum.Parse<ViewModels.Pages.ExperimentRunMode>(run.RunMode),
+                                run.AcquisitionDurationMilliseconds,
+                                run.BlankingDurationMilliseconds,
+                                run.StimulationDurationMilliseconds,
+                                run.RecoveryDurationMilliseconds,
+                                run.CycleCount
+                            ),
+                        };
                     await packages.WriteAsync(destination, template, cancellationToken);
                     created.Add((destination, EegFileFormat.ExperimentPackage, null));
                 }

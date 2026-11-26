@@ -1,0 +1,239 @@
+[
+  {
+    "Submissions": [
+      {
+        "Reversals": 0,
+        "Passed": true,
+        "Snr": 10.0,
+        "Next": 2.0,
+        "Step": 8.0
+      },
+      {
+        "Reversals": 0,
+        "Passed": true,
+        "Snr": 2.0,
+        "Next": -6.0,
+        "Step": 8.0
+      },
+      {
+        "Reversals": 0,
+        "Passed": true,
+        "Snr": -6.0,
+        "Next": -14.0,
+        "Step": 8.0
+      },
+      {
+        "Reversals": 0,
+        "Passed": true,
+        "Snr": -14.0,
+        "Next": -22.0,
+        "Step": 8.0
+      },
+      {
+        "Reversals": 0,
+        "Passed": true,
+        "Snr": -22.0,
+        "Next": -30.0,
+        "Step": 8.0
+      },
+      {
+        "Reversals": 0,
+        "Passed": true,
+        "Snr": -30.0,
+        "Next": -38.0,
+        "Step": 8.0
+      },
+      {
+        "Reversals": 0,
+        "Passed": true,
+        "Snr": -38.0,
+        "Next": -46.0,
+        "Step": 8.0
+      },
+      {
+        "Reversals": 0,
+        "Passed": true,
+        "Snr": -46.0,
+        "Next": -54.0,
+        "Step": 8.0
+      }
+    ],
+    "Name": "pass"
+  },
+  {
+    "Submissions": [
+      {
+        "Reversals": 0,
+        "Passed": false,
+        "Snr": 10.0,
+        "Next": 18.0,
+        "Step": 8.0
+      },
+      {
+        "Reversals": 0,
+        "Passed": false,
+        "Snr": 18.0,
+        "Next": 20.0,
+        "Step": 8.0
+      },
+      {
+        "Reversals": 0,
+        "Passed": false,
+        "Snr": 20.0,
+        "Next": 20.0,
+        "Step": 8.0
+      },
+      {
+        "Reversals": 0,
+        "Passed": false,
+        "Snr": 20.0,
+        "Next": 20.0,
+        "Step": 8.0
+      },
+      {
+        "Reversals": 0,
+        "Passed": false,
+        "Snr": 20.0,
+        "Next": 20.0,
+        "Step": 8.0
+      },
+      {
+        "Reversals": 0,
+        "Passed": false,
+        "Snr": 20.0,
+        "Next": 20.0,
+        "Step": 8.0
+      }
+    ],
+    "Name": "fail"
+  },
+  {
+    "Submissions": [
+      {
+        "Reversals": 0,
+        "Passed": true,
+        "Snr": 10.0,
+        "Next": 2.0,
+        "Step": 8.0
+      },
+      {
+        "Reversals": 1,
+        "Passed": false,
+        "Snr": 2.0,
+        "Next": 10.0,
+        "Step": 8.0
+      },
+      {
+        "Reversals": 2,
+        "Passed": true,
+        "Snr": 10.0,
+        "Next": 6.0,
+        "Step": 4.0
+      },
+      {
+        "Reversals": 3,
+        "Passed": false,
+        "Snr": 6.0,
+        "Next": 10.0,
+        "Step": 4.0
+      },
+      {
+        "Reversals": 4,
+        "Passed": true,
+        "Snr": 10.0,
+        "Next": 8.0,
+        "Step": 2.0
+      },
+      {
+        "Reversals": 5,
+        "Passed": false,
+        "Snr": 8.0,
+        "Next": 10.0,
+        "Step": 2.0
+      },
+      {
+        "Reversals": 6,
+        "Passed": true,
+        "Snr": 10.0,
+        "Next": 8.0,
+        "Step": 2.0
+      },
+      {
+        "Reversals": 7,
+        "Passed": false,
+        "Snr": 8.0,
+        "Next": 10.0,
+        "Step": 2.0
+      },
+      {
+        "Reversals": 8,
+        "Passed": true,
+        "Snr": 10.0,
+        "Next": 8.0,
+        "Step": 2.0
+      }
+    ],
+    "Name": "alternating"
+  },
+  {
+    "Submissions": [
+      {
+        "Reversals": 0,
+        "Passed": false,
+        "Snr": 10.0,
+        "Next": 18.0,
+        "Step": 8.0
+      },
+      {
+        "Reversals": 0,
+        "Passed": false,
+        "Snr": 18.0,
+        "Next": 20.0,
+        "Step": 8.0
+      },
+      {
+        "Reversals": 1,
+        "Passed": true,
+        "Snr": 20.0,
+        "Next": 12.0,
+        "Step": 8.0
+      },
+      {
+        "Reversals": 1,
+        "Passed": true,
+        "Snr": 12.0,
+        "Next": 4.0,
+        "Step": 8.0
+      },
+      {
+        "Reversals": 2,
+        "Passed": false,
+        "Snr": 4.0,
+        "Next": 8.0,
+        "Step": 4.0
+      },
+      {
+        "Reversals": 2,
+        "Passed": false,
+        "Snr": 8.0,
+        "Next": 12.0,
+        "Step": 4.0
+      },
+      {
+        "Reversals": 3,
+        "Passed": true,
+        "Snr": 12.0,
+        "Next": 8.0,
+        "Step": 4.0
+      },
+      {
+        "Reversals": 4,
+        "Passed": false,
+        "Snr": 8.0,
+        "Next": 10.0,
+        "Step": 2.0
+      }
+    ],
+    "Name": "plateau"
+  }
+]

@@ -23,7 +23,7 @@ public static class StimulusConfigurationSummaryBuilder
             configuration.RampSeconds,
             configuration.Frequency,
             configuration.DutyPercent,
-            configuration.Envelope?.DelayMilliseconds ?? 40
+            configuration.Envelope?.DelayMilliseconds ?? 0
         );
 
     public static string DirectionText(StimulusDirection direction) =>
@@ -73,7 +73,10 @@ public static class StimulusConfigurationSummaryBuilder
         if (waveform.Length > 0 && configuration.Envelope?.IsDeviceSetup != true)
             items.Add(new("波形参数", waveform));
         if (configuration.Envelope is { IsDeviceSetup: true } setup)
+        {
             items.Add(new("启动延时", $"{setup.DelayMilliseconds:0} ms"));
+            items.Add(new("调试频率", $"{setup.DebugFrequencyHz} Hz"));
+        }
         else if (configuration.Envelope is { } envelope)
         {
             items.Add(new("载波频率", $"{configuration.Frequency:0.###} Hz"));

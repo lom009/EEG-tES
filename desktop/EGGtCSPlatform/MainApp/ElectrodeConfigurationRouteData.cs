@@ -12,7 +12,8 @@ public sealed record ElectrodeConfigurationRouteData(
     DateTimeOffset? ScheduledAt = null,
     string Remarks = "",
     ExperimentConfigurationTemplate? ImportedTemplate = null,
-    ExperimentCreationMode CreationMode = ExperimentCreationMode.AcquisitionAndStimulation
+    ExperimentCreationMode CreationMode = ExperimentCreationMode.AcquisitionAndStimulation,
+    ToleranceTestContext? Tolerance = null
 );
 
 public static class ElectrodeConfigurationRouteDataDefaults

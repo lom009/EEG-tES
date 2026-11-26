@@ -141,7 +141,7 @@
                       <Image
                         Width="20"
                         Height="20"
-                        Source="{SvgImage /Assets/Images/stimulus-figma/check-double.svg}"
+                        Source="{SvgImage /Assets/Images/check-double-line.svg}"
                       />
                       <TextBlock
                         VerticalAlignment="Center"
@@ -188,18 +188,9 @@
                   <StackPanel Spacing="{Binding ParameterRowSpacing}">
                     <Grid ColumnDefinitions="*,16,*">
                     <controls:StimulusParameterEditor
-                      Grid.Column="2"
-                      Title="延时"
-                      Unit="ms"
-                      Minimum="0"
-                      Maximum="300"
-                      Increment="1"
-                      DecimalPlaces="0"
-                      IsVisible="{Binding IsEnvelope}"
-                      Value="{Binding DelayMilliseconds, Mode=TwoWay}"
-                    />
-                    <controls:StimulusParameterEditor
                       Grid.Column="0"
+                      Grid.ColumnSpan="{Binding CurrentParameterColumnSpan}"
+                      ActiveTrackBrush="#3941B6"
                       InfoText="{Binding CurrentInfo}"
                       IsError="{Binding CurrentHasError}"
                       IsAllocated="{Binding IsAllocationValid}"
@@ -213,6 +204,7 @@
                       Title="{Binding CurrentTitle}"
                       Unit="mA"
                       Value="{Binding Current, Mode=TwoWay}"
+                      IsEnabled="{Binding CanEditCurrent}"
                       IsVisible="{Binding ShowGlobalCurrent}"
                     />
                     <controls:StimulusParameterEditor
@@ -248,6 +240,16 @@
                       Unit="%"
                       Value="{Binding DutyPercent, Mode=TwoWay}"
                     />
+                    <StackPanel IsVisible="{Binding ShowMultiTargetEditor}" Spacing="12">
+                      <Button Content="添加靶点" Command="{Binding AddTargetCommand}" HorizontalAlignment="Left"/>
+                      <ItemsControl ItemsSource="{Binding Targets}"><ItemsControl.ItemTemplate><DataTemplate x:DataType="pages:StimulusTargetConfigurationViewModel">
+                        <StackPanel Spacing="8" Margin="0,0,0,16">
+                          <Grid ColumnDefinitions="*,Auto"><TextBlock Text="{Binding DisplayName}"/><Button Grid.Column="1" Content="移除" Command="{Binding RemoveTargetCommand}"/></Grid>
+                          <controls:StimulusParameterEditor Title="峰值电流" Unit="mA" ActiveTrackBrush="#3941B6" Value="{Binding PeakCurrent, Mode=TwoWay}" Minimum="{Binding MinimumCurrent}" Maximum="{Binding MaximumCurrent}" Increment="{Binding CurrentIncrement}" DecimalPlaces="2" IsEnabled="{Binding CanEditCurrent}"/>
+                          <controls:StimulationChannelAllocationEditor ItemsSource="{Binding Channels}" SelectFixedCommand="{Binding SelectFixedChannelCommand}" StatusText="{Binding BalanceText}"/>
+                        </StackPanel>
+                      </DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
+                    </StackPanel>
                     <controls:StimulationChannelAllocationEditor
                       HasError="{Binding HasAllocationError}"
                       IsPeakAboveSelectableTotal="{Binding IsPeakAboveSelectableTotal}"

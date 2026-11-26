@@ -20,7 +20,8 @@ public sealed class SingleStimulusExperimentDialogService(
     IExperimentRunPersistenceCoordinator persistence,
     IExperimentRunClock clock,
     IOptions<ExperimentRunTimingOptions> timing,
-    IExperimentRunErrorDialogService errors
+    IExperimentRunErrorDialogService errors,
+    INavigationRouter router
 ) : ISingleStimulusExperimentDialogService
 {
     public async Task ShowAsync(ExperimentRunRouteData route)
@@ -31,7 +32,8 @@ public sealed class SingleStimulusExperimentDialogService(
             persistence,
             clock,
             timing.Value,
-            errors
+            errors,
+            router
         );
         await dialogs.ShowDialog(host, model);
     }

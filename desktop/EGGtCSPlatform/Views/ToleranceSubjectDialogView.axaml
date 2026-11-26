@@ -1,0 +1,39 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:vm="clr-namespace:EGGtCSPlatform.ViewModels" x:Class="EGGtCSPlatform.Views.ToleranceSubjectDialogView" x:DataType="vm:ToleranceSubjectDialogViewModel" FontFamily="{DynamicResource AlibabaPuHuiTi}">
+  <UserControl.Styles>
+    <StyleInclude Source="/Controls/ExperimentInputStyles.axaml"/>
+    <Style Selector="TextBox.experiment-input:pointerover:not(:focus) /template/ Border#PART_BorderElement">
+      <Setter Property="BorderBrush" Value="#D9DEE6"/>
+      <Setter Property="BorderThickness" Value="1"/>
+    </Style>
+  </UserControl.Styles>
+  <Border Background="White" CornerRadius="12" Padding="32" Width="640" MaxWidth="760">
+    <StackPanel Spacing="24">
+      <Grid ColumnDefinitions="*,Auto">
+        <TextBlock Text="被试信息" FontSize="24" FontWeight="SemiBold"/>
+        <Button Grid.Column="1" Command="{Binding DismissCommand}" Background="Transparent" AutomationProperties.Name="关闭被试信息" BorderThickness="0">
+          <Button.Template>
+            <ControlTemplate>
+              <Border Background="Transparent" Padding="{TemplateBinding Padding}">
+                <Path Width="18" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center" Data="M1,1 L17,17 M17,1 L1,17" Stroke="#232B39" StrokeThickness="2.5"/>
+              </Border>
+            </ControlTemplate>
+          </Button.Template>
+        </Button>
+      </Grid>
+      <Grid ColumnDefinitions="80,*,12,Auto">
+        <TextBlock HorizontalAlignment="Right" Margin="0,0,8,0" VerticalAlignment="Center" Foreground="#7185A4"><Run Text="*" Foreground="Red"/><Run Text="被试ID"/></TextBlock>
+        <TextBox x:Name="SubjectIdInput" Grid.Column="1" Classes="experiment-input" CornerRadius="4" Text="{Binding SubjectId}" PlaceholderText="请输入被试ID，如 SUB001" MaxLength="64"/>
+        <Button Grid.Column="3" Content="随机生成" Command="{Binding GenerateCommand}"/>
+      </Grid>
+      <Grid ColumnDefinitions="80,*">
+        <TextBlock Text="备注" HorizontalAlignment="Right" Margin="0,0,8,0" VerticalAlignment="Center" Foreground="#7185A4"/>
+        <TextBox x:Name="RemarksInput" Grid.Column="1" Classes="experiment-input" CornerRadius="4" Text="{Binding Remarks}" PlaceholderText="可选" MaxLength="1000"/>
+      </Grid>
+      <TextBlock Text="{Binding ErrorText}" Foreground="#D64545" TextWrapping="Wrap"/>
+      <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="12">
+        <Button Content="取消" Command="{Binding DismissCommand}" Padding="22,10"/>
+        <Button Content="开始测试" IsEnabled="{Binding !GenerateCommand.IsRunning}" Command="{Binding ConfirmCommand}" Background="#403DBA" Foreground="White" Padding="22,10"/>
+      </StackPanel>
+    </StackPanel>
+  </Border>
+</UserControl>

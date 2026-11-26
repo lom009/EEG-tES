@@ -1,0 +1,10 @@
+{
+  "adaptiveScoring": {
+    "expectedCharacterCount": 10,
+    "minimumCorrect": 8
+  },
+  "snrNoise": {
+    "ssn": "SSN-MHINT.wav",
+    "babble": "Babble-MHINT.wav"
+  }
+}

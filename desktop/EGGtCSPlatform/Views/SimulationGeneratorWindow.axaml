@@ -2,6 +2,7 @@
   xmlns="https://github.com/avaloniaui"
   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
   xmlns:vm="clr-namespace:EGGtCSPlatform.ViewModels"
+  xmlns:controls="clr-namespace:EGGtCSPlatform.Controls"
   x:Class="EGGtCSPlatform.Views.SimulationGeneratorWindow"
   x:DataType="vm:SimulationGeneratorViewModel"
   Title="数据生成器"
@@ -62,7 +63,7 @@
               <Border Grid.Column="0">
                 <StackPanel Spacing="5">
                   <TextBlock Text="生成例数" />
-                  <NumericUpDown Value="{Binding Count}" Minimum="1" Maximum="1000" Increment="1" />
+                  <controls:StepNumericUpDown Value="{Binding Count}" Minimum="1" Maximum="1000" Increment="1" />
                 </StackPanel>
               </Border>
               <Border Grid.Column="1">
@@ -74,7 +75,7 @@
               <Border Grid.Column="2">
                 <StackPanel Spacing="5">
                   <TextBlock Text="随机种子" />
-                  <NumericUpDown
+                  <controls:StepNumericUpDown
                     Value="{Binding Seed}"
                     Minimum="-2147483648"
                     Maximum="2147483647"
@@ -92,7 +93,7 @@
                 <CheckBox Content="使用随机记录间隔" IsChecked="{Binding UseRandomInterval}" />
                 <StackPanel Spacing="5" IsVisible="{Binding !UseRandomInterval}">
                   <TextBlock Text="固定间隔 / 分钟" />
-                  <NumericUpDown
+                  <controls:StepNumericUpDown
                     Value="{Binding IntervalMinutes}"
                     Minimum="0"
                     Maximum="525600"
@@ -106,7 +107,7 @@
                 >
                   <StackPanel Spacing="5">
                     <TextBlock Text="最小间隔 / 分钟" />
-                    <NumericUpDown
+                    <controls:StepNumericUpDown
                       Value="{Binding MinimumIntervalMinutes}"
                       Minimum="0"
                       Maximum="525600"
@@ -115,7 +116,7 @@
                   </StackPanel>
                   <StackPanel Grid.Column="1" Spacing="5">
                     <TextBlock Text="最大间隔 / 分钟" />
-                    <NumericUpDown
+                    <controls:StepNumericUpDown
                       Value="{Binding MaximumIntervalMinutes}"
                       Minimum="0"
                       Maximum="525600"
@@ -235,7 +236,7 @@
               <Border Grid.Column="0" IsVisible="{Binding ParameterPolicy.ShowFrequency}">
                 <StackPanel Spacing="5">
                   <TextBlock Text="{Binding FrequencyLabel}" />
-                  <NumericUpDown
+                  <controls:StepNumericUpDown
                     Value="{Binding Frequency}"
                     Minimum="{Binding ParameterPolicy.Frequency.Minimum}"
                     Maximum="{Binding ParameterPolicy.Frequency.Maximum}"
@@ -249,7 +250,7 @@
               >
                 <StackPanel Spacing="5">
                   <TextBlock Text="{Binding RampLabel}" />
-                  <NumericUpDown
+                  <controls:StepNumericUpDown
                     Value="{Binding RampSeconds}"
                     Minimum="{Binding ParameterPolicy.Ramp.Minimum}"
                     Maximum="{Binding ParameterPolicy.Ramp.Maximum}"
@@ -260,7 +261,7 @@
               <Border Grid.Column="1" IsVisible="{Binding ParameterPolicy.ShowDutyPercent}">
                 <StackPanel Spacing="5">
                   <TextBlock Text="占空比 / %" />
-                  <NumericUpDown
+                  <controls:StepNumericUpDown
                     Value="{Binding DutyPercent}"
                     Minimum="{Binding DutyRange.Minimum}"
                     Maximum="{Binding DutyRange.Maximum}"
@@ -274,7 +275,7 @@
                 <Border Grid.Column="0">
                   <StackPanel Spacing="5">
                     <TextBlock Text="包络调制频率 / Hz" />
-                    <NumericUpDown
+                    <controls:StepNumericUpDown
                       Value="{Binding ModulationHz}"
                       Minimum="0.01"
                       Maximum="100"
@@ -285,7 +286,7 @@
                 <Border Grid.Column="1">
                   <StackPanel Spacing="5">
                     <TextBlock Text="调制深度 / 0–1" />
-                    <NumericUpDown
+                    <controls:StepNumericUpDown
                       Value="{Binding Depth}"
                       Minimum="0"
                       Maximum="1"
@@ -296,7 +297,7 @@
                 <Border Grid.Column="2">
                   <StackPanel Spacing="5">
                     <TextBlock Text="时延 / ms" />
-                    <NumericUpDown
+                    <controls:StepNumericUpDown
                       Value="{Binding DelayMilliseconds}"
                       Minimum="-60000"
                       Maximum="60000"
@@ -325,7 +326,7 @@
               <Border Grid.Column="1">
                 <StackPanel Spacing="5">
                   <TextBlock Text="循环次数（手动模式固定1次）" />
-                  <NumericUpDown Value="{Binding Cycles}" Minimum="1" Maximum="200" Increment="1" />
+                  <controls:StepNumericUpDown Value="{Binding Cycles}" Minimum="1" Maximum="200" Increment="1" />
                 </StackPanel>
               </Border>
               <Border Grid.Column="2">
@@ -343,7 +344,7 @@
               <Border Grid.Column="0">
                 <StackPanel Spacing="5">
                   <TextBlock Text="采集 / 秒" />
-                  <NumericUpDown
+                  <controls:StepNumericUpDown
                     Value="{Binding AcquisitionSeconds}"
                     Minimum="0.001"
                     Maximum="86400"
@@ -354,7 +355,7 @@
               <Border Grid.Column="1">
                 <StackPanel Spacing="5">
                   <TextBlock Text="消隐 / 秒" />
-                  <NumericUpDown
+                  <controls:StepNumericUpDown
                     Value="{Binding BlankingSeconds}"
                     Minimum="0.001"
                     Maximum="86400"
@@ -365,7 +366,7 @@
               <Border Grid.Column="2">
                 <StackPanel Spacing="5">
                   <TextBlock Text="刺激 / 秒" />
-                  <NumericUpDown
+                  <controls:StepNumericUpDown
                     Value="{Binding StimulationSeconds}"
                     Minimum="0.001"
                     Maximum="86400"
@@ -376,7 +377,7 @@
               <Border Grid.Column="3">
                 <StackPanel Spacing="5">
                   <TextBlock Text="恢复 / 秒" />
-                  <NumericUpDown
+                  <controls:StepNumericUpDown
                     Value="{Binding RecoverySeconds}"
                     Minimum="0.001"
                     Maximum="86400"
@@ -390,7 +391,7 @@
               <Border Grid.Column="0">
                 <StackPanel Spacing="5">
                   <TextBlock Text="EEG 幅度 / μV" />
-                  <NumericUpDown
+                  <controls:StepNumericUpDown
                     Value="{Binding Amplitude}"
                     Minimum="0.1"
                     Maximum="1000"
@@ -401,13 +402,13 @@
               <Border Grid.Column="1">
                 <StackPanel Spacing="5">
                   <TextBlock Text="噪声幅度 / μV" />
-                  <NumericUpDown Value="{Binding Noise}" Minimum="0" Maximum="1000" Increment="1" />
+                  <controls:StepNumericUpDown Value="{Binding Noise}" Minimum="0" Maximum="1000" Increment="1" />
                 </StackPanel>
               </Border>
               <Border Grid.Column="2">
                 <StackPanel Spacing="5">
                   <TextBlock Text="主节律 / Hz" />
-                  <NumericUpDown
+                  <controls:StepNumericUpDown
                     Value="{Binding RhythmHz}"
                     Minimum="0.1"
                     Maximum="100"

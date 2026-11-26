@@ -68,7 +68,13 @@ public sealed class RuntimeTests
     {
         var factory = new TestTransportFactory { Respond = true };
         await using var runtime = Build(factory);
-        var device = await runtime.ConnectVerifiedAsync(Candidate);
+        var device = await runtime.ConnectVerifiedAsync(
+            Candidate with
+            {
+                ProtocolVersion = EggtCsRevisions.V102,
+                RevisionSource = ProtocolRevisionSource.Explicit,
+            }
+        );
         var capability = Assert.IsAssignableFrom<IEnvelopeStimulationCapability>(
             device.EnvelopeStimulation
         );

@@ -38,9 +38,10 @@ public sealed class ApplicationUpdateCoordinator(
 
             viewModel.ShowAvailableUpdate(update);
         }
-        catch (Exception exception)
+        catch (Exception)
         {
-            viewModel.ShowCheckFailure(exception);
+            // The update client logs failures; startup checks should remain silent.
+            return;
         }
 
         var owner = ownerProvider();

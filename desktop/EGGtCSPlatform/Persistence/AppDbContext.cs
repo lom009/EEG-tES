@@ -35,6 +35,9 @@ public static class AppPaths
 
 public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {
+    public DbSet<SpeechExperimentEntity> SpeechExperiments => Set<SpeechExperimentEntity>();
+    public DbSet<SpeechTrainingRoundEntity> SpeechTrainingRounds =>
+        Set<SpeechTrainingRoundEntity>();
     public DbSet<OperatorEntity> Operators => Set<OperatorEntity>();
     public DbSet<SubjectEntity> Subjects => Set<SubjectEntity>();
     public DbSet<ExperimentEntity> Experiments => Set<ExperimentEntity>();
@@ -52,6 +55,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        SpeechExperimentSchema.Configure(modelBuilder);
+        ToleranceSchema.Configure(modelBuilder);
         modelBuilder.Entity<OperatorEntity>(entity =>
         {
             entity.ToTable("Operators");

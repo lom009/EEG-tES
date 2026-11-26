@@ -29,8 +29,8 @@
               <Button Grid.Column="1" Width="24" Height="24" Padding="0"
                       Command="{TemplateBinding CloseCommand}"
                       Theme="{StaticResource ElectrodePointButtonTheme}">
-                <Path Width="14" Height="14" Data="M 1 1 L 13 13 M 13 1 L 1 13"
-                      Stroke="#232B38" StrokeThickness="2" />
+                <Image Width="24" Height="24"
+                       Source="{SvgImage /Assets/Images/Dialog/configuration-confirmation/close.svg}" />
               </Button>
             </Grid>
             <Border Grid.Row="1" MinHeight="160" Padding="15"
@@ -50,10 +50,9 @@
                       </StackPanel.Styles>
                       <TextBlock><Run Foreground="#6B7D99" Text="刺激范式：" /><Run Text="包络-tACS · 单刺激" /></TextBlock>
                       <TextBlock><Run Foreground="#6B7D99" Text="最大电流：" /><Run Text="{Binding MaximumCurrent}" /></TextBlock>
-                      <TextBlock><Run Foreground="#6B7D99" Text="刺激启动延时：" /><Run Text="{Binding StartupDelay}" /></TextBlock>
                       <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
-                        <TextBlock><Run Foreground="#6B7D99" Text="固定刺激通道：" /><Run Text="{Binding FixedChannel}" /></TextBlock>
-                        <TextBlock Grid.Column="1"><Run Foreground="#6B7D99" Text="自选刺激通道：" /><Run Text="{Binding SelectableChannel}" /></TextBlock>
+                        <TextBlock><Run Foreground="#6B7D99" Text="阳极：" /><Run Text="{Binding FixedChannel}" /></TextBlock>
+                        <TextBlock Grid.Column="1"><Run Foreground="#6B7D99" Text="阴极：" /><Run Text="{Binding SelectableChannel}" /></TextBlock>
                       </Grid>
                     </StackPanel>
                   </DataTemplate>
@@ -64,161 +63,137 @@
                     Command="{TemplateBinding ConfirmCommand}"
                     Theme="{StaticResource ConfirmationButtonTheme}">
               <StackPanel Orientation="Horizontal" Spacing="8">
-                <Image Width="20" Height="20" Source="{SvgImage /Assets/Images/Dialog/check-double-line.svg}" />
+                <Image Width="20" Height="20" Source="{SvgImage /Assets/Images/check-double-line.svg}" />
                 <TextBlock Text="确认并进入言语训练" FontSize="14"
                            FontFamily="{DynamicResource AlibabaPuHuiTi}" FontWeight="Bold" />
               </StackPanel>
             </Button>
           </Grid>
         </Border>
+        <!-- Figma 248:5312: native bindings with the original icon assets and slots. -->
         <Border
           IsVisible="{TemplateBinding EnvelopeConfirmation, Converter={x:Static ObjectConverters.IsNull}}"
           Width="800"
           Padding="24"
-          Background="White"
+          Background="{DynamicResource ProductSurface}"
           BoxShadow="0 18 52 0 #550B1533"
-          CornerRadius="10"
+          CornerRadius="8"
         >
-          <Grid RowDefinitions="32,110,92,36" RowSpacing="10">
-            <Grid ColumnDefinitions="*,Auto">
-              <TextBlock
-                FontFamily="{DynamicResource AlibabaPuHuiTi}"
-                FontWeight="Bold"
-                FontSize="{DynamicResource FontSize20}"
-                Foreground="#202938"
-                Text="实验配置二次确认"
-              />
-              <Button
-                Grid.Column="1"
-                Width="28"
-                Height="28"
-                Command="{TemplateBinding CloseCommand}"
-                Content="×"
-                FontSize="{DynamicResource FontSize22}"
-                Theme="{StaticResource ElectrodePointButtonTheme}"
-              />
+          <Grid RowDefinitions="24,110,92,32" RowSpacing="16">
+            <Grid.Styles>
+              <Style Selector="TextBlock">
+                <Setter Property="FontFamily" Value="{DynamicResource AlibabaPuHuiTi}" />
+                <Setter Property="FontSize" Value="14" />
+                <Setter Property="Foreground" Value="{DynamicResource ProductText}" />
+              </Style>
+              <Style Selector="TextBlock.confirmation-section-title">
+                <Setter Property="FontSize" Value="16" />
+                <Setter Property="FontWeight" Value="Normal" />
+                <Setter Property="VerticalAlignment" Value="Center" />
+              </Style>
+              <Style Selector="Border.confirmation-card">
+                <Setter Property="Padding" Value="12,8" />
+                <Setter Property="BorderBrush" Value="{DynamicResource ProductStimulusBorder}" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="CornerRadius" Value="4" />
+              </Style>
+              <Style Selector="Border.confirmation-icon-tile">
+                <Setter Property="Width" Value="20" />
+                <Setter Property="Height" Value="20" />
+                <Setter Property="CornerRadius" Value="2.222" />
+                <Setter Property="Background" Value="{DynamicResource ProductTrainingChip}" />
+              </Style>
+            </Grid.Styles>
+            <Grid ColumnDefinitions="*,24">
+              <TextBlock FontWeight="SemiBold" FontSize="18" Text="实验配置二次确认"
+                         VerticalAlignment="Center" />
+              <Button Grid.Column="1" Width="24" Height="24" Padding="0"
+                      Command="{TemplateBinding CloseCommand}"
+                      Theme="{StaticResource ElectrodePointButtonTheme}">
+                <Image x:Name="ConfirmationCloseIcon" Width="24" Height="24"
+                       Source="{SvgImage /Assets/Images/Dialog/configuration-confirmation/close.svg}" />
+              </Button>
             </Grid>
             <Grid Grid.Row="1" ColumnDefinitions="*,16,*">
-              <Border Padding="12" BorderBrush="#DDE6F2" BorderThickness="1" CornerRadius="4">
-                <StackPanel Spacing="7">
-                  <TextBlock
-                    FontFamily="{DynamicResource AlibabaPuHuiTi}"
-                    FontWeight="Medium"
-                    FontSize="{DynamicResource FontSize15}"
-                    Foreground="#30394A"
-                    Text="▧  患者与实验"
-                  />
-                  <TextBlock FontSize="{DynamicResource FontSize13}" Foreground="#637590">
-                    <Run Text="患者ID：" />
+              <Border Classes="confirmation-card">
+                <StackPanel Spacing="8">
+                  <StackPanel Orientation="Horizontal" Spacing="4" Height="24">
+                    <Image x:Name="ConfirmationPatientIcon" Width="20" Height="20"
+                           Source="{SvgImage /Assets/Images/Dialog/configuration-confirmation/patient.svg}" />
+                    <TextBlock Classes="confirmation-section-title" Text="患者与实验" />
+                  </StackPanel>
+                  <TextBlock>
+                    <Run Foreground="{DynamicResource ProductTextMuted}" Text="患者ID：" />
                     <Run Text="{TemplateBinding SubjectId}" />
                   </TextBlock>
-                  <TextBlock FontSize="{DynamicResource FontSize13}" Foreground="#637590">
-                    <Run Text="实验ID：" />
+                  <TextBlock>
+                    <Run Foreground="{DynamicResource ProductTextMuted}" Text="实验ID：" />
                     <Run Text="{TemplateBinding ExperimentId}" />
                   </TextBlock>
                 </StackPanel>
               </Border>
-              <Border
-                IsVisible="{TemplateBinding ShowStimulation}"
-                Grid.Column="2"
-                Padding="12"
-                BorderBrush="#DDE6F2"
-                BorderThickness="1"
-                CornerRadius="4"
-              >
-                <StackPanel Spacing="7">
-                  <TextBlock
-                    FontFamily="{DynamicResource AlibabaPuHuiTi}"
-                    FontWeight="Medium"
-                    FontSize="{DynamicResource FontSize15}"
-                    Foreground="#30394A"
-                    Text="ϟ  刺激方案"
-                  />
-                  <TextBlock
-                    FontSize="{DynamicResource FontSize13}"
-                    Foreground="#637590"
-                    Text="{TemplateBinding StimulusSummary}"
-                  />
-                  <TextBlock
-                    FontSize="{DynamicResource FontSize13}"
-                    Foreground="#637590"
-                    Text="{TemplateBinding ParameterSummary}"
-                    TextWrapping="Wrap"
-                  />
+              <Border Grid.Column="2" Classes="confirmation-card"
+                      IsVisible="{TemplateBinding ShowStimulation}">
+                <StackPanel Spacing="8">
+                  <StackPanel Orientation="Horizontal" Spacing="8" Height="24">
+                    <Border Classes="confirmation-icon-tile">
+                      <Image x:Name="ConfirmationStimulationIcon" Width="15" Height="15"
+                             Source="{SvgImage /Assets/Images/Dialog/configuration-confirmation/stimulation.svg}" />
+                    </Border>
+                    <TextBlock Classes="confirmation-section-title" Text="刺激方案" />
+                  </StackPanel>
+                  <TextBlock Text="{TemplateBinding StimulusSummary}" />
+                  <TextBlock Text="{TemplateBinding ParameterSummary}" TextWrapping="Wrap" />
                 </StackPanel>
               </Border>
             </Grid>
             <Grid Grid.Row="2" ColumnDefinitions="*,16,*">
-              <Border Padding="12" BorderBrush="#DDE6F2" BorderThickness="1" CornerRadius="4">
-                <ScrollViewer>
-                  <StackPanel Spacing="6">
-                    <TextBlock
-                      FontFamily="{DynamicResource AlibabaPuHuiTi}"
-                      FontWeight="Medium"
-                      FontSize="{DynamicResource FontSize15}"
-                      Foreground="#30394A"
-                      Text="⌁  电极与采集"
-                    />
-                    <TextBlock
-                      FontSize="{DynamicResource FontSize12}"
-                      Foreground="#637590"
-                      Text="{TemplateBinding StimulusElectrodes}"
-                      IsVisible="{TemplateBinding ShowStimulation}"
-                      TextWrapping="Wrap"
-                    />
-                    <TextBlock
-                      FontSize="{DynamicResource FontSize12}"
-                      Foreground="#637590"
-                      Text="{TemplateBinding AcquisitionElectrodes}"
-                      IsVisible="{TemplateBinding ShowAcquisition}"
-                      TextWrapping="Wrap"
-                    />
+              <Border Classes="confirmation-card">
+                <Grid RowDefinitions="24,8,*">
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Border Classes="confirmation-icon-tile">
+                      <Image x:Name="ConfirmationAcquisitionIcon" Width="16" Height="16"
+                             Source="{SvgImage /Assets/Images/Dialog/configuration-confirmation/acquisition.svg}" />
+                    </Border>
+                    <TextBlock Classes="confirmation-section-title" Text="电极与采集" />
                   </StackPanel>
-                </ScrollViewer>
+                  <ScrollViewer Grid.Row="2">
+                    <StackPanel Spacing="8">
+                      <TextBlock Text="{TemplateBinding StimulusElectrodes}"
+                                 IsVisible="{TemplateBinding ShowStimulation}" TextWrapping="Wrap" />
+                      <TextBlock Text="{TemplateBinding AcquisitionElectrodes}"
+                                 IsVisible="{TemplateBinding ShowAcquisition}" TextWrapping="Wrap" />
+                    </StackPanel>
+                  </ScrollViewer>
+                </Grid>
               </Border>
-              <Border
-                Grid.Column="2"
-                Padding="12"
-                BorderBrush="#DDE6F2"
-                BorderThickness="1"
-                CornerRadius="4"
-              >
-                <ScrollViewer>
-                  <StackPanel Spacing="7">
-                    <TextBlock
-                      FontFamily="{DynamicResource AlibabaPuHuiTi}"
-                      FontWeight="Medium"
-                      FontSize="{DynamicResource FontSize15}"
-                      Foreground="#30394A"
-                      Text="▣  安全校验"
-                    />
-                    <TextBlock
-                      FontSize="{DynamicResource FontSize13}"
-                      Foreground="#637590"
-                      Text="患者耐受记录：-"
-                    />
-                    <TextBlock
-                      FontSize="{DynamicResource FontSize13}"
-                      Foreground="#637590"
-                      Text="{TemplateBinding SafetySummary}"
-                    />
+              <Border Grid.Column="2" Classes="confirmation-card">
+                <Grid RowDefinitions="24,8,*">
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Border Classes="confirmation-icon-tile">
+                      <Image x:Name="ConfirmationSafetyIcon" Width="20" Height="20"
+                             Source="{SvgImage /Assets/Images/Dialog/configuration-confirmation/safety.svg}" />
+                    </Border>
+                    <TextBlock Classes="confirmation-section-title" Text="安全校验" />
                   </StackPanel>
-                </ScrollViewer>
+                  <ScrollViewer Grid.Row="2">
+                    <StackPanel Spacing="8">
+                      <TextBlock><Run Foreground="{DynamicResource ProductTextMuted}" Text="患者耐受记录：" /><Run Text="-" /></TextBlock>
+                      <TextBlock Text="{TemplateBinding SafetySummary}" TextWrapping="Wrap" />
+                    </StackPanel>
+                  </ScrollViewer>
+                </Grid>
               </Border>
             </Grid>
-            <Button
-              Grid.Row="3"
-              Command="{TemplateBinding ConfirmCommand}"
-              Theme="{StaticResource ConfirmationButtonTheme}"
-            >
+            <Button Grid.Row="3" Height="32" Padding="12,6"
+                    Background="{DynamicResource ProductPrimary}"
+                    Command="{TemplateBinding ConfirmCommand}"
+                    Theme="{StaticResource ConfirmationButtonTheme}">
               <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Spacing="8">
-                <TextBlock FontSize="{DynamicResource FontSize14}" Text="✓✓" />
-                <TextBlock
-                  FontFamily="{DynamicResource AlibabaPuHuiTi}"
-                  FontWeight="Bold"
-                  FontSize="{DynamicResource FontSize14}"
-                  Text="确认参数配置"
-                />
+                <Image x:Name="ConfirmationConfirmIcon" Width="20" Height="20"
+                       Source="{SvgImage /Assets/Images/check-double-line.svg}" />
+                <TextBlock FontWeight="SemiBold" FontSize="14" Foreground="White"
+                           Text="确认参数配置" VerticalAlignment="Center" />
               </StackPanel>
             </Button>
           </Grid>

@@ -1,18 +1,28 @@
-node_modules/
-dist/
-.tools/
-.pnpm-store/
-.codex/
+# macOS
 .DS_Store
-*.log
-.cache/
-__pycache__/
-*.pyc
 
-# Local archives and visual QA artifacts
-deploy/
-prototypes/
-snapshots/
+# Build outputs and packaged apps
+[Bb]in/
+[Oo]bj/
 output/
-outputs/
-tmp/
+*.app/
+
+# Large model files (kept locally, not versioned)
+models/
+
+# Acceptance run evidence (logs, screenshots, built copies)
+acceptance/*.log
+acceptance/states/
+acceptance/ui-*/
+acceptance/verified/
+
+# IDE / local state, tests, secrets
+.vs/
+.idea/
+.vscode/
+*.user
+[Tt]est[Rr]esults/
+.env
+.env.*
+*.tmp
+*.bak

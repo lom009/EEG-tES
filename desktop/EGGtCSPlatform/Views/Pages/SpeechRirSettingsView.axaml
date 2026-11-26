@@ -1,0 +1,42 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ xmlns:pages="clr-namespace:EGGtCSPlatform.ViewModels.Pages" xmlns:controls="clr-namespace:EGGtCSPlatform.Controls"
+ x:Class="EGGtCSPlatform.Views.Pages.SpeechRirSettingsView" x:DataType="pages:EnvelopeStimulationPageViewModel">
+ <StackPanel Spacing="10">
+  <StackPanel Spacing="10">
+   <TextBlock Text="房间与位置（m；X / Y / Z）" TextWrapping="Wrap" />
+   <TextBlock Text="房间尺寸" FontSize="12" />
+   <Grid ColumnDefinitions="*,8,*,8,*">
+    <controls:StimulusNumericInput IsEnabled="{Binding CanConfigure}" x:Name="RirRoomXInput" Grid.Column="0" Minimum="0" Maximum="{Binding FixedSnrMaximum}" DecimalPlaces="2" CornerRadius="6" ShowButtonSpinner="False" Height="32" Padding="6,0" Unit="X" Value="{Binding RirRoomX, Mode=TwoWay}" AutomationProperties.Name="房间尺寸X" />
+    <controls:StimulusNumericInput IsEnabled="{Binding CanConfigure}" x:Name="RirRoomYInput" Grid.Column="2" Minimum="0" Maximum="{Binding FixedSnrMaximum}" DecimalPlaces="2" CornerRadius="6" ShowButtonSpinner="False" Height="32" Padding="6,0" Unit="Y" Value="{Binding RirRoomY, Mode=TwoWay}" AutomationProperties.Name="房间尺寸Y" />
+    <controls:StimulusNumericInput IsEnabled="{Binding CanConfigure}" x:Name="RirRoomZInput" Grid.Column="4" Minimum="0" Maximum="{Binding FixedSnrMaximum}" DecimalPlaces="2" CornerRadius="6" ShowButtonSpinner="False" Height="32" Padding="6,0" Unit="Z" Value="{Binding RirRoomZ, Mode=TwoWay}" AutomationProperties.Name="房间尺寸Z" />
+   </Grid>
+   <TextBlock Text="声源位置" FontSize="12" />
+   <Grid ColumnDefinitions="*,8,*,8,*">
+    <controls:StimulusNumericInput IsEnabled="{Binding CanConfigure}" x:Name="RirSourceXInput" Grid.Column="0" Minimum="0" Maximum="{Binding FixedSnrMaximum}" DecimalPlaces="2" CornerRadius="6" ShowButtonSpinner="False" Height="32" Padding="6,0" Unit="X" Value="{Binding RirSourceX, Mode=TwoWay}" AutomationProperties.Name="声源位置X" />
+    <controls:StimulusNumericInput IsEnabled="{Binding CanConfigure}" x:Name="RirSourceYInput" Grid.Column="2" Minimum="0" Maximum="{Binding FixedSnrMaximum}" DecimalPlaces="2" CornerRadius="6" ShowButtonSpinner="False" Height="32" Padding="6,0" Unit="Y" Value="{Binding RirSourceY, Mode=TwoWay}" AutomationProperties.Name="声源位置Y" />
+    <controls:StimulusNumericInput IsEnabled="{Binding CanConfigure}" x:Name="RirSourceZInput" Grid.Column="4" Minimum="0" Maximum="{Binding FixedSnrMaximum}" DecimalPlaces="2" CornerRadius="6" ShowButtonSpinner="False" Height="32" Padding="6,0" Unit="Z" Value="{Binding RirSourceZ, Mode=TwoWay}" AutomationProperties.Name="声源位置Z" />
+   </Grid>
+   <TextBlock Text="听者位置" FontSize="12" />
+   <Grid ColumnDefinitions="*,8,*,8,*">
+    <controls:StimulusNumericInput IsEnabled="{Binding CanConfigure}" x:Name="RirListenerXInput" Grid.Column="0" Minimum="0" Maximum="{Binding FixedSnrMaximum}" DecimalPlaces="2" CornerRadius="6" ShowButtonSpinner="False" Height="32" Padding="6,0" Unit="X" Value="{Binding RirListenerX, Mode=TwoWay}" AutomationProperties.Name="听者位置X" />
+    <controls:StimulusNumericInput IsEnabled="{Binding CanConfigure}" x:Name="RirListenerYInput" Grid.Column="2" Minimum="0" Maximum="{Binding FixedSnrMaximum}" DecimalPlaces="2" CornerRadius="6" ShowButtonSpinner="False" Height="32" Padding="6,0" Unit="Y" Value="{Binding RirListenerY, Mode=TwoWay}" AutomationProperties.Name="听者位置Y" />
+    <controls:StimulusNumericInput IsEnabled="{Binding CanConfigure}" x:Name="RirListenerZInput" Grid.Column="4" Minimum="0" Maximum="{Binding FixedSnrMaximum}" DecimalPlaces="2" CornerRadius="6" ShowButtonSpinner="False" Height="32" Padding="6,0" Unit="Z" Value="{Binding RirListenerZ, Mode=TwoWay}" AutomationProperties.Name="听者位置Z" />
+   </Grid>
+   <Grid ColumnDefinitions="86,*"><TextBlock Text="T60" VerticalAlignment="Center"/><controls:StimulusNumericInput IsEnabled="{Binding CanConfigure}" x:Name="RirT60Input" Grid.Column="1" Minimum="0" Maximum="{Binding FixedSnrMaximum}" DecimalPlaces="2" Height="32" Padding="8,0" Unit="s" CornerRadius="6" ShowButtonSpinner="False" Value="{Binding RirT60, Mode=TwoWay}" AutomationProperties.Name="T60" /></Grid>
+   <Grid ColumnDefinitions="86,*"><TextBlock Text="RIR 长度" VerticalAlignment="Center"/><controls:StimulusNumericInput IsEnabled="{Binding CanConfigure}" x:Name="RirLengthSecondsInput" Grid.Column="1" Minimum="0" Maximum="{Binding FixedSnrMaximum}" DecimalPlaces="2" Height="32" Padding="8,0" Unit="s" CornerRadius="6" ShowButtonSpinner="False" Value="{Binding RirLengthSeconds, Mode=TwoWay}" AutomationProperties.Name="RIR 长度" /></Grid>
+   <Grid ColumnDefinitions="86,*"><TextBlock Text="早晚分界" VerticalAlignment="Center"/><controls:StimulusNumericInput IsEnabled="{Binding CanConfigure}" x:Name="RirEarlyLateMillisecondsInput" Grid.Column="1" Minimum="0" Maximum="{Binding FixedSnrMaximum}" DecimalPlaces="2" Height="32" Padding="8,0" Unit="ms" CornerRadius="6" ShowButtonSpinner="False" Value="{Binding RirEarlyLateMilliseconds, Mode=TwoWay}" AutomationProperties.Name="早晚分界" /></Grid>
+   <WrapPanel><CheckBox IsEnabled="{Binding CanConfigure}" Content="早期反射" IsChecked="{Binding RirEarly}" Margin="0,0,16,0"/><CheckBox IsEnabled="{Binding CanConfigure}" Content="晚期反射" IsChecked="{Binding RirLate}" /></WrapPanel>
+   <CheckBox IsEnabled="{Binding CanConfigure}" Content="叠加背景噪声" IsChecked="{Binding RirAddNoise}" />
+   <StackPanel IsVisible="{Binding RirAddNoise}" Spacing="10">
+    <TextBlock Text="背景噪声" FontSize="12" />
+    <ComboBox IsEnabled="{Binding CanConfigure}" x:Name="RirNoiseSelector" Classes="speech-field" ItemsSource="{Binding NoiseOptions}" SelectedItem="{Binding RirNoise}" HorizontalAlignment="Stretch" />
+    <Grid ColumnDefinitions="86,*"><TextBlock Text="固定 SNR" VerticalAlignment="Center"/><controls:StimulusNumericInput IsEnabled="{Binding CanConfigure}" x:Name="RirSnrInput" Grid.Column="1" Minimum="{Binding FixedSnrMinimum}" Maximum="{Binding FixedSnrMaximum}" AllowNegative="True" DecimalPlaces="2" Height="32" Padding="8,0" Unit="dB" CornerRadius="6" ShowButtonSpinner="False" Value="{Binding RirSnrDb, Mode=TwoWay}" AutomationProperties.Name="RIR 信噪比" /></Grid>
+    <TextBlock Text="SNR 参考：直达声＋启用的早期反射" TextWrapping="Wrap" FontSize="12" />
+   </StackPanel>
+  </StackPanel>
+  <WrapPanel><Button Content="生成并预览 RIR" Command="{Binding GenerateRirCommand}" Margin="0,0,8,0"/><Button Content="取消生成" Command="{Binding CancelRirCommand}" IsVisible="{Binding CanCancelRir}" /></WrapPanel>
+  <TextBlock Text="{Binding RirStatus}" TextWrapping="Wrap" FontSize="12" />
+  <controls:SpeechRirPreviewControl x:Name="RirPreviewPlot" Response="{Binding RirPreview}" Height="150" />
+  <TextBlock Text="蓝线：生效 RIR · 绿线：直达声 · 橙线：早晚分界" FontSize="11" TextWrapping="Wrap" />
+ </StackPanel>
+</UserControl>

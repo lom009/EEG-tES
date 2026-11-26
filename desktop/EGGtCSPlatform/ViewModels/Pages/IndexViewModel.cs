@@ -9,7 +9,8 @@ namespace EGGtCSPlatform.ViewModels.Pages;
 public partial class IndexViewModel(
     INavigationRouter router,
     IDeviceSelectionContext deviceConnection,
-    IDeviceCapabilityAvailability? capabilityAvailability = null
+    IDeviceCapabilityAvailability? capabilityAvailability = null,
+    ToleranceEntryService? toleranceEntry = null
 ) : ViewModelBase
 {
     private readonly IDeviceCapabilityAvailability _capabilityAvailability =
@@ -43,5 +44,11 @@ public partial class IndexViewModel(
     private void OpenDeviceConnection() => router.Navigate(ApplicationPageNames.DeviceConnection);
 
     [RelayCommand(CanExecute = nameof(CanStartToleranceTest))]
-    private void StartToleranceTest() => router.Navigate(ApplicationPageNames.ToleranceTest);
+    private async System.Threading.Tasks.Task StartToleranceTestAsync()
+    {
+        if (toleranceEntry is not null && router is IDialogProvider host)
+            await toleranceEntry.StartAsync(host, router);
+        else
+            router.Navigate(ApplicationPageNames.ToleranceTest);
+    }
 }

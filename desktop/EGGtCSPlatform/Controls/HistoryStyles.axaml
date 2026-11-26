@@ -1,0 +1,85 @@
+<Styles xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <Style Selector="Grid.history-page TextBlock">
+    <Setter Property="FontSize" Value="14"/>
+    <Setter Property="Foreground" Value="{DynamicResource ProductText}"/>
+  </Style>
+  <Style Selector="Grid.history-page Button.history-action">
+    <Setter Property="Height" Value="32"/>
+    <Setter Property="Padding" Value="12,6"/>
+    <Setter Property="Background" Value="{DynamicResource ProductSurface}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource ProductStimulusInputBorder}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="CornerRadius" Value="6"/>
+  </Style>
+  <Style Selector="Grid.history-page Button.history-action:disabled">
+    <Setter Property="Opacity" Value="1"/>
+  </Style>
+  <Style Selector="Grid.history-page Button.history-action:disabled TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource ProductStimulusDisabledText}"/>
+  </Style>
+  <Style Selector="Grid.history-page Button.history-action:disabled Image">
+    <Setter Property="Opacity" Value="0.35"/>
+  </Style>
+  <Style Selector="Grid.history-page Button.history-primary">
+    <Setter Property="Background" Value="{DynamicResource ProductPrimary}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource ProductPrimary}"/>
+  </Style>
+  <Style Selector="Grid.history-page Button.history-primary TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource ProductSurface}"/>
+  </Style>
+  <Style Selector="Grid.history-page Button.history-danger">
+    <Setter Property="Background" Value="{DynamicResource ProductFeedbackError}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource ProductFeedbackError}"/>
+  </Style>
+  <Style Selector="Grid.history-page Button.history-danger TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource ProductSurface}"/>
+  </Style>
+  <Style Selector="Grid.history-page Button.history-primary:disabled, Grid.history-page Button.history-danger:disabled">
+    <Setter Property="Opacity" Value="0.45"/>
+  </Style>
+  <Style Selector="Grid.history-page TextBlock.history-muted">
+    <Setter Property="Foreground" Value="{DynamicResource ProductTextMuted}"/>
+  </Style>
+  <Style Selector="Grid.history-page TextBlock.history-count">
+    <Setter Property="Foreground" Value="{DynamicResource ProductPrimary}"/>
+  </Style>
+  <Style Selector="Grid.history-page TextBlock.history-error">
+    <Setter Property="Foreground" Value="{DynamicResource ProductFeedbackError}"/>
+  </Style>
+  <Style Selector="Grid.history-page TextBlock.history-success">
+    <Setter Property="Foreground" Value="{DynamicResource ProductExcellent}"/>
+  </Style>
+  <Style Selector="Grid.history-page TextBox.history-search">
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="Height" Value="32"/>
+    <Setter Property="Padding" Value="12,5,32,5"/>
+    <Setter Property="CornerRadius" Value="6"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource ProductStimulusInputBorder}"/>
+    <Setter Property="Background" Value="{DynamicResource ProductSurface}"/>
+    <Setter Property="FontSize" Value="14"/>
+    <Setter Property="Foreground" Value="{DynamicResource ProductText}"/>
+    <Setter Property="PlaceholderForeground" Value="{DynamicResource ProductStimulusDisabledText}"/>
+    <Setter Property="VerticalContentAlignment" Value="Center"/>
+  </Style>
+  <Style Selector="Grid.history-page Border.history-table-header">
+    <Setter Property="Background" Value="{DynamicResource ProductTrainingChip}"/>
+  </Style>
+  <Style Selector="Grid.history-page Border.history-group">
+    <Setter Property="Margin" Value="0,0,0,8"/>
+    <Setter Property="Padding" Value="0,0,0,8"/>
+    <Setter Property="Background" Value="{DynamicResource ProductSurface}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource ProductStimulusInputBorder}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="CornerRadius" Value="4"/>
+  </Style>
+  <Style Selector="Grid.history-page Border.history-group-header">
+    <Setter Property="BorderBrush" Value="{DynamicResource ProductStimulusBorder}"/>
+    <Setter Property="BorderThickness" Value="0,0,0,1"/>
+  </Style>
+  <Style Selector="Grid.history-page Border.history-child-row">
+    <Setter Property="Background" Value="{DynamicResource ProductTrainingChip}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource ProductStimulusBorder}"/>
+    <Setter Property="BorderThickness" Value="0,0,0,1"/>
+    <Setter Property="Padding" Value="16,0"/>
+  </Style>
+</Styles>

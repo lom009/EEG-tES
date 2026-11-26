@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Security.Cryptography;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using EGGtCSPlatform.MainApp;
@@ -32,7 +31,8 @@ public sealed record ExperimentHistoryItem(
     IReadOnlyList<string> ElectrodeSites,
     int RunCount,
     DateTimeOffset ScheduledAt,
-    IReadOnlyList<ExperimentHistoryRunItem> Runs
+    IReadOnlyList<ExperimentHistoryRunItem> Runs,
+    bool IsSpeech = false
 );
 
 public sealed record ExperimentHistoryRunItem(
@@ -78,7 +78,7 @@ public interface IExperimentPersistenceService
         string remarks,
         CancellationToken cancellationToken = default
     );
-    Task SaveConfigurationAsync(
+    Task<ExperimentConfigurationSaveResult> SaveConfigurationAsync(
         long experimentId,
         ExperimentConfigurationTemplate template,
         IReadOnlyList<ImpedanceSnapshotValue> impedances,
@@ -230,9 +230,31 @@ public sealed class ExperimentPersistenceService(
             ExperimentEntity experiment;
             if (draftId is { } id)
             {
-                experiment = await db.Experiments.SingleAsync(x => x.Id == id, cancellationToken);
-                if (experiment.Status != ExperimentStatus.Draft)
-                    throw new InvalidOperationException("实验已经开始，不能再修改基础信息。");
+                experiment = await db
+                    .Experiments.Include(x => x.Runs)
+                    .SingleAsync(x => x.Id == id, cancellationToken);
+                if (
+                    experiment.Runs.Any(r =>
+                        r.Status is ExperimentRunStatus.Preparing or ExperimentRunStatus.Running
+                    )
+                )
+                    throw new InvalidOperationException("实验正在运行，不能修改配置。");
+                if (experiment.Runs.Count > 0 || experiment.Status != ExperimentStatus.Draft)
+                {
+                    // Returning to configuration may keep the original identity until a changed
+                    // effective configuration is confirmed. Never rewrite completed-run metadata.
+                    if (
+                        experiment.SubjectId != subject.Id
+                        || experiment.ScheduledAt != scheduledAt
+                        || experiment.Remarks != remarks.Trim()
+                    )
+                        throw new InvalidOperationException("实验已经开始，不能再修改基础信息。");
+                    return new ExperimentDraft(
+                        experiment.Id,
+                        experiment.ExperimentCode,
+                        subject.SubjectCode
+                    );
+                }
             }
             else
             {
@@ -250,13 +272,7 @@ public sealed class ExperimentPersistenceService(
                 db.Experiments.Add(experiment);
             }
 
-            var desiredPrefix = $"EXP-{scheduledAt:yyyyMMdd}-";
-            if (!experiment.ExperimentCode.StartsWith(desiredPrefix, StringComparison.Ordinal))
-                experiment.ExperimentCode = await AllocateCodeAsync(
-                    db,
-                    scheduledAt,
-                    cancellationToken
-                );
+            // Once allocated, a draft keeps its identity, including a fork's original date prefix.
             experiment.ScheduledAt = scheduledAt;
             experiment.Subject = subject;
             experiment.Remarks = remarks.Trim();
@@ -279,7 +295,7 @@ public sealed class ExperimentPersistenceService(
         throw new InvalidOperationException("无法分配唯一实验 ID，请稍后重试。");
     }
 
-    public async Task SaveConfigurationAsync(
+    public async Task<ExperimentConfigurationSaveResult> SaveConfigurationAsync(
         long experimentId,
         ExperimentConfigurationTemplate template,
         IReadOnlyList<ImpedanceSnapshotValue> impedances,
@@ -293,25 +309,38 @@ public sealed class ExperimentPersistenceService(
             experimentId.ToString(),
             cancellationToken
         );
-        await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
-        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
-        var experiment = await db
-            .Experiments.Include(x => x.StimulusParadigm)
-                .ThenInclude(x => x!.Targets)
-                    .ThenInclude(x => x.Channels)
-            .Include(x => x.Electrodes)
-            .Include(x => x.ImpedanceSnapshots)
-            .SingleAsync(x => x.Id == experimentId, cancellationToken);
-        if (experiment.StimulusParadigm is not null)
-            db.StimulusParadigms.Remove(experiment.StimulusParadigm);
-        db.ExperimentElectrodes.RemoveRange(experiment.Electrodes);
-        db.ImpedanceSnapshots.RemoveRange(experiment.ImpedanceSnapshots);
-
-        ApplyConfiguration(experiment, template, impedances, channelMappings.Load().Mappings);
-        experiment.UpdatedAtUtc = DateTimeOffset.UtcNow;
-        await db.SaveChangesAsync(cancellationToken);
-        await transaction.CommitAsync(cancellationToken);
-        operation.Complete("fields=StimulusParadigm,Electrodes,ImpedanceSnapshots");
+        template = AcquisitionOnlyConfiguration.Normalize(
+            template with
+            {
+                PhysicalChannels =
+                    template.PhysicalChannels ?? channelMappings.Load().Mappings.ToArray(),
+            }
+        );
+        for (var attempt = 0; ; attempt++)
+        {
+            await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
+            await using var transaction = await db.Database.BeginTransactionAsync(
+                cancellationToken
+            );
+            try
+            {
+                var (experiment, created) = await ExperimentConfigurationWriter.ResolveAsync(
+                    db,
+                    experimentId,
+                    template,
+                    cancellationToken
+                );
+                ExperimentConfigurationWriter.ReplaceDraft(db, experiment, template, impedances);
+                await db.SaveChangesAsync(cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
+                operation.Complete("fields=StimulusParadigm,Electrodes,ImpedanceSnapshots");
+                return new(experiment.Id, experiment.ExperimentCode, created);
+            }
+            catch (DbUpdateException) when (attempt < 4)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+            }
+        }
     }
 
     internal static void ApplyConfiguration(
@@ -566,7 +595,12 @@ public sealed class ExperimentPersistenceService(
                     r.Status != ExperimentRunStatus.Preparing
                     && r.Status != ExperimentRunStatus.Running
                 )
+                || (
+                    x.SpeechExperiment != null
+                    && x.SpeechExperiment.Status != ExperimentRunStatus.Running
+                )
             )
+            .Include(x => x.SpeechExperiment)
             .Include(x => x.Subject)
             .Include(x => x.StimulusParadigm)
                 .ThenInclude(x => x!.Targets)
@@ -574,51 +608,7 @@ public sealed class ExperimentPersistenceService(
             .Include(x => x.Runs)
                 .ThenInclude(x => x.Files)
             .ToListAsync(cancellationToken);
-        var items = experiments
-            .Select(x =>
-            {
-                var runs = x
-                    .Runs.Where(r =>
-                        r.Status != ExperimentRunStatus.Preparing
-                        && r.Status != ExperimentRunStatus.Running
-                    )
-                    .OrderByDescending(r => r.CreatedAtUtc)
-                    .Select(r => new ExperimentHistoryRunItem(
-                        r.Id,
-                        r.Status,
-                        r.CreatedAtUtc,
-                        r.StartedAtUtc,
-                        r.EndedAtUtc,
-                        r.Files.Where(f =>
-                                f.Format == EegFileFormat.Staging
-                                && f.Location == EegFileLocation.Managed
-                                && f.State == EegFileState.Available
-                            )
-                            .OrderByDescending(f => f.CreatedAtUtc)
-                            .Select(f => f.Path)
-                            .FirstOrDefault(),
-                        CreatePacketStatistics(r)
-                    ))
-                    .ToArray();
-                return new ExperimentHistoryItem(
-                    x.Id,
-                    x.ExperimentCode,
-                    x.Subject.SubjectCode,
-                    x.StimulusParadigm == null ? "-" : x.StimulusParadigm.Kind,
-                    x.StimulusParadigm == null
-                        ? 0
-                        : x.StimulusParadigm.Targets.Sum(t => t.PeakCurrentMilliAmps),
-                    x.Electrodes.Where(e =>
-                            e.IsStimulus || e.AcquisitionUsage != ElectrodeUsage.None
-                        )
-                        .Select(e => e.SiteId)
-                        .ToArray(),
-                    runs.Length,
-                    x.ScheduledAt,
-                    runs
-                );
-            })
-            .ToList();
+        var items = experiments.Select(CreateHistoryItem).ToList();
         // SQLite stores DateTimeOffset as TEXT and cannot translate ORDER BY for it.
         // Keep filtering/projection in SQL, then order the small history result in memory.
         return items.OrderByDescending(x => x.ScheduledAt).ToArray();
@@ -643,6 +633,10 @@ public sealed class ExperimentPersistenceService(
                     r.Status != ExperimentRunStatus.Preparing
                     && r.Status != ExperimentRunStatus.Running
                 )
+                || (
+                    x.SpeechExperiment != null
+                    && x.SpeechExperiment.Status != ExperimentRunStatus.Running
+                )
             );
         if (searchText.Length > 0)
         {
@@ -659,7 +653,10 @@ public sealed class ExperimentPersistenceService(
         }
         if (query.RunStatus is { } runStatus)
         {
-            candidateQuery = candidateQuery.Where(x => x.Runs.Any(r => r.Status == runStatus));
+            candidateQuery = candidateQuery.Where(x =>
+                x.Runs.Any(r => r.Status == runStatus)
+                || (x.SpeechExperiment != null && x.SpeechExperiment.Status == runStatus)
+            );
         }
 
         // SQLite cannot order or range-filter DateTimeOffset directly. Materialize only
@@ -686,6 +683,7 @@ public sealed class ExperimentPersistenceService(
         var experiments = await db
             .Experiments.AsNoTracking()
             .Where(x => pageIds.Contains(x.Id))
+            .Include(x => x.SpeechExperiment)
             .Include(x => x.Subject)
             .Include(x => x.StimulusParadigm)
                 .ThenInclude(x => x!.Targets)
@@ -703,6 +701,29 @@ public sealed class ExperimentPersistenceService(
 
     private static ExperimentHistoryItem CreateHistoryItem(ExperimentEntity experiment)
     {
+        if (experiment.SpeechExperiment is { } speech)
+            return new(
+                experiment.Id,
+                experiment.ExperimentCode,
+                experiment.Subject.SubjectCode,
+                "EnvelopeTAcs",
+                experiment.StimulusParadigm?.Targets.Sum(x => x.PeakCurrentMilliAmps) ?? 0,
+                experiment.Electrodes.Where(x => x.IsStimulus).Select(x => x.SiteId).ToArray(),
+                1,
+                experiment.ScheduledAt,
+                [
+                    new(
+                        speech.Id,
+                        speech.Status,
+                        speech.StartedAt,
+                        speech.StartedAt,
+                        speech.EndedAt,
+                        null
+                    ),
+                ],
+                true
+            );
+
         var runs = experiment
             .Runs.Where(r =>
                 r.Status != ExperimentRunStatus.Preparing && r.Status != ExperimentRunStatus.Running
@@ -766,12 +787,6 @@ public sealed class ExperimentPersistenceService(
             .ExperimentRuns.AsNoTracking()
             .Include(x => x.Experiment)
                 .ThenInclude(x => x.Subject)
-            .Include(x => x.Experiment)
-                .ThenInclude(x => x.StimulusParadigm)
-                    .ThenInclude(x => x!.Targets)
-                        .ThenInclude(x => x.Channels)
-            .Include(x => x.Experiment)
-                .ThenInclude(x => x.Electrodes)
             .Include(x => x.Events)
             .Include(x => x.Files)
             .SingleAsync(x => x.Id == runId, cancellationToken);
@@ -787,7 +802,21 @@ public sealed class ExperimentPersistenceService(
                 .Select(x => x.Path)
                 .FirstOrDefault()
             ?? string.Empty;
-        var experiment = run.Experiment;
+        if (run.ConfigurationJson is { } snapshotJson)
+            return FromRunSnapshot(
+                run,
+                ExperimentConfigurationIdentity.Read(snapshotJson),
+                rawPath
+            );
+        var experiment = await db
+            .Experiments.AsNoTracking()
+            .Include(x => x.SpeechExperiment)
+            .Include(x => x.Subject)
+            .Include(x => x.StimulusParadigm)!
+                .ThenInclude(x => x!.Targets)
+                    .ThenInclude(x => x.Channels)
+            .Include(x => x.Electrodes)
+            .SingleAsync(x => x.Id == run.ExperimentId, cancellationToken);
         var paradigm =
             experiment.StimulusParadigm
             ?? throw new InvalidOperationException("历史实验没有刺激配置。");
@@ -848,42 +877,6 @@ public sealed class ExperimentPersistenceService(
                 );
             })
             .ToArray();
-        if (
-            run.ConfigurationJson is { } configurationJson
-            && JsonSerializer.Deserialize<ExperimentConfigurationTemplate>(configurationJson)
-                is { CreationMode: ExperimentCreationMode.StimulusOnly } saved
-        )
-        {
-            return new ExperimentRunRouteData(
-                experiment.ExperimentCode,
-                experiment.Subject.SubjectCode,
-                ExperimentStimulusConfigurationSnapshot.From(
-                    saved.StimulusConfiguration,
-                    saved.StimulusElectrodes
-                ),
-                saved.StimulusElectrodes,
-                [],
-                "",
-                "",
-                run.SampleRateHz,
-                "history",
-                experiment.Id,
-                experiment.ScheduledAt,
-                experiment.Remarks,
-                saved.Timing,
-                historicalResult: new HistoricalExperimentRunContext(
-                    run.Id,
-                    string.Empty,
-                    run.Status,
-                    started,
-                    ended,
-                    new Dictionary<int, string>(),
-                    intervals,
-                    LogicalTimelineEndSeconds: logicalTimelineEndSeconds
-                ),
-                creationMode: saved.CreationMode
-            );
-        }
         return new ExperimentRunRouteData(
             experiment.ExperimentCode,
             experiment.Subject.SubjectCode,
@@ -933,10 +926,81 @@ public sealed class ExperimentPersistenceService(
                 intervals,
                 CreatePacketStatistics(run),
                 logicalTimelineEndSeconds,
-                null
+                null,
+                ConfigurationWarning: ExperimentConfigurationIdentity.LegacyWarning
             ),
             physicalChannelNames: channelNames,
             creationMode: experiment.CreationMode
+        );
+    }
+
+    private static ExperimentRunRouteData FromRunSnapshot(
+        ExperimentRunEntity run,
+        ExperimentConfigurationTemplate saved,
+        string rawPath
+    )
+    {
+        var started = run.StartedAtUtc ?? run.CreatedAtUtc;
+        var ended = run.EndedAtUtc ?? run.LastHeartbeatAtUtc;
+        var channels = (saved.PhysicalChannels ?? [])
+            .Where(m =>
+                m.PhysicalChannel.HasValue
+                && saved.AcquisitionChannels.Contains(
+                    m.ElectrodeId,
+                    StringComparer.OrdinalIgnoreCase
+                )
+            )
+            .ToDictionary(m => m.PhysicalChannel!.Value, m => m.ElectrodeId);
+        var intervals = run
+            .Events.OrderBy(e => e.Sequence)
+            .Select(e =>
+            {
+                var time = ResolveHistoricalEventTimeline(e, started, ended);
+                return new HistoricalExperimentStageInterval(
+                    e.Kind switch
+                    {
+                        ExperimentEventKind.Acquisition => ExperimentRunStage.Acquisition,
+                        ExperimentEventKind.Blanking => ExperimentRunStage.Blanking,
+                        ExperimentEventKind.Stimulation => ExperimentRunStage.Stimulation,
+                        _ => ExperimentRunStage.Recovery,
+                    },
+                    e.Cycle,
+                    time.StartSeconds,
+                    time.EndSeconds
+                );
+            })
+            .ToArray();
+        return new ExperimentRunRouteData(
+            run.Experiment.ExperimentCode,
+            run.Experiment.Subject.SubjectCode,
+            ExperimentStimulusConfigurationSnapshot.From(
+                saved.StimulusConfiguration,
+                saved.StimulusElectrodes
+            ),
+            saved.StimulusElectrodes,
+            saved.AcquisitionChannels,
+            saved.ReferenceChannel,
+            saved.GroundChannel,
+            saved.SampleRateHz,
+            "history",
+            run.ExperimentId,
+            run.Experiment.ScheduledAt,
+            run.Experiment.Remarks,
+            saved.Timing,
+            new HistoricalExperimentRunContext(
+                run.Id,
+                rawPath,
+                run.Status,
+                started,
+                ended,
+                channels,
+                intervals,
+                CreatePacketStatistics(run),
+                ResolveHistoricalLogicalTimelineEnd(run.Events),
+                saved.Simulation
+            ),
+            channels,
+            creationMode: saved.CreationMode
         );
     }
 

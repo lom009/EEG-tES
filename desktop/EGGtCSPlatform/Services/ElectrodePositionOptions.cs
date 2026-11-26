@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Globalization;
 using EGGtCSPlatform.Persistence;
 using EGGtCSPlatform.ViewModels.Pages;
 using Microsoft.Extensions.Configuration;
@@ -15,6 +16,28 @@ public sealed class ElectrodePositionOptions
     public const double ReferenceHeight = 574d;
 
     public ElectrodePositionDefinition[] Positions { get; set; } = [];
+
+    public static ElectrodePositionOptions Read(IConfiguration section) => new()
+    {
+        Positions = section.GetSection(nameof(Positions)).GetChildren().Select(point => new ElectrodePositionDefinition(
+            point[nameof(ElectrodePositionDefinition.Id)] ?? "",
+            point[nameof(ElectrodePositionDefinition.Position)] ?? "",
+            point.GetValue(nameof(ElectrodePositionDefinition.ReferenceX), double.NaN),
+            point.GetValue(nameof(ElectrodePositionDefinition.ReferenceY), double.NaN),
+            point.GetValue<ElectrodeRole>(nameof(ElectrodePositionDefinition.DefaultRole)),
+            ReadVector(point.GetSection(nameof(ElectrodePositionDefinition.Position3D))),
+            ReadVector(point.GetSection(nameof(ElectrodePositionDefinition.Normal3D)))
+        )).ToArray(),
+    };
+
+    private static ElectrodeVector3? ReadVector(IConfigurationSection section)
+    {
+        if (!section.Exists()) return null;
+        // Malformed 3D fields disable that view, not otherwise valid 2D/device setup.
+        double Component(string name) => double.TryParse(section[name], NumberStyles.Float,
+            CultureInfo.InvariantCulture, out var value) ? value : double.NaN;
+        return new(Component("X"), Component("Y"), Component("Z"));
+    }
 
     public bool IsValid()
     {
@@ -87,13 +110,7 @@ public sealed class ElectrodePositionCatalog : IElectrodePositionCatalog
         var configuration = new ConfigurationBuilder()
             .AddJsonFile(configurationPath, optional: false, reloadOnChange: false)
             .Build();
-        var options =
-            configuration
-                .GetSection(ElectrodePositionOptions.SectionName)
-                .Get<ElectrodePositionOptions>()
-            ?? throw new InvalidOperationException(
-                $"{configurationPath} 缺少 ElectrodePositions 配置。"
-            );
+        var options = ElectrodePositionOptions.Read(configuration.GetSection(ElectrodePositionOptions.SectionName));
         return new ElectrodePositionCatalog(options);
     }
 }

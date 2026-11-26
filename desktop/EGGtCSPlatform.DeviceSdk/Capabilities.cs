@@ -147,6 +147,8 @@ public interface IImpedanceCapability
 
 public interface IToleranceCapability
 {
+    Task<DeviceCommandResult> StartAsync(CancellationToken cancellationToken = default);
+
     Task<CurrentAdjustmentResponse> AdjustCurrentAsync(
         CurrentAdjustment adjustment,
         CancellationToken cancellationToken = default

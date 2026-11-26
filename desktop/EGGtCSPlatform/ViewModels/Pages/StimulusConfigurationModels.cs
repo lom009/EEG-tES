@@ -254,7 +254,9 @@ public sealed class StimulationPhysicalChannelViewModel : ObservableObject
 
     public bool CanToggle => IsSelectableChannel;
 
-    public bool CanEditCurrent => Enabled && !IsSelectedFixed;
+    public bool IsCurrentLocked { get; init; }
+
+    public bool CanEditCurrent => Enabled && !IsSelectedFixed && !IsCurrentLocked;
 
     public double MinimumCurrent => _currentPolicy.MinimumMilliAmps;
 
@@ -313,11 +315,13 @@ public sealed class StimulusTargetConfigurationViewModel : ObservableObject
         double peakCurrent,
         StimulusArrayMode arrayMode,
         StimulusCapabilityProfile capability,
-        Action<StimulusTargetConfigurationViewModel> removeTarget
+        Action<StimulusTargetConfigurationViewModel> removeTarget,
+        bool lockCurrent = false
     )
     {
         TargetId = targetId;
         _displayOrder = displayOrder;
+        CanEditCurrent = !lockCurrent;
         _peakCurrent = capability.CurrentPolicy.Normalize(peakCurrent);
         ArrayMode = arrayMode;
         _capability = capability;
@@ -329,7 +333,10 @@ public sealed class StimulusTargetConfigurationViewModel : ObservableObject
                     channel,
                     capability.IsFixedActiveChannel(channel),
                     capability.CurrentPolicy
-                ))
+                )
+                {
+                    IsCurrentLocked = lockCurrent,
+                })
         );
         foreach (var channel in Channels)
         {
@@ -369,12 +376,21 @@ public sealed class StimulusTargetConfigurationViewModel : ObservableObject
 
     public string DisplayName => $"靶点 {DisplayOrder}";
 
+    public bool CanEditCurrent { get; }
+
+    public double MinimumCurrent => _capability.CurrentPolicy.MinimumMilliAmps;
+    public double MaximumCurrent => _capability.CurrentPolicy.MaximumMilliAmps;
+    public double CurrentIncrement => _capability.CurrentPolicy.StepMilliAmps;
+
     public double PeakCurrent
     {
         get => _peakCurrent;
         set
         {
-            if (!SetProperty(ref _peakCurrent, _capability.CurrentPolicy.Normalize(value)))
+            if (
+                !CanEditCurrent
+                || !SetProperty(ref _peakCurrent, _capability.CurrentPolicy.Normalize(value))
+            )
                 return;
             SelectedFixedChannel?.SetCurrentSilently(_peakCurrent);
             RedistributeSelectableCurrents();
@@ -567,13 +583,26 @@ public sealed class StimulusModeConfigurationViewModel : ObservableObject
     private double _rampSeconds;
     private double _frequency;
     private double _dutyPercent;
-    private double _delayMilliseconds = 40;
+    private double _delayMilliseconds = 0;
+    private int _debugFrequencyHz = 500;
+
+    public int DebugFrequencyHz
+    {
+        get => _debugFrequencyHz;
+        set
+        {
+            if (SetProperty(ref _debugFrequencyHz, Math.Clamp(value, 200, 1000)))
+                NotifyConfigurationChanged();
+        }
+    }
 
     public StimulusModeConfigurationViewModel(
         StimulusKind kind,
-        StimulusCapabilityProfile? capability = null
+        StimulusCapabilityProfile? capability = null,
+        bool lockCurrent = false
     )
     {
+        CanEditCurrent = !lockCurrent;
         Kind = kind;
         _capability = capability ?? StimulusCapabilityProfile.Default;
         ArrayOptions =
@@ -707,6 +736,8 @@ public sealed class StimulusModeConfigurationViewModel : ObservableObject
     public ShamWaveformMode ShamMode =>
         SelectedShamModeOption?.Value is ShamWaveformMode value ? value : ShamWaveformMode.Direct;
 
+    public bool CanEditCurrent { get; }
+
     public double Current
     {
         get => Targets.FirstOrDefault()?.PeakCurrent ?? 0;
@@ -771,6 +802,8 @@ public sealed class StimulusModeConfigurationViewModel : ObservableObject
 
     public double ParameterRowSpacing => IsEnvelope ? 0 : 16;
 
+    public int CurrentParameterColumnSpan => IsEnvelope ? 3 : 1;
+
     public double DelayMilliseconds
     {
         get => _delayMilliseconds;
@@ -827,7 +860,13 @@ public sealed class StimulusModeConfigurationViewModel : ObservableObject
     public double CurrentIncrement => _capability.CurrentPolicy.StepMilliAmps;
 
     public string CurrentInfo =>
-        IsEnvelope ? string.Empty
+        !CanEditCurrent
+            ? (
+                ArrayMode == StimulusArrayMode.MultiTarget
+                    ? "初始电流已锁定，完成阻抗检测后可调节"
+                    : "耐受度电流上限已锁定为 2.00 mA，启动后从 0.00 mA 开始调节"
+            )
+        : IsEnvelope ? string.Empty
         : Kind == StimulusKind.TAcs ? "该用户近期耐受度测试值：-"
         : "该用户近期耐受度测试值：2mA";
 
@@ -967,7 +1006,11 @@ public sealed class StimulusModeConfigurationViewModel : ObservableObject
             DutyPercent,
             Targets.Select(target => target.CreateSnapshot()).ToArray(),
             IsEnvelope
-                ? new EnvelopeParameters(DelayMilliseconds: DelayMilliseconds, IsDeviceSetup: true)
+                ? new EnvelopeParameters(
+                    DelayMilliseconds: DelayMilliseconds,
+                    IsDeviceSetup: true,
+                    DebugFrequencyHz: DebugFrequencyHz
+                )
                 : null
         );
 
@@ -1011,10 +1054,18 @@ public sealed class StimulusModeConfigurationViewModel : ObservableObject
         var target = new StimulusTargetConfigurationViewModel(
             Guid.NewGuid(),
             Targets.Count + 1,
-            current,
+            CanEditCurrent ? current
+                : ArrayMode != StimulusArrayMode.MultiTarget ? 2d
+                : _capability.CurrentPolicy.MinimumMilliAmps
+                    * (
+                        ArrayMode == StimulusArrayMode.DualChannel
+                            ? _capability.DualChannelSelectableCount
+                            : _capability.HdSelectableChannelCount
+                    ),
             ArrayMode,
             _capability,
-            RemoveTarget
+            RemoveTarget,
+            !CanEditCurrent
         );
         target.ConfigurationChanged += OnTargetConfigurationChanged;
         Targets.Add(target);
@@ -1100,7 +1151,7 @@ public sealed record WaveformDescriptor(
     double RampSeconds,
     double Frequency,
     double DutyPercent,
-    double DelayMilliseconds = 40
+    double DelayMilliseconds = 0
 );
 
 public sealed record StimulationPhysicalChannelSnapshot(

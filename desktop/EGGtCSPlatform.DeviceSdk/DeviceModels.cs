@@ -99,7 +99,11 @@ public sealed record DeviceStatusResponse(
     DeviceCommandStatus Status,
     DeviceOperationState Operation,
     int BatteryPercent
-);
+)
+{
+    /// <summary>False when the response carries only battery information.</summary>
+    public bool HasOperationState { get; init; } = true;
+}
 
 public sealed record CurrentAdjustmentResponse(
     DeviceCommandStatus Status,

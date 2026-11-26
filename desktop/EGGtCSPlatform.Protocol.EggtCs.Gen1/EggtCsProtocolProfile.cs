@@ -112,7 +112,10 @@ public sealed class EggtCsProtocolProfile(EggtCsProtocolOptions options) : IDevi
             ControlStimulationRequest request => new WireMessage(
                 index,
                 (byte)EggtCsCommandCode.ControlStimulationRequest,
-                EncodeRunControl(request.Control, request.Duration)
+                request.Control == RunControl.Start
+                && request.StartMode == StimulationStartMode.Tolerance
+                    ? new byte[] { 0x03, 0x00, 0x00 }
+                    : EncodeRunControl(request.Control, request.Duration)
             ),
             AdjustCurrentRequest request => new WireMessage(
                 index,
@@ -443,7 +446,10 @@ public sealed class EggtCsProtocolProfile(EggtCsProtocolOptions options) : IDevi
                 DeviceCommandStatus.Success,
                 DeviceOperationState.Unknown,
                 Math.Clamp(payload[0], (byte)0, (byte)100)
-            );
+            )
+            {
+                HasOperationState = false,
+            };
         }
         RequireLength(payload, 2, (byte)EggtCsCommandCode.ReadDeviceStatusResponse);
         var operation = payload[0] switch

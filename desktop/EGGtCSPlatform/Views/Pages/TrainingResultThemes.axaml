@@ -1,0 +1,17 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <ControlTheme x:Key="SpeechResultTab" TargetType="TabItem">
+   <Setter Property="Padding" Value="12,10"/><Setter Property="Foreground" Value="#7C91B1"/>
+   <Setter Property="Template"><ControlTemplate>
+    <Border BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="0,0,0,3" Padding="{TemplateBinding Padding}" Background="Transparent">
+     <ContentPresenter Content="{TemplateBinding Header}" Foreground="{TemplateBinding Foreground}"/>
+    </Border>
+   </ControlTemplate></Setter>
+   <Setter Property="BorderBrush" Value="Transparent"/>
+   <Style Selector="^:selected"><Setter Property="BorderBrush" Value="#4940C7"/><Setter Property="Foreground" Value="#4940C7"/></Style>
+  </ControlTheme>
+  <ControlTheme x:Key="SpeechSentenceDetail" TargetType="ToggleButton">
+   <Setter Property="Template"><ControlTemplate><Border Background="White" BorderBrush="#DFE7F3" BorderThickness="1" CornerRadius="4" Padding="6">
+    <Image Source="{SvgImage /Assets/Images/envelope-training/result-detail.svg}" Width="20" Height="20"/>
+   </Border></ControlTemplate></Setter>
+  </ControlTheme>
+</ResourceDictionary>

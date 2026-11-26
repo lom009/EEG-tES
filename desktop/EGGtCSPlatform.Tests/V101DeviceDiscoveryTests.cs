@@ -43,7 +43,7 @@ public sealed class EggtCsDeviceDiscoveryTests
         Assert.Equal("192.168.1.101", device.Endpoint.Address);
         Assert.Equal(30307, device.Endpoint.Port);
         Assert.Equal(EggtCsProtocolModule.Id, device.ProtocolId);
-        Assert.Equal("1.0.1", device.ProtocolVersion);
+        Assert.Equal("1.0.2", device.ProtocolVersion);
         Assert.Equal(
             EGGtCSPlatform.DeviceSdk.ProtocolRevisionSource.SoftwareDefault,
             device.RevisionSource

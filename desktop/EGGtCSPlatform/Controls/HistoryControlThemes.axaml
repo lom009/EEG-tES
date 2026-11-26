@@ -1,0 +1,281 @@
+<ResourceDictionary
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:pages="clr-namespace:EGGtCSPlatform.ViewModels.Pages"
+  xmlns:controls="clr-namespace:EGGtCSPlatform.Controls"
+  x:CompileBindings="False"
+>
+  <ControlTheme x:Key="ExperimentButtonTheme" TargetType="Button">
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="0" />
+    <Setter Property="Cursor" Value="Hand" />
+    <Setter Property="Effect" Value="{x:Null}" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border
+          x:Name="ButtonBorder"
+          Padding="{TemplateBinding Padding}"
+          Background="{TemplateBinding Background}"
+          BorderBrush="{TemplateBinding BorderBrush}"
+          BorderThickness="{TemplateBinding BorderThickness}"
+          CornerRadius="{TemplateBinding CornerRadius}"
+        >
+          <ContentPresenter
+            HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+            VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+            Content="{TemplateBinding Content}"
+          />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:pointerover /template/ Border#ButtonBorder">
+      <Setter Property="Opacity" Value="0.82" />
+    </Style>
+  </ControlTheme>
+  <DataTemplate x:Key="HistoryElectrodePointTemplate" x:DataType="pages:ElectrodePointViewModel">
+    <Border Height="20" Padding="8,0" Margin="0,0,4,4" Background="{DynamicResource ProductStimulusBorder}" CornerRadius="16">
+      <TextBlock Text="{Binding Name}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+    </Border>
+  </DataTemplate>
+  <!-- Figma 248:3704. Scoped themes preserve ComboBox, CheckBox and calendar behavior. -->
+  <ControlTheme x:Key="HistoryComboBoxItemTheme" TargetType="ComboBoxItem">
+    <Setter Property="MinHeight" Value="32"/>
+    <Setter Property="Padding" Value="12,6"/>
+    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="Foreground" Value="{DynamicResource ProductText}"/>
+    <Setter Property="FontSize" Value="14"/>
+    <Setter Property="HorizontalContentAlignment" Value="Left"/>
+    <Setter Property="VerticalContentAlignment" Value="Center"/>
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border
+          x:Name="ItemSurface"
+          Margin="4,1"
+          Padding="{TemplateBinding Padding}"
+          Background="{TemplateBinding Background}"
+          CornerRadius="4"
+        >
+          <ContentPresenter
+            Content="{TemplateBinding Content}"
+            ContentTemplate="{TemplateBinding ContentTemplate}"
+            HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+            VerticalAlignment="Center"
+          />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:pointerover /template/ Border#ItemSurface">
+      <Setter Property="Background" Value="{DynamicResource ProductTabSurface}"/>
+    </Style>
+    <Style Selector="^:selected">
+      <Setter Property="Foreground" Value="{DynamicResource ProductPrimary}"/>
+    </Style>
+    <Style Selector="^:selected /template/ Border#ItemSurface">
+      <Setter Property="Background" Value="{DynamicResource ProductTabSurface}"/>
+    </Style>
+  </ControlTheme>
+  <ControlTheme x:Key="HistoryComboBoxTheme" TargetType="ComboBox">
+    <Setter Property="Height" Value="32"/>
+    <Setter Property="MinHeight" Value="32"/>
+    <Setter Property="Background" Value="{DynamicResource ProductSurface}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource ProductStimulusInputBorder}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="CornerRadius" Value="6"/>
+    <Setter Property="Foreground" Value="{DynamicResource ProductText}"/>
+    <Setter Property="FontFamily" Value="{DynamicResource AlibabaPuHuiTi}"/>
+    <Setter Property="FontSize" Value="14"/>
+    <Setter Property="HorizontalContentAlignment" Value="Left"/>
+    <Setter Property="VerticalContentAlignment" Value="Center"/>
+    <Setter Property="Cursor" Value="Hand"/>
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Grid ColumnDefinitions="*,28">
+          <Border
+            x:Name="PART_Background"
+            Grid.ColumnSpan="2"
+            Background="{TemplateBinding Background}"
+            BorderBrush="{TemplateBinding BorderBrush}"
+            BorderThickness="{TemplateBinding BorderThickness}"
+            CornerRadius="{TemplateBinding CornerRadius}"
+          />
+          <ContentControl
+            Margin="12,0,0,0"
+            HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+            VerticalContentAlignment="Center"
+            Content="{TemplateBinding SelectionBoxItem}"
+            ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+            Foreground="{TemplateBinding Foreground}"
+          />
+          <Image
+            x:Name="DropDownIcon"
+            Grid.Column="1"
+            Width="20"
+            Height="20"
+            Margin="0,0,8,0"
+            IsHitTestVisible="False"
+            Source="{SvgImage /Assets/Images/history/down.svg}"
+          />
+          <Popup
+            Name="PART_Popup"
+            MinWidth="{Binding Bounds.Width, RelativeSource={RelativeSource TemplatedParent}}"
+            MaxHeight="{TemplateBinding MaxDropDownHeight}"
+            IsLightDismissEnabled="True"
+            IsOpen="{TemplateBinding IsDropDownOpen, Mode=TwoWay}"
+            Placement="BottomEdgeAlignedLeft"
+            PlacementTarget="{Binding #PART_Background}"
+          >
+            <Border
+              Margin="0,4,0,0"
+              Padding="0,4"
+              Background="{DynamicResource ProductSurface}"
+              BorderBrush="{DynamicResource ProductStimulusInputBorder}"
+              BorderThickness="1"
+              CornerRadius="6"
+              BoxShadow="0 2 8 0 #1F6885B3"
+            >
+              <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+                <ItemsPresenter Name="PART_ItemsPresenter" ItemsPanel="{TemplateBinding ItemsPanel}"/>
+              </ScrollViewer>
+            </Border>
+          </Popup>
+        </Grid>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:focus /template/ Border#PART_Background">
+      <Setter Property="BorderBrush" Value="{DynamicResource ProductPrimary}"/>
+    </Style>
+    <Style Selector="^:pointerover /template/ Border#PART_Background">
+      <Setter Property="BorderBrush" Value="{DynamicResource ProductTextMuted}"/>
+    </Style>
+  </ControlTheme>
+  <ControlTheme
+    x:Key="HistoryPageSizeTheme"
+    TargetType="ComboBox"
+    BasedOn="{StaticResource HistoryComboBoxTheme}"
+  >
+    <Setter Property="CornerRadius" Value="2"/>
+    <Style Selector="^ /template/ Image#DropDownIcon">
+      <Setter Property="Source" Value="{SvgImage /Assets/Images/history/page-size.svg}"/>
+      <Setter Property="Width" Value="24"/>
+      <Setter Property="Height" Value="24"/>
+      <Setter Property="Margin" Value="0"/>
+    </Style>
+  </ControlTheme>
+  <ControlTheme x:Key="HistoryCheckBoxTheme" TargetType="CheckBox">
+    <Setter Property="MinHeight" Value="20"/>
+    <Setter Property="Padding" Value="0"/>
+    <Setter Property="FontSize" Value="14"/>
+    <Setter Property="Foreground" Value="{DynamicResource ProductText}"/>
+    <Setter Property="Cursor" Value="Hand"/>
+    <Setter Property="Template">
+      <ControlTemplate>
+        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="8">
+          <Grid Width="16" Height="16">
+            <Border
+              Background="{DynamicResource ProductSurface}"
+              BorderBrush="#BAC4D3"
+              BorderThickness="1"
+              CornerRadius="2"
+            />
+            <Image
+              x:Name="CheckedIcon"
+              Width="16"
+              Height="16"
+              IsVisible="False"
+              Source="{SvgImage /Assets/Images/history/checked.svg}"
+            />
+            <Border
+              x:Name="MixedIcon"
+              IsVisible="False"
+              Background="{DynamicResource ProductPrimary}"
+              CornerRadius="2"
+            >
+              <Rectangle Width="8" Height="2" Fill="White"/>
+            </Border>
+          </Grid>
+          <ContentPresenter
+            Content="{TemplateBinding Content}"
+            ContentTemplate="{TemplateBinding ContentTemplate}"
+            VerticalAlignment="Center"
+          />
+        </StackPanel>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:checked /template/ Image#CheckedIcon">
+      <Setter Property="IsVisible" Value="True"/>
+    </Style>
+    <Style Selector="^:indeterminate /template/ Border#MixedIcon">
+      <Setter Property="IsVisible" Value="True"/>
+    </Style>
+    <Style Selector="^:disabled">
+      <Setter Property="Opacity" Value="0.45"/>
+    </Style>
+  </ControlTheme>
+  <ControlTheme x:Key="HistoryDatePickerTheme" TargetType="controls:DateSelectionPicker">
+    <Setter Property="Height" Value="30"/>
+    <Setter Property="Background" Value="{DynamicResource ProductSurface}"/>
+    <Setter Property="BorderThickness" Value="0"/>
+    <Setter Property="CornerRadius" Value="4"/>
+    <Setter Property="Cursor" Value="Hand"/>
+    <Setter Property="FontFamily" Value="{DynamicResource AlibabaPuHuiTi}"/>
+    <Setter Property="FontSize" Value="14"/>
+    <Setter Property="Foreground" Value="{DynamicResource ProductText}"/>
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Grid>
+          <CalendarDatePicker
+            x:Name="PART_DatePicker"
+            MinHeight="30"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Stretch"
+            Padding="9,4"
+            Background="{TemplateBinding Background}"
+            BorderThickness="0"
+            CornerRadius="{TemplateBinding CornerRadius}"
+            CustomDateFormatString="yyyy-MM-dd"
+            FontFamily="{TemplateBinding FontFamily}"
+            FontSize="{TemplateBinding FontSize}"
+            Foreground="{TemplateBinding Foreground}"
+            PlaceholderText="输入日期"
+            SelectedDateFormat="Custom"
+            VerticalContentAlignment="Center"
+            PlaceholderForeground="{DynamicResource ProductStimulusDisabledText}"
+          >
+            <CalendarDatePicker.Styles>
+              <Style Selector="TextBox#PART_TextBox">
+                <Setter Property="IsReadOnly" Value="True"/>
+                <Setter
+                  Property="PlaceholderForeground"
+                  Value="{DynamicResource ProductStimulusDisabledText}"
+                />
+                <Setter Property="Background" Value="{DynamicResource ProductSurface}"/>
+                <Setter Property="BorderThickness" Value="0"/>
+                <Setter Property="MinHeight" Value="30"/>
+                <Setter Property="Height" Value="30"/>
+                <Setter Property="FontSize" Value="14"/>
+              </Style>
+              <Style Selector="TextBox#PART_TextBox /template/ Border:nth-child(2)">
+                <Setter Property="Background" Value="{DynamicResource ProductSurface}"/>
+              </Style>
+            </CalendarDatePicker.Styles>
+          </CalendarDatePicker>
+          <Border
+            Width="30"
+            Margin="0,1,1,1"
+            HorizontalAlignment="Right"
+            Background="{TemplateBinding Background}"
+            CornerRadius="0,4,4,0"
+            IsHitTestVisible="False"
+          >
+            <Image Width="20" Height="20" Source="{SvgImage /Assets/Images/history/calendar.svg}"/>
+          </Border>
+        </Grid>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+</ResourceDictionary>

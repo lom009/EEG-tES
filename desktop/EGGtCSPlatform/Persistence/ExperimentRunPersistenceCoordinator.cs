@@ -19,7 +19,7 @@ public sealed record ExperimentRunPreparation(
     TimeSpan BlankingDuration,
     TimeSpan StimulationDuration,
     TimeSpan RecoveryDuration,
-    ExperimentConfigurationTemplate? Configuration = null
+    ExperimentConfigurationTemplate Configuration
 );
 
 public interface IActiveExperimentSession
@@ -33,7 +33,7 @@ public interface IExperimentRunPersistenceCoordinator : IActiveExperimentSession
 {
     CancellationToken RunCancellationToken { get; }
     void ReportProgress(Guid runId, ExperimentRunStage stage, int cycle, TimeSpan elapsed);
-    Task PrepareAsync(
+    Task<ExperimentConfigurationSaveResult> PrepareAsync(
         ExperimentRunPreparation preparation,
         string deviceId,
         CancellationToken cancellationToken = default
@@ -150,7 +150,7 @@ public sealed class ExperimentRunPersistenceCoordinator(
         }
     }
 
-    public async Task PrepareAsync(
+    public async Task<ExperimentConfigurationSaveResult> PrepareAsync(
         ExperimentRunPreparation preparation,
         string deviceId,
         CancellationToken cancellationToken = default
@@ -164,63 +164,110 @@ public sealed class ExperimentRunPersistenceCoordinator(
             cancellationToken,
             Log
         );
+        ArgumentNullException.ThrowIfNull(preparation.Configuration);
         await _gate.WaitAsync(cancellationToken);
         try
         {
             if (IsActive)
                 throw new InvalidOperationException("已有实验运行正在持久化。");
-            var now = DateTimeOffset.UtcNow;
-            await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
-            var experiment = await db.Experiments.SingleAsync(
-                x => x.Id == preparation.ExperimentId,
-                cancellationToken
-            );
-            db.ExperimentRuns.Add(
-                new ExperimentRunEntity
-                {
-                    Id = preparation.RunId,
-                    ConfigurationJson = preparation.Configuration is null
-                        ? null
-                        : JsonSerializer.Serialize(preparation.Configuration),
-                    Experiment = experiment,
-                    ApplicationSessionId = applicationSession.Id,
-                    Status = ExperimentRunStatus.Preparing,
-                    RunMode = preparation.RunMode,
-                    CycleCount = preparation.CycleCount,
-                    SampleRateHz = preparation.SampleRateHz,
-                    AcquisitionDurationMilliseconds = preparation
-                        .AcquisitionDuration
-                        .TotalMilliseconds,
-                    BlankingDurationMilliseconds = preparation.BlankingDuration.TotalMilliseconds,
-                    StimulationDurationMilliseconds = preparation
-                        .StimulationDuration
-                        .TotalMilliseconds,
-                    RecoveryDurationMilliseconds = preparation.RecoveryDuration.TotalMilliseconds,
-                    CreatedAtUtc = now,
-                    LastHeartbeatAtUtc = now,
-                }
-            );
-            experiment.Status = ExperimentStatus.Running;
-            experiment.UpdatedAtUtc = now;
-            await db.SaveChangesAsync(cancellationToken);
-            lock (_progressGate)
+            for (var attempt = 0; ; attempt++)
             {
-                _runCancellation?.Dispose();
-                _runCancellation = new CancellationTokenSource();
-                _runId = preparation.RunId;
-                _latestElapsedMilliseconds = 0d;
-                _deviceId = deviceId;
-                _activeStage = null;
-                _lastStage = null;
-                _activeCycle = 0;
+                try
+                {
+                    var now = DateTimeOffset.UtcNow;
+                    await using var db = await contextFactory.CreateDbContextAsync(
+                        cancellationToken
+                    );
+                    await using var transaction = await db.Database.BeginTransactionAsync(
+                        cancellationToken
+                    );
+                    var configuration = AcquisitionOnlyConfiguration.Normalize(
+                        preparation.Configuration with
+                        {
+                            SampleRateHz = preparation.SampleRateHz,
+                            Timing = new ExperimentTimingTemplate(
+                                Enum.Parse<ViewModels.Pages.ExperimentRunMode>(preparation.RunMode),
+                                preparation.AcquisitionDuration.TotalMilliseconds,
+                                preparation.BlankingDuration.TotalMilliseconds,
+                                preparation.StimulationDuration.TotalMilliseconds,
+                                preparation.RecoveryDuration.TotalMilliseconds,
+                                preparation.CycleCount
+                            ),
+                        }
+                    );
+                    var (experiment, created) = await ExperimentConfigurationWriter.ResolveAsync(
+                        db,
+                        preparation.ExperimentId,
+                        configuration,
+                        cancellationToken
+                    );
+                    ExperimentConfigurationWriter.ReplaceDraft(
+                        db,
+                        experiment,
+                        configuration,
+                        experiment
+                            .ImpedanceSnapshots.Select(i => new ImpedanceSnapshotValue(
+                                i.SiteId,
+                                i.Kind,
+                                i.KiloOhms,
+                                i.Passed,
+                                i.MeasuredAtUtc
+                            ))
+                            .ToArray()
+                    );
+                    db.ExperimentRuns.Add(
+                        new ExperimentRunEntity
+                        {
+                            Id = preparation.RunId,
+                            ConfigurationJson = JsonSerializer.Serialize(configuration),
+                            Experiment = experiment,
+                            ApplicationSessionId = applicationSession.Id,
+                            Status = ExperimentRunStatus.Preparing,
+                            RunMode = configuration.Timing.Mode.ToString(),
+                            CycleCount = configuration.Timing.CycleCount,
+                            SampleRateHz = configuration.SampleRateHz,
+                            AcquisitionDurationMilliseconds = configuration
+                                .Timing
+                                .AcquisitionMilliseconds,
+                            BlankingDurationMilliseconds = configuration
+                                .Timing
+                                .BlankingMilliseconds,
+                            StimulationDurationMilliseconds = configuration
+                                .Timing
+                                .StimulationMilliseconds,
+                            RecoveryDurationMilliseconds = configuration
+                                .Timing
+                                .RecoveryMilliseconds,
+                            CreatedAtUtc = now,
+                            LastHeartbeatAtUtc = now,
+                        }
+                    );
+                    experiment.Status = ExperimentStatus.Running;
+                    experiment.UpdatedAtUtc = now;
+                    await db.SaveChangesAsync(cancellationToken);
+                    await transaction.CommitAsync(cancellationToken);
+                    lock (_progressGate)
+                    {
+                        _runCancellation?.Dispose();
+                        _runCancellation = new CancellationTokenSource();
+                        _runId = preparation.RunId;
+                        _latestElapsedMilliseconds = 0d;
+                        _deviceId = deviceId;
+                        _activeStage = null;
+                        _lastStage = null;
+                        _activeCycle = 0;
+                    }
+                    _eventSequence = 0;
+                    _heartbeatCancellation?.Dispose();
+                    _heartbeatCancellation = new CancellationTokenSource();
+                    _heartbeatTask = RunHeartbeatAsync(_runId, _heartbeatCancellation.Token);
+                    operation.Complete(
+                        $"experimentId={preparation.ExperimentId}; deviceId={deviceId}; prepared=true"
+                    );
+                    return new(experiment.Id, experiment.ExperimentCode, created);
+                }
+                catch (DbUpdateException) when (attempt < 4) { }
             }
-            _eventSequence = 0;
-            _heartbeatCancellation?.Dispose();
-            _heartbeatCancellation = new CancellationTokenSource();
-            _heartbeatTask = RunHeartbeatAsync(_runId, _heartbeatCancellation.Token);
-            operation.Complete(
-                $"experimentId={preparation.ExperimentId}; deviceId={deviceId}; prepared=true"
-            );
         }
         finally
         {

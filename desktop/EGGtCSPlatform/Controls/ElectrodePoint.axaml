@@ -35,54 +35,73 @@
                 <GradientStop Color="{StaticResource ProductColorPointBottom}" Offset="0.882333" />
               </LinearGradientBrush>
             </Border.Background>
-            <TextBlock
-              x:Name="PointLabel"
-              ClipToBounds="False"
-              HorizontalAlignment="Center"
-              VerticalAlignment="Center"
-              FontFamily="{DynamicResource AlibabaPuHuiTi}"
-              FontWeight="Bold"
-              FontSize="{DynamicResource ProductPointFontSize}"
-              Foreground="{DynamicResource ProductText}"
-              LineHeight="{DynamicResource ProductPointLineHeight}"
-              MaxLines="2"
-              Text="{TemplateBinding Label}"
-              TextAlignment="Center"
-              TextTrimming="None"
-            />
+            <Grid>
+              <TextBlock
+                x:Name="PointLabel"
+                ClipToBounds="False"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                FontFamily="{DynamicResource AlibabaPuHuiTi}"
+                FontWeight="Bold"
+                FontSize="{DynamicResource ProductPointFontSize}"
+                Foreground="{DynamicResource ProductText}"
+                LineHeight="{DynamicResource ProductPointLineHeight}"
+                MaxLines="40"
+                Text="{TemplateBinding Label}"
+                TextAlignment="Center"
+                TextTrimming="None"
+              />
+              <Grid x:Name="SharedSurface" RowDefinitions="7*,3*"
+                    DataContext="{TemplateBinding Site}" x:DataType="pages:ElectrodeSiteViewModel">
+                <Grid.Clip><EllipseGeometry Rect="0,0,40,40" /></Grid.Clip>
+                <Border Grid.Row="0" Background="{Binding StimulationColor}">
+                  <Viewbox Stretch="Uniform" Margin="3,3,3,0" MaxHeight="20">
+                    <TextBlock Text="{Binding UiPositionLabel}" FontSize="11" FontWeight="Bold"
+                               Foreground="{Binding StimulationForeground}" />
+                  </Viewbox>
+                </Border>
+                <Border Grid.Row="1" Background="{Binding AcquisitionColor}">
+                  <TextBlock Text="{Binding AcquisitionLabel}" FontSize="11" FontWeight="Bold"
+                             HorizontalAlignment="Center" VerticalAlignment="Center"
+                             Foreground="{Binding AcquisitionForeground}" />
+                </Border>
+                <Border Grid.Row="0" Height="2" Background="#FFFFFF" VerticalAlignment="Bottom">
+                  <Line IsVisible="{Binding ShowSharedDivider}" StartPoint="0,1" EndPoint="40,1" Stroke="#475569" StrokeThickness="1" StrokeDashArray="2,2" />
+                </Border>
+              </Grid>
+            </Grid>
           </Border>
         </Button>
       </ControlTemplate>
     </Setter>
+    <Style Selector="^ /template/ Grid#SharedSurface">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+    <Style Selector="^:shared /template/ TextBlock#PointLabel">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+    <Style Selector="^:shared /template/ Grid#SharedSurface">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
     <Style Selector="^:multiline /template/ TextBlock#PointLabel, ^:stimulus /template/ TextBlock#PointLabel">
       <Setter Property="FontSize" Value="{DynamicResource ProductPointMultilineFontSize}" />
     </Style>
     <Style Selector="^:back">
       <Setter Property="RenderTransform" Value="rotate(180deg)" />
     </Style>
-    <Style Selector="^:stimulus /template/ Border#PointSurface">
-      <Setter Property="Background" Value="{DynamicResource ProductSelected}" />
-      <Setter Property="BorderBrush" Value="{DynamicResource ProductSurface}" />
-      <Setter Property="BoxShadow" Value="0 4 8 0 #332F86FF" />
-    </Style>
-    <Style Selector="^:red-stimulus /template/ Border#PointSurface">
-      <Setter Property="Background" Value="{DynamicResource ProductSelected}" />
-      <Setter Property="BorderBrush" Value="{DynamicResource ProductSurface}" />
-      <Setter Property="BoxShadow" Value="0 4 8 0 #332F86FF" />
-    </Style>
-    <Style Selector="^:blue-stimulus /template/ Border#PointSurface">
-      <Setter Property="Background" Value="{DynamicResource ProductSelected}" />
-      <Setter Property="BorderBrush" Value="{DynamicResource ProductSurface}" />
+    <Style Selector="^:stimulus /template/ Border#PointSurface, ^:red-stimulus /template/ Border#PointSurface, ^:blue-stimulus /template/ Border#PointSurface">
+      <Setter Property="Background" Value="#E9EBFF" />
+      <Setter Property="BorderBrush" Value="#3941B6" />
       <Setter Property="BoxShadow" Value="0 4 8 0 #332F86FF" />
     </Style>
     <Style Selector="^:acquisition /template/ Border#PointSurface, ^:reference /template/ Border#PointSurface, ^:ground /template/ Border#PointSurface">
-      <Setter Property="Background" Value="{DynamicResource ProductSelected}" />
-      <Setter Property="BorderBrush" Value="{DynamicResource ProductSurface}" />
+      <Setter Property="Background" Value="#E9EBFF" />
+      <Setter Property="BorderBrush" Value="#3941B6" />
       <Setter Property="BoxShadow" Value="0 4 8 0 #332F86FF" />
       <Setter Property="CornerRadius" Value="25" />
     </Style>
-    <Style Selector="^:stimulus /template/ TextBlock#PointLabel, ^:acquisition /template/ TextBlock#PointLabel, ^:reference /template/ TextBlock#PointLabel, ^:ground /template/ TextBlock#PointLabel">
-      <Setter Property="Foreground" Value="{DynamicResource ProductSurface}" />
+    <Style Selector="^:stimulus /template/ TextBlock#PointLabel, ^:red-stimulus /template/ TextBlock#PointLabel, ^:blue-stimulus /template/ TextBlock#PointLabel, ^:acquisition /template/ TextBlock#PointLabel, ^:reference /template/ TextBlock#PointLabel, ^:ground /template/ TextBlock#PointLabel">
+      <Setter Property="Foreground" Value="#3941B6" />
     </Style>
     <Style Selector="^:excellent /template/ Border#PointSurface">
       <Setter Property="Background" Value="{DynamicResource ProductExcellent}" />
@@ -105,7 +124,7 @@
       <Setter Property="BorderBrush" Value="{DynamicResource ProductSurface}" />
     </Style>
     <Style Selector="^:medium /template/ TextBlock#PointLabel">
-      <Setter Property="Foreground" Value="{DynamicResource ProductText}" />
+      <Setter Property="Foreground" Value="{DynamicResource ProductSurface}" />
     </Style>
     <Style Selector="^:excellent /template/ TextBlock#PointLabel, ^:good /template/ TextBlock#PointLabel, ^:poor /template/ TextBlock#PointLabel, ^:bad /template/ TextBlock#PointLabel">
       <Setter Property="Foreground" Value="{DynamicResource ProductSurface}" />

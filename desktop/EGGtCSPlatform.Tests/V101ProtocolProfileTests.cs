@@ -9,8 +9,33 @@ namespace EGGtCSPlatform.Tests;
 
 public sealed class EggtCsProtocolProfileTests
 {
+    [Theory]
+    [InlineData(EggtCsRevisions.V101)]
+    [InlineData(EggtCsRevisions.V102)]
+    public void BatteryOnlyFrameHasNoOperationButExplicitUnknownDoes(string revision)
+    {
+        var profile = new EggtCsProtocolProfile(
+            EggtCsProtocolOptions.CreateTestDefaults().ForRevision(revision)
+        );
+        var codec = new EggtCsFrameCodec(new EggtCsUnverifiedFixedChecksum());
+        var frame = Assert.Single(codec.Feed(Convert.FromHexString("AACC0108844FFFFF"), true));
+        var battery = Assert.IsType<DeviceStatusResponse>(profile.Decode(frame).Value);
+        Assert.False(battery.HasOperationState);
+        Assert.Equal(79, battery.BatteryPercent);
+        Assert.Equal(DeviceOperationState.Unknown, battery.Operation);
+        var explicitUnknown = Assert.IsType<DeviceStatusResponse>(
+            profile.Decode(new(1, 0x84, new byte[] { 0xFF, 79 })).Value
+        );
+        Assert.True(explicitUnknown.HasOperationState);
+        Assert.Equal(DeviceOperationState.Unknown, explicitUnknown.Operation);
+        var (status, operation, percent) = battery;
+        Assert.Equal(DeviceCommandStatus.Success, status);
+        Assert.Equal(DeviceOperationState.Unknown, operation);
+        Assert.Equal(79, percent);
+    }
+
     private readonly EggtCsProtocolProfile _profile = new(
-        EggtCsProtocolOptions.CreateTestDefaults()
+        EggtCsProtocolOptions.CreateTestDefaults().ForRevision(EggtCsRevisions.V101)
     );
 
     [Fact]
@@ -584,7 +609,7 @@ public sealed class EggtCsProtocolProfileTests
             options.GetTimeout(typeof(ControlAcquisitionRequest))
         );
         Assert.Throws<NotSupportedException>(() =>
-            new EggtCsProtocolOptions(new Dictionary<Type, TimeSpan>(), revision: "1.0.2")
+            new EggtCsProtocolOptions(new Dictionary<Type, TimeSpan>(), revision: "9.9.9")
         );
     }
 

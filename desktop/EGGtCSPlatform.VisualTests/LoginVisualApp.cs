@@ -1,6 +1,8 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Automation.Peers;
+using Avalonia.Automation.Provider;
 using Avalonia.Media.Imaging;
 using Avalonia.VisualTree;
 using EGGtCSPlatform.Views;
@@ -29,6 +31,19 @@ public sealed class LoginVisualApp : App
                 inputs[1].Focus();
                 await Task.Delay(200);
                 Capture("login-filled");
+                var remember = window.GetVisualDescendants().OfType<CheckBox>().Single();
+                ((IInvokeProvider)new ButtonAutomationPeer(remember)).Invoke();
+                await Task.Delay(100);
+                if (remember.IsChecked != true) throw new Exception("Remember checkbox did not become checked.");
+                var icon = remember.GetVisualDescendants().OfType<Image>().Single(image => image.Name == "CheckedIcon");
+                if (!icon.IsVisible || icon.Width != 16 || icon.Height != 16)
+                    throw new Exception("Remember checkbox is not using the history selection icon.");
+                Capture("login-remember-checked");
+                ((IInvokeProvider)new ButtonAutomationPeer(remember)).Invoke();
+                await Task.Delay(100);
+                if (remember.IsChecked != false || icon.IsVisible)
+                    throw new Exception("Remember checkbox did not return to unchecked state.");
+                Capture("login-remember-unchecked");
                 desktop.Shutdown(0);
             }
             catch (Exception ex)
@@ -41,7 +56,7 @@ public sealed class LoginVisualApp : App
                 var content = (Control)window.Content!;
                 using var bitmap = new RenderTargetBitmap(new PixelSize((int)content.Bounds.Width, (int)content.Bounds.Height));
                 bitmap.Render(content);
-                bitmap.Save(Path.Combine(output, name + ".png"));
+                bitmap.Save(Path.Combine(output, name + ".png"), PngBitmapEncoderOptions.Default);
             }
         };
         window.Show();

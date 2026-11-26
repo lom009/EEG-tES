@@ -1,22 +1,116 @@
-<UserControl
-  xmlns="https://github.com/avaloniaui"
-  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-  xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-  xmlns:pages="clr-namespace:EGGtCSPlatform.ViewModels.Pages"
-  x:Class="EGGtCSPlatform.Views.Pages.ToleranceTestPageView"
-  x:DataType="pages:ToleranceTestPageViewModel"
-  mc:Ignorable="d"
->
-  <Border Background="#F5F7FB">
-    <TextBlock
-      HorizontalAlignment="Center"
-      VerticalAlignment="Center"
-      FontFamily="{DynamicResource AlibabaPuHuiTi}"
-      FontWeight="Medium"
-      FontSize="{DynamicResource FontSize28}"
-      Foreground="#232B38"
-      Text="{Binding PageTitle}"
-    />
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:pages="clr-namespace:EGGtCSPlatform.ViewModels.Pages" xmlns:data="clr-namespace:EGGtCSPlatform.Persistence" x:Class="EGGtCSPlatform.Views.Pages.ToleranceTestPageView" x:DataType="pages:ToleranceTestPageViewModel" FontFamily="{DynamicResource AlibabaPuHuiTi}" Foreground="#232B38">
+  <UserControl.Styles>
+    <Style Selector="Border.card">
+      <Setter Property="BorderBrush" Value="#E1EAF8"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="CornerRadius" Value="6"/>
+      <Setter Property="Padding" Value="16"/>
+    </Style>
+    <Style Selector="TextBlock.heading">
+      <Setter Property="FontSize" Value="16"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
+    <Style Selector="TextBlock.muted">
+      <Setter Property="Foreground" Value="#7B8EAB"/>
+    </Style>
+  </UserControl.Styles>
+  <Border Margin="24,0,24,24" Padding="16,20" Background="White" CornerRadius="8" BoxShadow="0 4 12 0 #246885B3">
+    <Grid RowDefinitions="Auto,16,*" MinWidth="640">
+      <Border Classes="card">
+        <StackPanel Spacing="16">
+          <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="8"><Path Data="M2,1 H14 V15 H2 Z M5,4 H7 V6 H5 Z M9,5 H12 M5,9 H12 M5,12 H12" Width="16" Height="16" VerticalAlignment="Center" Stroke="#232B38" StrokeThickness="1.6"/><TextBlock Classes="heading" Text="测试信息"/></StackPanel>
+          <Grid ColumnDefinitions="*,12,*,12,*">
+            <Border Background="#F8FAFC" CornerRadius="4" Padding="24,14" MinHeight="82">
+              <StackPanel Spacing="8">
+                <TextBlock Classes="muted" Text="被试ID"/>
+                <TextBlock Text="{Binding SubjectId}" FontSize="16" FontWeight="Medium" TextWrapping="Wrap"/>
+              </StackPanel>
+            </Border>
+            <Border Grid.Column="2" Background="#F8FAFC" CornerRadius="4" Padding="24,14" MinHeight="82">
+              <StackPanel Spacing="8">
+                <TextBlock Classes="muted" Text="刺激配置"/>
+                <TextBlock Text="{Binding Summary}" FontSize="16" FontWeight="Medium"/>
+              </StackPanel>
+            </Border>
+            <Border Grid.Column="4" Background="#F8FAFC" CornerRadius="4" Padding="24,14" MinHeight="82">
+              <StackPanel Spacing="8">
+                <TextBlock Classes="muted" Text="点位"/>
+                <TextBlock Text="{Binding Sites}" FontSize="16" FontWeight="Medium" TextWrapping="Wrap"/>
+              </StackPanel>
+            </Border>
+          </Grid>
+        </StackPanel>
+      </Border>
+      <Grid Grid.Row="2" ColumnDefinitions="*,16,*">
+        <Border x:Name="AdjustmentPanel" Classes="card">
+          <Grid RowDefinitions="Auto,16,*">
+            <Grid ColumnDefinitions="*,Auto">
+              <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="8"><Path Data="M2,1 H14 V15 H2 Z M5,4 H7 V6 H5 Z M9,5 H12 M5,9 H12 M5,12 H12" Width="16" Height="16" VerticalAlignment="Center" Stroke="#232B38" StrokeThickness="1.6"/><TextBlock Classes="heading" Text="耐受度测试"/></StackPanel>
+              <Button Grid.Column="1" CornerRadius="6" Width="88" Height="32" Padding="0" AutomationProperties.Name="重置" Command="{Binding ResetCommand}"><StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="8"><Image Source="/Assets/Images/tolerance-reset.png" Width="16" Height="16"/><TextBlock Text="重置"/></StackPanel></Button>
+            </Grid>
+            <Border Grid.Row="2" Background="#F5F7FA" CornerRadius="8" Padding="16,20">
+              <Grid RowDefinitions="*,48">
+              <ScrollViewer x:Name="AdjustmentScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="24">
+                  <Border Background="#FFF0EB" CornerRadius="16" HorizontalAlignment="Center" Padding="16,2">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="8"><Path Data="M7,1 A6,6 0 1 1 6.99,1 Z M7,4 V8 M7,9 V10" Width="14" Height="14" VerticalAlignment="Center" Stroke="#FF6949" StrokeThickness="1.6"/><TextBlock FontSize="16" LineHeight="20" Text="请逐步递增，注意被试反馈" Foreground="#FF6949" TextWrapping="Wrap" TextAlignment="Center"/></StackPanel>
+                  </Border>
+                  <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="24" ToolTip.Tip="↑ / → 增加 · ↓ / ← 减少，每次按下一步">
+                    <Button Padding="0" CornerRadius="6" Width="56" Height="56" Command="{Binding DecreaseCommand}" AutomationProperties.Name="降低电流"><Path Data="M1,10 H19" Width="20" Height="20" VerticalAlignment="Center" Stroke="#232B38" StrokeThickness="1.6"/></Button>
+                    <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                      <TextBlock Text="{Binding CurrentText}" FontSize="40" FontWeight="SemiBold"/>
+                      <TextBlock Text="mA" Classes="muted" VerticalAlignment="Bottom" Margin="0,0,0,7"/>
+                    </StackPanel>
+                    <Button Padding="0" CornerRadius="6" Width="56" Height="56" Command="{Binding IncreaseCommand}" AutomationProperties.Name="增加电流"><Path Data="M1,10 H19 M10,1 V19" Width="20" Height="20" VerticalAlignment="Center" Stroke="#232B38" StrokeThickness="1.6"/></Button>
+                  </StackPanel>
+                  <TextBlock Text="{Binding LimitsText}" Classes="muted" TextWrapping="Wrap" TextAlignment="Center" MaxWidth="340"/>
+                  <Button x:Name="SaveResultButton" CornerRadius="6" Width="178" Height="32" AutomationProperties.Name="保存本次耐受度数据" Command="{Binding SaveCommand}" Background="#36A16D" Foreground="White" HorizontalAlignment="Center" Padding="0"><StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="8"><Image Source="{SvgImage /Assets/Images/check-double-line.svg}" Width="20" Height="20" VerticalAlignment="Center"/><TextBlock Text="保存本次耐受度数据" FontWeight="SemiBold"/></StackPanel></Button>
+                </StackPanel>
+              </ScrollViewer>
+                <ScrollViewer Grid.Row="1" MaxWidth="340" Margin="0,8,0,0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                  <TextBlock Text="{Binding StatusText}" TextWrapping="Wrap" TextAlignment="Center"/>
+                </ScrollViewer>
+              </Grid>
+            </Border>
+          </Grid>
+        </Border>
+        <Border x:Name="RecordsPanel" Grid.Column="2" Classes="card">
+          <Grid RowDefinitions="Auto,16,*">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="8"><Path Data="M2,1 H14 V15 H2 Z M5,4 H7 V6 H5 Z M9,5 H12 M5,9 H12 M5,12 H12" Width="16" Height="16" VerticalAlignment="Center" Stroke="#232B38" StrokeThickness="1.6"/><TextBlock x:Name="RecordsTitle" Classes="heading" Text="本轮测试记录"/></StackPanel>
+            <Viewbox x:Name="EmptyRecords" Grid.Row="2" Stretch="Uniform" StretchDirection="DownOnly" IsVisible="{Binding !HasRecords}">
+              <StackPanel Spacing="12">
+                <Image Source="/Assets/Images/tolerance-records-empty.png" Width="192" Height="192"/>
+                <TextBlock Text="暂无测试记录" Classes="heading" HorizontalAlignment="Center"/>
+                <TextBlock Text="完成首次耐受度测试并保存后，记录将显示在这里" Classes="muted" TextWrapping="Wrap" TextAlignment="Center"/>
+              </StackPanel>
+            </Viewbox>
+            <Grid Grid.Row="2" RowDefinitions="Auto,*" IsVisible="{Binding HasRecords}">
+              <Border x:Name="RecordsHeader" Background="#F5F7FA" Padding="14">
+                <Grid ColumnDefinitions="50,*,1.5*">
+                  <TextBlock Text="次数"/>
+                  <TextBlock Grid.Column="1" Text="阈值"/>
+                  <TextBlock Grid.Column="2" Text="测试时间"/>
+                </Grid>
+              </Border>
+              <ScrollViewer x:Name="RecordsScroll" Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <ItemsControl ItemsSource="{Binding RecordRows}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="data:ToleranceResultRow">
+                      <Border Padding="14,18" BorderBrush="#E5EDF8" BorderThickness="0,0,0,1">
+                        <Grid ColumnDefinitions="50,*,1.5*">
+                          <TextBlock Text="{Binding Number}"/>
+                          <TextBlock Grid.Column="1" Text="{Binding Result.CurrentText}"/>
+                          <TextBlock Grid.Column="2" Text="{Binding Result.TimeText}" TextWrapping="Wrap"/>
+                        </Grid>
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </ScrollViewer>
+            </Grid>
+          </Grid>
+        </Border>
+      </Grid>
+    </Grid>
   </Border>
 </UserControl>

@@ -13,6 +13,71 @@ namespace EGGtCSPlatform.Tests;
 public sealed class DeviceSessionTests
 {
     [Fact]
+    public async Task ToleranceCapabilityStartsAndConfirmsZeroWithoutProgressEvents()
+    {
+        var (session, transport, codec) = await CreateSessionAsync();
+        await using var device = new SessionEggtCsDevice(
+            new(new("tolerance-test"), "test", null, null),
+            DeviceCapabilities.Simulator,
+            session
+        );
+        var start = device.Tolerance!.StartAsync();
+        var sent = await WaitForSentPacketAsync(transport);
+        Assert.Equal(new byte[] { 0x4C, 3, 0, 0 }, sent.Skip(4).Take(4));
+        Assert.False(start.IsCompleted);
+        transport.Inject(codec.Encode(new WireMessage(sent[2], 0xCC, new byte[] { 0 })));
+        Assert.True((await start).IsSuccess);
+        Assert.Equal(DeviceOperationState.Stimulating, device.State.Operation);
+        var confirm = device.Tolerance.AdjustCurrentAsync(CurrentAdjustment.Decrease);
+        sent = await WaitForSentPacketAsync(transport, expectedCount: 2);
+        Assert.Equal(new byte[] { 0x51, 0x55 }, sent.Skip(4).Take(2));
+        transport.Inject(codec.Encode(new WireMessage(sent[2], 0xD1, new byte[] { 3, 0 })));
+        var response = await confirm;
+        Assert.Equal(DeviceCommandStatus.MinimumReached, response.Status);
+        Assert.Equal(0m, response.CurrentMilliAmps);
+    }
+
+    [Theory]
+    [InlineData(DeviceOperationState.Unknown)]
+    [InlineData(DeviceOperationState.Ready)]
+    [InlineData(DeviceOperationState.Acquiring)]
+    [InlineData(DeviceOperationState.Stimulating)]
+    [InlineData(DeviceOperationState.Stopping)]
+    [InlineData(DeviceOperationState.ImpedanceChecking)]
+    [InlineData(DeviceOperationState.Faulted)]
+    public async Task BatteryOnlyStatusPreservesOperationForQueryAndApply(
+        DeviceOperationState operation
+    )
+    {
+        var (session, transport, codec) = await CreateSessionAsync();
+        await using var device = new SessionEggtCsDevice(
+            new(new("battery-test"), "test", null, null),
+            DeviceCapabilities.Simulator,
+            session
+        );
+        device.ApplyStatus(new(DeviceCommandStatus.Success, operation, 100));
+        var before = device.State.UpdatedAt;
+        device.ApplyStatus(
+            new(DeviceCommandStatus.Success, DeviceOperationState.Unknown, 80)
+            {
+                HasOperationState = false,
+            }
+        );
+        Assert.Equal(operation, device.State.Operation);
+        Assert.Equal(80, device.State.BatteryPercent);
+        Assert.True(device.State.UpdatedAt >= before);
+        var pending = device.ReadStatusAsync();
+        await WaitForSentPacketAsync(transport);
+        transport.Inject(Convert.FromHexString("AACC0108844FFFFF"));
+        var response = await pending;
+        Assert.False(response.HasOperationState);
+        Assert.Equal(operation, device.State.Operation);
+        Assert.Equal(79, device.State.BatteryPercent);
+        device.ApplyStatus(new(DeviceCommandStatus.Success, DeviceOperationState.Unknown, 78));
+        Assert.Equal(DeviceOperationState.Unknown, device.State.Operation);
+    }
+
+    [Fact]
     public async Task DeviceEventPreservesTransportReceiveTimestamp()
     {
         var (session, transport, codec) = await CreateSessionAsync();

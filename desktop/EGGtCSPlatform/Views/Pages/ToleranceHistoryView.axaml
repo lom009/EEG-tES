@@ -1,0 +1,111 @@
+<UserControl
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:controls="clr-namespace:EGGtCSPlatform.Controls"
+  xmlns:views="clr-namespace:EGGtCSPlatform.Views.Pages"
+  xmlns:pages="clr-namespace:EGGtCSPlatform.ViewModels.Pages"
+  xmlns:data="clr-namespace:EGGtCSPlatform.Persistence"
+  x:Class="EGGtCSPlatform.Views.Pages.ToleranceHistoryView"
+  x:DataType="pages:ToleranceHistoryViewModel"
+  FontFamily="{DynamicResource AlibabaPuHuiTi}"
+>
+  <UserControl.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.MergedDictionaries>
+        <ResourceInclude Source="/Controls/HistoryControlThemes.axaml"/>
+      </ResourceDictionary.MergedDictionaries>
+    </ResourceDictionary>
+  </UserControl.Resources>
+  <UserControl.Styles>
+    <StyleInclude Source="/Controls/HistoryStyles.axaml"/>
+  </UserControl.Styles>
+  <Grid Classes="history-page" RowDefinitions="32,16,Auto,16,*,16,32" Margin="16,16,16,20">
+    <Grid x:Name="ToleranceFilterBar" ColumnDefinitions="1.2*,10,0.85*,10,2*,10,64,8,64">
+      <Grid>
+        <TextBox x:Name="ToleranceSearchBox" Classes="history-search" PlaceholderText="搜索被试ID" Text="{Binding SubjectId, Mode=TwoWay}">
+          <TextBox.KeyBindings><KeyBinding Gesture="Enter" Command="{Binding SearchCommand}"/></TextBox.KeyBindings>
+        </TextBox>
+        <Image Width="20" Height="20" Margin="0,0,8,0" HorizontalAlignment="Right" IsHitTestVisible="False" Source="{SvgImage /Assets/Images/history/search.svg}"/>
+      </Grid>
+      <ComboBox Grid.Column="2" Theme="{StaticResource HistoryComboBoxTheme}" ItemContainerTheme="{StaticResource HistoryComboBoxItemTheme}"
+        ItemsSource="{Binding Kinds}" SelectedItem="{Binding SelectedKind, Mode=TwoWay}">
+        <ComboBox.ItemTemplate><DataTemplate x:DataType="pages:ToleranceKindOption"><TextBlock Text="{Binding Label}"/></DataTemplate></ComboBox.ItemTemplate>
+        <ComboBox.SelectionBoxItemTemplate><DataTemplate x:DataType="pages:ToleranceKindOption"><TextBlock Text="{Binding Label}"/></DataTemplate></ComboBox.SelectionBoxItemTemplate>
+      </ComboBox>
+      <Border Grid.Column="4" BorderBrush="{DynamicResource ProductStimulusInputBorder}" BorderThickness="1" CornerRadius="4" ToolTip.Tip="测试日期（包含起止日）">
+        <Grid Margin="1,0,0,0" ColumnDefinitions="*,18,*">
+          <controls:DateSelectionPicker x:Name="ToleranceStartDatePicker" Theme="{StaticResource HistoryDatePickerTheme}" SelectedDate="{Binding StartDate, Mode=TwoWay}"/>
+          <TextBlock Grid.Column="1" Text="～" Classes="history-muted" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+          <controls:DateSelectionPicker x:Name="ToleranceEndDatePicker" Grid.Column="2" Theme="{StaticResource HistoryDatePickerTheme}" SelectedDate="{Binding EndDate, Mode=TwoWay}"/>
+        </Grid>
+      </Border>
+      <Button Grid.Column="6" Classes="history-action history-primary" Theme="{StaticResource ExperimentButtonTheme}" Command="{Binding SearchCommand}"><TextBlock Text="查询"/></Button>
+      <Button Grid.Column="8" Classes="history-action" Theme="{StaticResource ExperimentButtonTheme}" Command="{Binding ResetCommand}"><TextBlock Text="重置"/></Button>
+    </Grid>
+    <TextBlock Grid.Row="2" Text="{Binding StatusText}" Classes.history-muted="{Binding !HasError}" Classes.history-error="{Binding HasError}"
+      TextWrapping="Wrap" IsVisible="{Binding StatusText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+    <ScrollViewer x:Name="ToleranceTableScroll" Grid.Row="4" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+      <Grid Width="{Binding #ToleranceTableScroll.Viewport.Width}" MinWidth="1060" RowDefinitions="52,8,*">
+        <Border Classes="history-table-header">
+          <Grid x:Name="ToleranceTableHeader" ColumnDefinitions="{x:Static views:ToleranceHistoryView.GroupColumns}">
+            <TextBlock Grid.Column="0" Text="被试ID" Margin="16,0" VerticalAlignment="Center" Classes="history-muted" FontWeight="Medium"/>
+            <TextBlock Grid.Column="1" Text="刺激配置方案" Margin="16,0" VerticalAlignment="Center" Classes="history-muted" FontWeight="Medium"/>
+            <TextBlock Grid.Column="2" Text="选中点位" Margin="16,0" VerticalAlignment="Center" Classes="history-muted" FontWeight="Medium"/>
+            <TextBlock Grid.Column="3" Text="次数" Margin="16,0" VerticalAlignment="Center" Classes="history-muted" FontWeight="Medium"/>
+            <TextBlock Grid.Column="4" Text="最近阈值" Margin="16,0" VerticalAlignment="Center" Classes="history-muted" FontWeight="Medium"/>
+            <TextBlock Grid.Column="5" Text="最近测试时间" Margin="16,0" VerticalAlignment="Center" Classes="history-muted" FontWeight="Medium"/>
+            <TextBlock Grid.Column="6" Text="操作" Margin="16,0" VerticalAlignment="Center" Classes="history-muted" FontWeight="Medium"/>
+          </Grid>
+        </Border>
+        <ScrollViewer Grid.Row="2" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto" IsEnabled="{Binding !IsLoading}">
+          <ItemsControl ItemsSource="{Binding Groups}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="pages:ToleranceHistoryGroupViewModel">
+                <Border Classes="history-group">
+                  <Grid RowDefinitions="Auto,Auto">
+                    <Border Classes="history-group-header">
+                      <Grid Classes="tolerance-group-columns" MinHeight="52" ColumnDefinitions="{x:Static views:ToleranceHistoryView.GroupColumns}">
+                        <TextBlock Grid.Column="0" Margin="16,0" Text="{Binding SubjectId}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding SubjectId}" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="1" Margin="16,0" Text="{Binding Summary}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Summary}" VerticalAlignment="Center"/>
+                        <ItemsControl Grid.Column="2" Margin="16,8" VerticalAlignment="Center" ItemsSource="{Binding ElectrodePoints}" ItemTemplate="{StaticResource HistoryElectrodePointTemplate}" ToolTip.Tip="{Binding Sites}">
+                          <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel Orientation="Horizontal"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                        </ItemsControl>
+                        <TextBlock Grid.Column="3" Margin="16,0" Text="{Binding Count}" Classes="history-count" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="4" Margin="16,0" Text="{Binding Latest.CurrentText}" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="5" Margin="16,0" Text="{Binding Latest.TimeText}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Latest.TimeText}" VerticalAlignment="Center"/>
+                        <Button Grid.Column="6" Width="80" Margin="16,0" HorizontalAlignment="Left" VerticalAlignment="Center" Classes="history-action"
+                          Theme="{StaticResource ExperimentButtonTheme}" Command="{Binding ToggleExpandedCommand}" AutomationProperties.Name="展开或收起测试记录">
+                          <TextBlock Text="测试记录"/>
+                        </Button>
+                      </Grid>
+                    </Border>
+                    <controls:AnimatedExpander Grid.Row="1" IsExpanded="{Binding IsExpanded}">
+                      <ItemsControl Margin="16,8,16,0" ItemsSource="{Binding Rows}">
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate x:DataType="data:ToleranceResultRow">
+                            <Border Classes="history-child-row">
+                              <Grid MinHeight="42" ColumnDefinitions="80,130,240,*">
+                                <TextBlock Grid.Column="0" Margin="8,0" VerticalAlignment="Center"><Run Text="第 "/><Run Text="{Binding Number}"/><Run Text=" 次"/></TextBlock>
+                                <TextBlock Grid.Column="1" Margin="8,0" VerticalAlignment="Center"><Run Text="阈值："/><Run Text="{Binding Result.CurrentText}"/></TextBlock>
+                                <TextBlock Grid.Column="2" Margin="8,0" VerticalAlignment="Center"><Run Text="测试时间："/><Run Text="{Binding Result.TimeText}"/></TextBlock>
+                                <TextBlock Grid.Column="3" Margin="8,8" VerticalAlignment="Center" TextWrapping="Wrap"><Run Text="备注："/><Run Text="{Binding Result.Remarks}"/></TextBlock>
+                              </Grid>
+                            </Border>
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+                    </controls:AnimatedExpander>
+                  </Grid>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </ScrollViewer>
+      </Grid>
+    </ScrollViewer>
+    <controls:HistoryPagination x:Name="TolerancePaginationBar" Grid.Row="6" Unit="组" IsVisible="{Binding HasGroups}"
+      PageNumber="{Binding Page}" PageSize="{Binding PageSize, Mode=TwoWay}" PageSizes="{Binding PageSizes}"
+      TotalCount="{Binding TotalCount}" IsBusy="{Binding IsLoading}"
+      PreviousCommand="{Binding PreviousCommand}" NextCommand="{Binding NextCommand}"/>
+  </Grid>
+</UserControl>

@@ -683,6 +683,21 @@ public sealed class SimulatedEggtCsDevice : IEggtCsDevice, IDeviceCapabilitySour
     private sealed class SimulatedToleranceCapability(SimulatedEggtCsDevice owner)
         : IToleranceCapability
     {
+        public Task<DeviceCommandResult> StartAsync(CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.FromResult(
+                owner.TryStartOperation(
+                    DeviceOperationState.Stimulating,
+                    token =>
+                    {
+                        owner.SetCurrent(0m);
+                        return Task.Delay(Timeout.InfiniteTimeSpan, token);
+                    }
+                )
+            );
+        }
+
         public Task<CurrentAdjustmentResponse> AdjustCurrentAsync(
             CurrentAdjustment adjustment,
             CancellationToken cancellationToken = default

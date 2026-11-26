@@ -46,15 +46,17 @@
                     DoubleClickCommand="{Binding PointDoubleClickCommand, RelativeSource={RelativeSource AncestorType=controls:ElectrodeHeadMap}}"
                     DoubleClickCommandParameter="{Binding}"
                     IsAvailable="{Binding IsAvailable}"
+                    IsDimmed="{Binding IsDimmed}"
                     IsBackView="{Binding IsBackView, RelativeSource={RelativeSource AncestorType=controls:ElectrodeHeadMap}}"
                     IsSelected="{Binding IsSelected}"
                     IsStimulus="{Binding IsStimulus}"
-                    Label="{Binding DisplayName}"
-                    Quality="{Binding Quality}"
+                    Site="{Binding}"
+                    Label="{Binding UiDisplayName}"
+                    Quality="{Binding DisplayQuality}"
                     Role="{Binding Role}"
                     ResolvedStimulationRole="{Binding ResolvedStimulationRole}"
                     StimulationChannelRole="{Binding StimulationChannelRole}"
-                    ToolTipText="{Binding ToolTipText}"
+                    ToolTipText="{Binding UiToolTipText}"
                   />
                 </DataTemplate>
               </ItemsControl.ItemTemplate>

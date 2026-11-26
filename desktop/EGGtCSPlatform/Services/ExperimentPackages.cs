@@ -213,6 +213,9 @@ public sealed class ExperimentPackageSerializer(
                 ),
                 Timing = package.Timing with
                 {
+                    Mode = ExperimentRunMode.Manual,
+                    CycleCount = 1,
+                    BlankingMilliseconds = 0,
                     StimulationMilliseconds = 0,
                     RecoveryMilliseconds = 0,
                 },
@@ -262,7 +265,7 @@ public sealed class ExperimentPackageSerializer(
                 !stimulusOnly
                 && (
                     package.Timing.AcquisitionMilliseconds <= 0
-                    || package.Timing.BlankingMilliseconds <= 0
+                    || (!acquisitionOnly && package.Timing.BlankingMilliseconds <= 0)
                     || (!acquisitionOnly && package.Timing.RecoveryMilliseconds <= 0)
                 )
             )

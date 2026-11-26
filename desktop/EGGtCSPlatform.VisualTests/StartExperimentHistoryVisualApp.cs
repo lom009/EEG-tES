@@ -195,7 +195,19 @@ public sealed class StartExperimentHistoryVisualApp : App
                         Path.Combine(outputDirectory, "StartExperimentPage.history-page-2.png")
                     );
 
-                    viewModel.HistoryPageSize = 20;
+                    var sharedPager = content
+                        .GetVisualDescendants()
+                        .OfType<HistoryPagination>()
+                        .Single(pager => pager.Name == "HistoryPaginationBar");
+                    if (
+                        sharedPager.TotalCount != 23
+                        || sharedPager.PageNumber != 2
+                        || sharedPager.IsBusy
+                    )
+                        throw new InvalidOperationException("共享分页状态未同步。");
+                    sharedPager.FindControl<ComboBox>("PageSizeSelector")!.SelectedItem = 20;
+                    if (viewModel.HistoryPageSize != 20)
+                        throw new InvalidOperationException("共享分页大小双向绑定失败。");
                     await viewModel.RefreshHistoryCommand.ExecuteAsync(null);
                     EnsurePage(viewModel, 23, 2, 1, 20, "每页二十条");
                     await Task.Delay(100);
@@ -414,12 +426,13 @@ public sealed class StartExperimentHistoryVisualApp : App
             CancellationToken cancellationToken = default
         ) => Task.FromResult(new ExperimentDraft(1, "EXP-20260828-003", subjectCode));
 
-        public Task SaveConfigurationAsync(
+        public Task<ExperimentConfigurationSaveResult> SaveConfigurationAsync(
             long experimentId,
             ExperimentConfigurationTemplate template,
             IReadOnlyList<ImpedanceSnapshotValue> impedances,
             CancellationToken cancellationToken = default
-        ) => Task.CompletedTask;
+        ) =>
+            Task.FromResult(new ExperimentConfigurationSaveResult(experimentId, "EXP-TEST", false));
 
         public Task<ExperimentConfigurationTemplate> LoadTemplateAsync(
             long experimentId,

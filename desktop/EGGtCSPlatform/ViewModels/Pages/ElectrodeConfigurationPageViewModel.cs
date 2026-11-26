@@ -19,6 +19,22 @@ public partial class ElectrodeConfigurationPageViewModel : PageViewModel, IDispo
 {
     private static readonly TimeSpan DetectionToggleThrottle = TimeSpan.FromMilliseconds(300);
 
+    public string Head3DConfigurationError =>
+        string.Join(
+            "；",
+            Points
+                .Select(point =>
+                    point.Position3D is not { IsFinite: true }
+                        ? $"{point.Name}：缺少或无效的 Position3D"
+                    : (point.Normal3D ?? point.Position3D) is not { IsDirection: true }
+                        ? $"{point.Name}：无效的 Normal3D（或无法从中心计算朝向）"
+                    : null
+                )
+                .Where(error => error is not null)
+        );
+    public bool CanShowHead3D => Head3DConfigurationError.Length == 0;
+
+    private readonly ElectrodeSelectionOptions _selectionOptions;
     private readonly StimulusCapabilityProfile _capability;
     private readonly INavigationRouter _router;
     private readonly DialogService _dialogService;
@@ -81,7 +97,8 @@ public partial class ElectrodeConfigurationPageViewModel : PageViewModel, IDispo
         IExperimentPersistenceService? experimentPersistence = null,
         IDeviceCapabilityAvailability? capabilityAvailability = null,
         IEegPhysicalChannelMappingService? eegChannelMappings = null,
-        ISingleStimulusExperimentDialogService? singleStimulusDialog = null
+        ISingleStimulusExperimentDialogService? singleStimulusDialog = null,
+        ElectrodeSelectionOptions? electrodeSelectionOptions = null
     )
         : base(ApplicationPageNames.ElectrodeConfiguration, "电极与检测")
     {
@@ -92,6 +109,7 @@ public partial class ElectrodeConfigurationPageViewModel : PageViewModel, IDispo
                     StimulusConfiguration = AcquisitionOnlyConfiguration.StimulusPlaceholder,
                 }
                 : routeData;
+        _selectionOptions = electrodeSelectionOptions ?? new ElectrodeSelectionOptions();
         _singleStimulusDialog = singleStimulusDialog;
         _router = router;
         _dialogService = dialogService;
@@ -106,12 +124,14 @@ public partial class ElectrodeConfigurationPageViewModel : PageViewModel, IDispo
         _eegChannelMappings = eegChannelMappings;
         electrodeCatalog ??= ElectrodePositionCatalog.Default;
         _uiSynchronizationContext = SynchronizationContext.Current;
-        HeaderBadges =
+        _headerBadges =
         [
             new PageHeaderBadgeViewModel("患者ID", routeData.SubjectId),
             new PageHeaderBadgeViewModel("实验ID", routeData.ExperimentId),
             PageHeaderBadgeViewModel.CreateExperimentMode(routeData.CreationMode),
         ];
+        if (routeData.Tolerance is not null)
+            _headerBadges = [new("被试ID", routeData.SubjectId), new("流程", "耐受度测试")];
         StimulusSelectionGroups = [];
         StimulusSelectionOptions = [];
         BuildStimulusSelectionGroups();
@@ -144,10 +164,17 @@ public partial class ElectrodeConfigurationPageViewModel : PageViewModel, IDispo
         RefreshAllState();
     }
 
-    public override IReadOnlyList<PageHeaderBadgeViewModel> HeaderBadges { get; }
+    private IReadOnlyList<PageHeaderBadgeViewModel> _headerBadges = [];
+    public override IReadOnlyList<PageHeaderBadgeViewModel> HeaderBadges => _headerBadges;
 
     private readonly ISingleStimulusExperimentDialogService? _singleStimulusDialog;
     private bool _isConfirmationOpen;
+
+    public bool CanChoosePictureNaming => IsStimulusOnly && RouteData.Tolerance is null
+        && StimulusConfiguration.Kind == StimulusKind.TDcs;
+
+    [ObservableProperty]
+    private bool _usePictureNaming;
 
     public bool IsStimulusOnly => RouteData.CreationMode == ExperimentCreationMode.StimulusOnly;
     public bool IsAcquisitionOnly =>
@@ -159,7 +186,32 @@ public partial class ElectrodeConfigurationPageViewModel : PageViewModel, IDispo
         : string.Empty;
     public override bool CanGoBack => !IsAnyDetecting && !_isConfirmationOpen;
 
-    public ElectrodeConfigurationRouteData RouteData { get; }
+    public ElectrodeConfigurationRouteData RouteData { get; private set; }
+
+    public override void UpdateExperimentIdentity(
+        long previousId,
+        long id,
+        string code,
+        EGGtCSPlatform.MainApp.ExperimentConfigurationTemplate? configuration = null
+    )
+    {
+        if (RouteData.ExperimentDatabaseId != previousId)
+            return;
+        RouteData = RouteData with
+        {
+            ExperimentDatabaseId = id,
+            ExperimentId = code,
+            ImportedTemplate = configuration ?? RouteData.ImportedTemplate,
+        };
+        _headerBadges =
+        [
+            new("患者ID", RouteData.SubjectId),
+            new("实验ID", code),
+            PageHeaderBadgeViewModel.CreateExperimentMode(RouteData.CreationMode),
+        ];
+        OnPropertyChanged(nameof(RouteData));
+        OnPropertyChanged(nameof(HeaderBadges));
+    }
 
     public ObservableCollection<ElectrodeSiteViewModel> Points { get; }
 
@@ -213,7 +265,11 @@ public partial class ElectrodeConfigurationPageViewModel : PageViewModel, IDispo
     public ResolvedStimulationRoles ResolvedRoles =>
         StimulationElectrodeRoleResolver.Resolve(StimulusConfiguration.Direction);
 
-    public string PolarityHintText => ResolvedRoles.Description;
+    public string PolarityHintText =>
+        StimulusConfiguration.Direction == StimulusDirection.Bidirectional
+            ? "阳极/阴极为界面标识，刺激方向为双向"
+        : StimulusConfiguration.Direction == StimulusDirection.Positive ? "刺激方向：正向"
+        : "刺激方向：反向";
 
     public int RequiredStimulusElectrodeCount =>
         StimulusSelectionOptions.Sum(option => option.RequiredCount);
@@ -227,7 +283,7 @@ public partial class ElectrodeConfigurationPageViewModel : PageViewModel, IDispo
         string.Join(
             "；",
             StimulusSelectionGroups.Select(group =>
-                $"{group.DisplayName}：{string.Join("、", group.Options.Select(option => $"{option.Label} {option.RequiredCount} 个"))}"
+                $"{group.DisplayName}：{string.Join("、", group.Options.Select(option => $"{option.UiLabel} {option.RequiredCount} 个"))}"
             )
         );
 
@@ -253,10 +309,14 @@ public partial class ElectrodeConfigurationPageViewModel : PageViewModel, IDispo
     public string SelectedPointRoleText =>
         SelectedPoint is null
             ? "点击头模点位进行配置"
-            : $"当前点位 {SelectedPoint.PositionName} · {SelectedPoint.RoleText}"
-                + (SelectedPoint.IsStimulus
-                    ? SelectedPoint.StimulationPhysicalChannelId is { } channel ? $" · CH{channel}" : " · 待分配物理通道"
-                    : string.Empty);
+            : $"当前点位 {SelectedPoint.PositionName} · {(IsStimulusMode ? SelectedPoint.UiRoleText : SelectedPoint.AcquisitionRoleText)}"
+                + (
+                    IsStimulusMode && SelectedPoint.IsStimulus
+                        ? SelectedPoint.StimulationPhysicalChannelId is { } channel
+                            ? $" · CH{channel}"
+                            : " · 待分配物理通道"
+                        : string.Empty
+                );
 
     public bool HasSelectedPoint => SelectedPoint is not null;
 
@@ -381,11 +441,11 @@ public partial class ElectrodeConfigurationPageViewModel : PageViewModel, IDispo
             if (!string.IsNullOrWhiteSpace(DetectionErrorText))
                 return DetectionErrorText;
             if (IsStimulusMode && _capability.FixedActivePhysicalChannelIds.Count == 0)
-                return "未配置固定刺激物理通道，请检查 StimulationChannels 配置";
+                return "刺激物理通道配置不完整，请检查 StimulationChannels 配置";
             if (IsStimulusMode && !IsStimulusPositionSelectionComplete)
                 return $"请完成刺激电极位置选择：{StimulusSelectionProgressText}";
             if (IsStimulusMode && !IsStimulusChannelMappingComplete)
-                return "请为每个刺激电极位置分配唯一通道，并确保固定刺激/自选刺激通道数量正确";
+                return "请为每个刺激电极位置分配唯一通道，并确保两组电极的通道数量符合配置";
             if (IsAcquisitionMode && !IsAcquisitionConfigurationComplete)
                 return "请至少配置 1 个采集电极，并设置 REF 与 GND";
             if (IsCurrentDetectionFailed)
@@ -429,7 +489,7 @@ public partial class ElectrodeConfigurationPageViewModel : PageViewModel, IDispo
                     .Select(target => $"靶点{target.DisplayOrder}峰值 {target.PeakCurrent:0.00} mA")
             );
             if (StimulusConfiguration.Envelope is { IsDeviceSetup: true } envelope)
-                return $"{peaks}；启动延时 {envelope.DelayMilliseconds:0} ms";
+                return $"{peaks}；启动延时 {envelope.DelayMilliseconds:0} ms；调试频率 {envelope.DebugFrequencyHz} Hz";
             var waveform = StimulusParameterPolicy
                 .For(StimulusConfiguration.Kind, StimulusConfiguration.ShamMode)
                 .FormatSummary(
@@ -456,7 +516,7 @@ public partial class ElectrodeConfigurationPageViewModel : PageViewModel, IDispo
                         .OrderBy(point => point.StimulationChannelRole)
                         .ThenBy(point => point.StimulationPhysicalChannelId)
                         .Select(point =>
-                            $"CH{point.StimulationPhysicalChannelId}={point.PositionName}({point.RoleText})"
+                            $"CH{point.StimulationPhysicalChannelId}={point.PositionName}({point.UiRoleText})"
                         );
                     return $"靶点{target.DisplayOrder}：{string.Join("、", assignments)}";
                 });
@@ -486,7 +546,27 @@ public partial class ElectrodeConfigurationPageViewModel : PageViewModel, IDispo
 
     private void ApplyImportedTemplate(ExperimentConfigurationTemplate template)
     {
+        if (!_selectionOptions.AllowSharedStimulationAcquisitionSite && !IsSingleMode)
+        {
+            var acquisitionSites = template
+                .AcquisitionChannels.Concat(
+                    new[] { template.ReferenceChannel, template.GroundChannel }
+                )
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            if (template.StimulusElectrodes.Any(x => acquisitionSites.Contains(x.SiteId)))
+                throw new InvalidOperationException(
+                    "当前配置禁止刺激与采集共用点位，无法应用包含共用点位的模板。请启用 ElectrodeSelection.AllowSharedStimulationAcquisitionSite 后重试。"
+                );
+        }
         _suppressSiteChanges = true;
+        // A template replaces defaults, including the default REF/GND locations.
+        foreach (var point in Points)
+        {
+            point.ClearStimulusAssignment();
+            point.Role = ElectrodeRole.None;
+            point.StimulationImpedance = null;
+            point.AcquisitionImpedance = null;
+        }
         foreach (
             var assignment in IsAcquisitionOnly
                 ? Array.Empty<StimulusElectrodeAssignment>()
@@ -513,7 +593,7 @@ public partial class ElectrodeConfigurationPageViewModel : PageViewModel, IDispo
                     template.StimulusConfiguration.Direction
                 )
             );
-            point.Impedance = null;
+            point.StimulationImpedance = null;
         }
         foreach (
             var siteId in IsStimulusOnly ? Array.Empty<string>() : template.AcquisitionChannels
@@ -622,7 +702,7 @@ public partial class ElectrodeConfigurationPageViewModel : PageViewModel, IDispo
                 StimulusConfiguration.Direction
             );
             TryAssignOnlyFixedStimulationChannel(point);
-            point.Impedance = null;
+            point.StimulationImpedance = null;
             InvalidateMode(ElectrodeConfigurationMode.Stimulus);
             RefreshAllState();
             return;
@@ -634,7 +714,13 @@ public partial class ElectrodeConfigurationPageViewModel : PageViewModel, IDispo
     [RelayCommand(CanExecute = nameof(CanEditConfiguration))]
     private void SetSelectedPointRole(ElectrodeRole role)
     {
-        if (SelectedPoint is null || SelectedPoint.IsStimulus)
+        if (
+            IsStimulusMode
+            || SelectedPoint is null
+            || (
+                SelectedPoint.IsStimulus && !_selectionOptions.AllowSharedStimulationAcquisitionSite
+            )
+        )
             return;
         if (role is ElectrodeRole.Reference or ElectrodeRole.Ground)
         {
@@ -662,9 +748,25 @@ public partial class ElectrodeConfigurationPageViewModel : PageViewModel, IDispo
         if (point is null || point.Role == ElectrodeRole.None && !point.IsStimulus)
             return;
 
-        _pendingChannelSelections.Remove(point.Name);
-        SetPointRole(point, ElectrodeRole.None);
-        ReindexStimulusPositions();
+        if (IsStimulusMode)
+        {
+            if (!point.IsStimulus)
+                return;
+            _suppressSiteChanges = true;
+            _pendingChannelSelections.Remove(point.Name);
+            point.ClearStimulusAssignment();
+            point.StimulationImpedance = null;
+            _suppressSiteChanges = false;
+            InvalidateMode(ElectrodeConfigurationMode.Stimulus);
+            ReindexStimulusPositions();
+            RefreshAllState();
+        }
+        else
+        {
+            if (!point.IsAcquisition)
+                return;
+            SetPointRole(point, ElectrodeRole.None);
+        }
         SelectedPoint = null;
     }
 
@@ -1147,19 +1249,28 @@ public partial class ElectrodeConfigurationPageViewModel : PageViewModel, IDispo
         if (!IsStimulusOnly || StimulusConfiguration.Kind != StimulusKind.EnvelopeTAcs)
             return null;
 
-        string ChannelText(StimulationChannelRole role) => string.Join(
-            "、",
-            Points.Where(point => point.HasStimulationChannel && point.StimulationChannelRole == role)
-                .OrderBy(point => point.StimulationPhysicalChannelId)
-                .Select(point => $"{point.PositionName} / CH{point.StimulationPhysicalChannelId}")
-        );
+        string ChannelText(StimulationChannelRole role) =>
+            string.Join(
+                "、",
+                Points
+                    .Where(point =>
+                        point.HasStimulationChannel && point.StimulationChannelRole == role
+                    )
+                    .OrderBy(point => point.StimulationPhysicalChannelId)
+                    .Select(point =>
+                        $"{point.PositionName} / CH{point.StimulationPhysicalChannelId}"
+                    )
+            );
 
         var delay = StimulusConfiguration.Envelope?.DelayMilliseconds ?? 0;
         return new EnvelopeConfirmationData(
-            FormattableString.Invariant($"{StimulusConfiguration.Targets.Single().PeakCurrent:0.##} mA"),
+            FormattableString.Invariant(
+                $"{StimulusConfiguration.Targets.Single().PeakCurrent:0.##} mA"
+            ),
             FormattableString.Invariant($"{delay:0} ms ({delay / 1000d:0.###} s)"),
             ChannelText(StimulationChannelRole.FixedActive),
-            ChannelText(StimulationChannelRole.Selectable)
+            ChannelText(StimulationChannelRole.Selectable),
+            $"{StimulusConfiguration.Envelope?.DebugFrequencyHz ?? 500} Hz"
         );
     }
 
@@ -1188,6 +1299,29 @@ public partial class ElectrodeConfigurationPageViewModel : PageViewModel, IDispo
             await _dialogService.ShowDialog(_dialogHost, dialog);
             if (!dialog.Confirmed)
                 return;
+            if (RouteData.Tolerance is { } tolerance)
+            {
+                var measuredAt = _stimulationMeasuredAt ?? DateTimeOffset.UtcNow;
+                var readings = Points
+                    .Where(p => p.IsStimulus)
+                    .Select(p => new ImpedanceSnapshotValue(
+                        p.Name,
+                        ImpedanceMeasurementKind.Stimulation,
+                        p.StimulationImpedance,
+                        p.StimulationImpedance is <= 10,
+                        measuredAt
+                    ))
+                    .ToArray();
+                _router.Navigate(
+                    new ToleranceTestRouteData(
+                        tolerance,
+                        StimulusConfiguration,
+                        CreateStimulusAssignments(),
+                        readings
+                    )
+                );
+                return;
+            }
             var runRoute = CreateExperimentRunRouteData();
             if (_experimentPersistence is not null && RouteData.ExperimentDatabaseId > 0)
             {
@@ -1228,6 +1362,8 @@ public partial class ElectrodeConfigurationPageViewModel : PageViewModel, IDispo
                     _eegAcquisitionOptions.SampleRateHz,
                     timing,
                     RouteData.ImportedTemplate?.SourceDisplayName ?? "当前实验",
+                    PhysicalChannels: _eegChannelMappings?.Load().Mappings
+                        ?? RouteData.ImportedTemplate?.PhysicalChannels,
                     CreationMode: RouteData.CreationMode
                 );
                 var measuredAt = DateTimeOffset.UtcNow;
@@ -1241,9 +1377,9 @@ public partial class ElectrodeConfigurationPageViewModel : PageViewModel, IDispo
                                 new ImpedanceSnapshotValue(
                                     point.Name,
                                     ImpedanceMeasurementKind.Stimulation,
-                                    point.Impedance,
-                                    point.Impedance is <= 10,
-                                    measuredAt
+                                    point.StimulationImpedance,
+                                    point.StimulationImpedance is <= 10,
+                                    _stimulationMeasuredAt ?? measuredAt
                                 )
                             );
                         if (point.IsAcquisition)
@@ -1251,20 +1387,38 @@ public partial class ElectrodeConfigurationPageViewModel : PageViewModel, IDispo
                                 new ImpedanceSnapshotValue(
                                     point.Name,
                                     ImpedanceMeasurementKind.Acquisition,
-                                    point.Impedance,
+                                    point.AcquisitionImpedance,
                                     point.Role is ElectrodeRole.Reference or ElectrodeRole.Ground
-                                        || point.Impedance is <= 10,
-                                    measuredAt
+                                        || point.AcquisitionImpedance is <= 10,
+                                    _acquisitionMeasuredAt ?? measuredAt
                                 )
                             );
                         return values;
                     })
                     .ToArray();
-                await _experimentPersistence.SaveConfigurationAsync(
+                template = template with
+                {
+                    SpeechTrainingPreset = RouteData.ImportedTemplate?.SpeechTrainingPreset,
+                };
+                var saved = await _experimentPersistence.SaveConfigurationAsync(
                     RouteData.ExperimentDatabaseId,
                     template,
                     impedances
                 );
+                var previousId = RouteData.ExperimentDatabaseId;
+                _router.UpdateExperimentIdentity(
+                    previousId,
+                    saved.ExperimentId,
+                    saved.ExperimentCode,
+                    template
+                );
+                UpdateExperimentIdentity(
+                    previousId,
+                    saved.ExperimentId,
+                    saved.ExperimentCode,
+                    template
+                );
+                runRoute = CreateExperimentRunRouteData();
             }
             IsConfigurationConfirmed = true;
             OnPropertyChanged(nameof(ConfirmationStatusText));
@@ -1275,10 +1429,13 @@ public partial class ElectrodeConfigurationPageViewModel : PageViewModel, IDispo
                         runRoute,
                         StimulusDetectionState == ImpedanceDetectionState.Passed
                             ? "已通过"
-                            : "未通过（按配置允许继续）"
+                            : "未通过（按配置允许继续）",
+                        RouteData.ImportedTemplate?.SpeechTrainingPreset
                     )
                 );
             }
+            else if (CanChoosePictureNaming && UsePictureNaming)
+                _router.NavigatePictureNaming(runRoute);
             else if (IsStimulusOnly)
             {
                 if (_singleStimulusDialog is null)
@@ -1319,12 +1476,18 @@ public partial class ElectrodeConfigurationPageViewModel : PageViewModel, IDispo
                     point.StimulationChannelRole == StimulationChannelRole.FixedActive
                 )
             )
-                fixedPoint.Impedance = null;
+                fixedPoint.StimulationImpedance = null;
         }
         foreach (var point in configured)
-            point.Impedance = readings.TryGetValue(point.Name, out var value) ? value : null;
+            point.SetImpedance(
+                mode,
+                readings.TryGetValue(point.Name, out var value) ? value : null
+            );
+        foreach (var point in GetConfiguredPoints(mode))
+            point.SetDetectionResultAvailable(mode, true);
         _suppressSiteChanges = false;
-        var passed = configured.Length > 0 && configured.All(point => point.Impedance is <= 10);
+        var passed =
+            configured.Length > 0 && configured.All(point => point.GetImpedance(mode) is <= 10);
         if (mode == ElectrodeConfigurationMode.Stimulus)
             StimulusDetectionState = passed
                 ? ImpedanceDetectionState.Passed
@@ -1428,7 +1591,7 @@ public partial class ElectrodeConfigurationPageViewModel : PageViewModel, IDispo
                             )
                         )
                         ?.PhysicalChannel,
-                    PreRunImpedanceSummaryCalculator.AcquisitionBand(point.Impedance)
+                    PreRunImpedanceSummaryCalculator.AcquisitionBand(point.AcquisitionImpedance)
                 )),
             Points
                 .Where(x =>
@@ -1437,7 +1600,7 @@ public partial class ElectrodeConfigurationPageViewModel : PageViewModel, IDispo
                 .Select(point => new PreRunImpedanceChannel(
                     point.Name,
                     point.StimulationPhysicalChannelId,
-                    PreRunImpedanceSummaryCalculator.StimulationBand(point.Impedance)
+                    PreRunImpedanceSummaryCalculator.StimulationBand(point.StimulationImpedance)
                 )),
             _acquisitionMeasuredAt,
             _stimulationMeasuredAt
@@ -1554,17 +1717,17 @@ public partial class ElectrodeConfigurationPageViewModel : PageViewModel, IDispo
 
     private void SetPointRole(ElectrodeSiteViewModel point, ElectrodeRole role)
     {
-        var wasStimulus = point.IsStimulus;
+        if (
+            role != ElectrodeRole.None
+            && point.IsStimulus
+            && !_selectionOptions.AllowSharedStimulationAcquisitionSite
+        )
+            return;
         _suppressSiteChanges = true;
-        point.ClearStimulusAssignment();
         point.Role = role;
-        point.Impedance = null;
+        point.AcquisitionImpedance = null;
         _suppressSiteChanges = false;
-        InvalidateMode(
-            wasStimulus || IsStimulusMode
-                ? ElectrodeConfigurationMode.Stimulus
-                : ElectrodeConfigurationMode.Acquisition
-        );
+        InvalidateMode(ElectrodeConfigurationMode.Acquisition);
         RefreshAllState();
     }
 
@@ -1602,7 +1765,7 @@ public partial class ElectrodeConfigurationPageViewModel : PageViewModel, IDispo
         row.ChannelConflictText = string.Empty;
         _suppressSiteChanges = true;
         point.AssignStimulationChannel(selectedChannel);
-        point.Impedance = null;
+        point.StimulationImpedance = null;
         _suppressSiteChanges = false;
         InvalidateMode(ElectrodeConfigurationMode.Stimulus);
         RefreshAllState(false);
@@ -1622,8 +1785,10 @@ public partial class ElectrodeConfigurationPageViewModel : PageViewModel, IDispo
     private void InvalidateMode(ElectrodeConfigurationMode mode)
     {
         _suppressSiteChanges = true;
+        foreach (var point in Points)
+            point.SetDetectionResultAvailable(mode, false);
         foreach (var point in GetConfiguredPoints(mode))
-            point.Impedance = null;
+            point.SetImpedance(mode, null);
         _suppressSiteChanges = false;
         if (mode == ElectrodeConfigurationMode.Stimulus)
         {
@@ -1726,7 +1891,7 @@ public partial class ElectrodeConfigurationPageViewModel : PageViewModel, IDispo
         foreach (var (point, channel) in pendingAssignments)
         {
             point.AssignStimulationChannel(channel);
-            point.Impedance = null;
+            point.StimulationImpedance = null;
         }
         _suppressSiteChanges = false;
         _pendingChannelSelections.Clear();
@@ -1770,8 +1935,13 @@ public partial class ElectrodeConfigurationPageViewModel : PageViewModel, IDispo
         foreach (var point in Points)
         {
             point.IsAvailable = IsStimulusMode
-                ? point.IsStimulus || point.CanStimulate && !point.IsAcquisition
-                : !point.IsStimulus;
+                ? point.IsStimulus
+                    || point.CanStimulate
+                        && (
+                            _selectionOptions.AllowSharedStimulationAcquisitionSite
+                            || !point.IsAcquisition
+                        )
+                : _selectionOptions.AllowSharedStimulationAcquisitionSite || !point.IsStimulus;
         }
     }
 
@@ -1974,7 +2144,9 @@ public partial class ElectrodeConfigurationPageViewModel : PageViewModel, IDispo
                 mapCenterY + (position.ReferenceY - referenceCenterY) * verticalScale - pointRadius,
                 capability.CanStimulate(position.Id),
                 position.DefaultRole,
-                position.Position
+                position.Position,
+                position.Position3D,
+                position.Normal3D
             ))
         );
     }

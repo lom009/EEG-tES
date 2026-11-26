@@ -54,12 +54,10 @@
                 FontSize="{DynamicResource FontSize11_5}"
                 Foreground="{DynamicResource ProductTextMuted}"
                 IsVisible="{TemplateBinding ShowStimulationChannel}"
-                ItemsSource="{TemplateBinding StimulationChannels}"
-                SelectedItem="{Binding SelectedStimulationChannel, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
               >
                 <ComboBox.ItemTemplate>
                   <DataTemplate x:DataType="pages:StimulationChannelOptionViewModel">
-                    <TextBlock Text="{Binding Label}" />
+                    <TextBlock Text="{Binding UiLabel}" />
                   </DataTemplate>
                 </ComboBox.ItemTemplate>
               </ComboBox>

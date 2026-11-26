@@ -21,6 +21,12 @@ public enum CurrentAdjustment
     Decrease,
 }
 
+public enum StimulationStartMode
+{
+    Normal,
+    Tolerance,
+}
+
 public sealed record ReadDeviceStatusRequest : IDeviceRequest<DeviceStatusResponse>;
 
 public sealed record ConfigureEegImpedanceRequest(
@@ -32,7 +38,10 @@ public sealed record ControlAcquisitionRequest(RunControl Control, TimeSpan Dura
     : IDeviceRequest<DeviceCommandResult>;
 
 public sealed record ControlStimulationRequest(RunControl Control, TimeSpan Duration)
-    : IDeviceRequest<DeviceCommandResult>;
+    : IDeviceRequest<DeviceCommandResult>
+{
+    public StimulationStartMode StartMode { get; init; }
+}
 
 public sealed record AdjustCurrentRequest(CurrentAdjustment Adjustment)
     : IDeviceRequest<CurrentAdjustmentResponse>;

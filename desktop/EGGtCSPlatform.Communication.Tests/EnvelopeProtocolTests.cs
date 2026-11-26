@@ -13,7 +13,12 @@ public sealed class EnvelopeProtocolTests
     private static EggtCsFrameCodec Codec() => new(new EggtCsUnverifiedFixedChecksum());
 
     private static EggtCsProtocolProfile Profile() =>
-        new(EggtCsProtocolOptions.CreateTestDefaults());
+        new(
+            new EggtCsProtocolOptions(
+                new Dictionary<Type, TimeSpan>(),
+                revision: EggtCsRevisions.V102
+            )
+        );
 
     private static EnvelopeStimulationConfiguration Configuration(ushort delay = 100) =>
         new(delay, 3, 100, 500, new byte[] { 10, 20, 30, 40 });

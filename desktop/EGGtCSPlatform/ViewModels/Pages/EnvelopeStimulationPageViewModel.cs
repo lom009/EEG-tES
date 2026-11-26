@@ -2,392 +2,1163 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.IO;
-using System.Text.Json;
-using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Threading;
-using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using EGGtCSPlatform.Interfaces;
 using EGGtCSPlatform.MainApp;
 using EGGtCSPlatform.Services;
+using EGGtCSPlatform.SpeechTraining;
 
 namespace EGGtCSPlatform.ViewModels.Pages;
 
-/// <summary>Native MVVM training flow. Device/audio and persistence are injected services.</summary>
 public sealed partial class EnvelopeStimulationPageViewModel : PageViewModel, IDisposable
 {
-    private readonly IEnvelopeTrainingExecutionService? _execution;
-    private readonly IEnvelopeTrainingResultStore _store;
-    private readonly Guid _sessionId = Guid.NewGuid();
-    private readonly DateTimeOffset _startedAt = DateTimeOffset.UtcNow;
-    private CancellationTokenSource? _operation;
-    private EnvelopeTrainingAudio? _audio;
-    private bool _disposed, _saving, _stopUnconfirmed;
-    private int _sentenceIndex, _interruptedTrials, _detailIndex;
-    private DateTimeOffset? _completedAt, _endedAt;
-    private EnvelopeTrainingStage _stage;
-    private decimal _speed = 2;
-    private EnvelopeTrainingCorpus _corpus = EnvelopeTrainingCorpus.Demo;
-    private EnvelopeTrainingSentenceTable _table = EnvelopeTrainingCorpus.Demo.Tables[0];
+    private readonly INavigationRouter _router;
+    private SpeechTrainingSession? _session;
+    private readonly string? _loadError;
+    private string? _outputError;
+    private readonly Func<string, Task>? _notifyStopFailure;
+    private string? _displayedSentence;
+    private AudioBuffer? _displayedAudio;
+    private bool _disposed;
+    private double _lastNonZeroVolume = 100;
+    private bool _refreshing;
+    private double _voiceMaximumAmplitude = 1;
+    private double _stimulusMaximumAmplitude = 2;
 
-    public EnvelopeStimulationPageViewModel(EnvelopeStimulationRouteData routeData, INavigationRouter router,
-        IEnvelopeTrainingExecutionService? execution = null, IEnvelopeTrainingResultStore? store = null)
-        : base(ApplicationPageNames.EnvelopeStimulation, "言语训练")
+    private readonly bool _playheadEnabled;
+    public bool ShowPlaybackPlayhead => _playheadEnabled && HasWaveform;
+    public bool EnvelopeWaveformRealtimeEnabled { get; }
+
+    public double VoiceMaximumAmplitude => _voiceMaximumAmplitude;
+    public double StimulusMaximumAmplitude => _stimulusMaximumAmplitude;
+
+    public void ZoomVoice(double delta) =>
+        ZoomAxis(ref _voiceMaximumAmplitude, delta, 0.001, 10, nameof(VoiceMaximumAmplitude));
+
+    public void ZoomStimulus(double delta) =>
+        ZoomAxis(ref _stimulusMaximumAmplitude, delta, 0.01, 20, nameof(StimulusMaximumAmplitude));
+
+    private void ZoomAxis(
+        ref double range,
+        double delta,
+        double minimum,
+        double maximum,
+        string property
+    )
     {
-        RouteData = routeData;
-        if (routeData.Configuration.CreationMode != ExperimentCreationMode.StimulusOnly
-            || routeData.Configuration.StimulusConfiguration.Kind != StimulusKind.EnvelopeTAcs)
-            throw new ArgumentException("需要单刺激模式的包络-tACS 配置。", nameof(routeData));
-        _execution = execution;
-        _store = store ?? new EnvelopeTrainingResultStore();
-        var route = routeData.Configuration;
-        HeaderBadges = [new("患者ID", route.SubjectId), new("实验ID", route.ExperimentId),
-            PageHeaderBadgeViewModel.CreateExperimentMode(route.CreationMode)];
-        BackCommand = new RelayCommand(() => router.GoBack(), () => CanGoBack);
-        HomeCommand = new RelayCommand(() => router.GoHome(), () => IsResults);
-        PlayAndStimulateCommand = new AsyncRelayCommand(() => ExecuteAsync(true), () => CanStart);
-        ReplayAudioCommand = new AsyncRelayCommand(() => ExecuteAsync(false), () => CanReplay);
-        StopCommand = new RelayCommand(() => _operation?.Cancel(), () => IsExecuting);
-        SetAllCorrectCommand = new RelayCommand(() => SetAll(true), () => CanScore);
-        SetAllIncorrectCommand = new RelayCommand(() => SetAll(false), () => CanScore);
-        ResetScoresCommand = new RelayCommand(() => SetAll(null), () => CanScore);
-        SaveTrialCommand = new AsyncRelayCommand(SaveTrialAsync, () => CanSave);
-        NextSentenceCommand = new RelayCommand(NextSentence, () => CanAdvance);
-        RequestEndCommand = new RelayCommand(() => IsEndConfirmationOpen = true, () => !IsExecuting && !_saving && !IsResults && !StopUnconfirmed);
-        RetryStopCommand = new AsyncRelayCommand(RetryStopAsync, () => StopUnconfirmed && !_saving && !IsExecuting);
-        CancelEndCommand = new RelayCommand(() => IsEndConfirmationOpen = false, () => !_saving);
-        ConfirmEndCommand = new AsyncRelayCommand(EndAsync, () => !_saving && !IsExecuting);
-        ShowDetailCommand = new RelayCommand<EnvelopeTrainingTrial>(ShowDetail);
-        CloseDetailCommand = new RelayCommand(() => IsDetailOpen = false);
-        PreviousDetailCommand = new RelayCommand(() => SetDetail(_detailIndex - 1), () => _detailIndex > 0);
-        NextDetailCommand = new RelayCommand(() => SetDetail(_detailIndex + 1), () => _detailIndex + 1 < SavedTrials.Count);
-        ResetSentence();
+        if (_disposed || !double.IsFinite(delta) || delta == 0)
+            return;
+        var next = Math.Clamp(range * Math.Pow(1.25, -delta), minimum, maximum);
+        if (next == range)
+            return;
+        range = next;
+        OnPropertyChanged(property);
     }
 
-    public EnvelopeStimulationRouteData RouteData { get; }
-    public override IReadOnlyList<PageHeaderBadgeViewModel> HeaderBadges { get; }
-    public override bool CanGoBack => !IsExecuting && !_saving && Stage == EnvelopeTrainingStage.Ready && SavedTrials.Count == 0 && _interruptedTrials == 0;
-    public double MaximumCurrent => RouteData.Configuration.StimulusConfiguration.Targets.Sum(target => target.PeakCurrent);
-    public string CurrentText => $"{MaximumCurrent:0.##} mA";
-    public double DelaySeconds => (RouteData.Configuration.StimulusConfiguration.Envelope?.DelayMilliseconds ?? 0) / 1000;
-    public string DelayText => $"{DelaySeconds * 1000:0} ms";
-    public string Electrodes => string.Join("\n", RouteData.Configuration.StimulusElectrodes.Select(assignment =>
-        $"{assignment.SiteId} · CH{assignment.PhysicalChannelId} · {StimulationElectrodeRoleResolver.GetChannelRoleLabel(assignment.Role)}"));
-    public string Impedances => DetectionStatus;
-    public string DetectionStatus => RouteData.DetectionStatus;
-    public string CorpusText => $"{_corpus.Name} · 句表 {_table.Name}";
-    public string VoiceText => _corpus.Voice;
-    public ObservableCollection<EnvelopeTrainingCorpus> Corpora { get; } = [EnvelopeTrainingCorpus.Demo];
-    public EnvelopeTrainingCorpus SelectedCorpus
-    {
-        get => _corpus;
-        set
-        {
-            if (!CanEditCorpus || value is null || !SetProperty(ref _corpus, value)) return;
-            _table = value.Tables[0]; _sentenceIndex = 0;
-            OnPropertyChanged(nameof(SentenceTables)); OnPropertyChanged(nameof(SelectedSentenceTable));
-            OnPropertyChanged(nameof(VoiceText)); ResetSentence();
-        }
-    }
-    public IReadOnlyList<EnvelopeTrainingSentenceTable> SentenceTables => _corpus.Tables;
-    public EnvelopeTrainingSentenceTable SelectedSentenceTable
-    {
-        get => _table;
-        set
-        {
-            if (!CanEditCorpus || value is null || !SetProperty(ref _table, value)) return;
-            _sentenceIndex = 0; ResetSentence();
-        }
-    }
-    public bool CanEditCorpus => CanEditSettings && SavedTrials.Count == 0;
-    public async Task ImportCorpusAsync(string path)
-    {
-        if (!CanEditCorpus) return;
-        try
-        {
-            var corpus = await EnvelopeTrainingCorpus.LoadAsync(path);
-            if (!CanEditCorpus || _disposed) return;
-            Corpora.Add(corpus); SelectedCorpus = corpus;
-        }
-        catch (Exception exception) { SetStatus($"语料导入失败：{exception.Message}", true); }
-    }
-    public string Sentence => _table.Sentences[_sentenceIndex].Text;
-    public int CharacterColumns => Math.Min(8, Characters.Count);
-    public int DetailCharacterColumns => Math.Min(7, DetailCharacters.Count);
-    public bool HasSavedTrials => SavedTrials.Count > 0;
-    public string ResultCorpusName => _corpus.Name;
-    public string ResultTableName => _table.Name;
-    public string ResultSpeedText
-    {
-        get
-        {
-            if (SavedTrials.Count == 0) return "未执行";
-            var speeds = SavedTrials.Select(trial => trial.CharactersPerSecond).Distinct().Order().ToArray();
-            return speeds.Length == 1 ? $"{speeds[0]:0.##} 字/s"
-                : $"{speeds[0]:0.##}–{speeds[^1]:0.##} 字/s（逐句调整）";
-        }
-    }
-    public string ResultScoredText => $"{SavedTrials.Sum(trial => trial.Characters.Count)}/{SavedTrials.Sum(trial => trial.Characters.Count)}";
-    public string ResultCorrectCountText => SavedTrials.Sum(trial => trial.CorrectCount).ToString();
-    public string ExperimentIdText => RouteData.Configuration.ExperimentId;
-    public string SubjectIdText => RouteData.Configuration.SubjectId;
-    public string StartedAtText => _startedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm");
-    public string InterruptionsText => _interruptedTrials.ToString();
-    public string CurrentSentenceNumberText => $"{_sentenceIndex + 1:00}";
-    public string SentenceTotalText => $"/{_table.Sentences.Count} 句";
-    public string SentenceCounter => $"第 {_sentenceIndex + 1:00}/{_table.Sentences.Count} 句";
-    public ObservableCollection<EnvelopeTrainingCharacterViewModel> Characters { get; } = [];
-    public ObservableCollection<EnvelopeTrainingTrial> SavedTrials { get; } = [];
-    public ObservableCollection<EnvelopeTrainingCharacterViewModel> DetailCharacters { get; } = [];
-    public EnvelopeTrainingAudio? Audio => _audio;
-    public decimal CharactersPerSecond
-    {
-        get => _speed;
-        set
-        {
-            if (!CanEditSettings || value is < .5m or > 5m || !SetProperty(ref _speed, value)) return;
-            ResetSentence();
-        }
-    }
-    public EnvelopeTrainingStage Stage => _stage;
-    public bool IsResults => Stage == EnvelopeTrainingStage.Results;
-    public bool ShowEndAction => Stage != EnvelopeTrainingStage.Ready || SavedTrials.Count > 0;
-    public bool IsExecuting => _operation is not null;
-    public bool CanEditSettings => !StopUnconfirmed && !IsExecuting && !_saving && Stage is EnvelopeTrainingStage.Ready or EnvelopeTrainingStage.Aborted;
-    public bool StopUnconfirmed => _stopUnconfirmed;
-    public bool CanStart => !StopUnconfirmed && CanEditSettings && _execution is not null && _audio is not null;
-    public bool CanScore => !IsExecuting && !_saving && Stage == EnvelopeTrainingStage.Scoring;
-    public bool CanReplay => _execution is not null && !StopUnconfirmed && !IsExecuting && !_saving && _audio is not null && Stage is EnvelopeTrainingStage.Scoring or EnvelopeTrainingStage.Saved;
-    public bool CanSave => CanScore && Characters.All(character => character.IsCorrect.HasValue);
-    public bool CanAdvance => !IsExecuting && !_saving && Stage == EnvelopeTrainingStage.Saved && _sentenceIndex + 1 < _table.Sentences.Count;
-    public string ScoredCountText => $"{Characters.Count(character => character.IsCorrect.HasValue)}/{Characters.Count}";
-    public string CorrectCountText => Characters.Count(character => character.IsCorrect == true).ToString();
-    public string IncorrectCountText => Characters.Count(character => character.IsCorrect == false).ToString();
-    public string AccuracyValueText => Characters.All(character => character.IsCorrect.HasValue)
-        ? $"{(double)Characters.Count(character => character.IsCorrect == true) / Characters.Count:P0}" : "待判定";
-    public string ScoredText => $"已评 {Characters.Count(character => character.IsCorrect.HasValue)}/{Characters.Count}";
-    public string CorrectText => $"正确 {Characters.Count(character => character.IsCorrect == true)}";
-    public string IncorrectText => $"错误 {Characters.Count(character => character.IsCorrect == false)}";
-    public string AccuracyText => Characters.All(character => character.IsCorrect.HasValue)
-        ? $"正确率 {(double)Characters.Count(character => character.IsCorrect == true) / Characters.Count:P0}" : "正确率 待判定";
-    // The three primary instructions match Figma. Transient operations take priority over the stage.
-    public string Instruction => StopUnconfirmed ? "设备停止未确认，请先重试停止"
-        : IsExecuting ? Stage == EnvelopeTrainingStage.Running ? "请等待音频和刺激结束" : "正在重复播放题目音频，请等待播放结束"
-        : _saving ? "正在保存本句评分，请稍候"
-        : Stage switch
-        {
-            EnvelopeTrainingStage.Scoring => "等待回答与评分后，可保存并进入下一句",
-            EnvelopeTrainingStage.Saved => _sentenceIndex + 1 < _table.Sentences.Count
-                ? "本句已保存，可进入下一句" : "本句已保存，句表训练已完成，可结束实验",
-            EnvelopeTrainingStage.Aborted => "本句已中断，请重新播放并刺激",
-            _ => "先进行题目音频播放并刺激"
-        };
-    public string AudioTimeText => $"音频 {FormatTime(AudioSeconds)} / {FormatTime(_audio?.Duration.TotalSeconds ?? 0)}";
-    public string EndMessage => $"已保存 {SavedTrials.Count} 句。" +
-        (Stage == EnvelopeTrainingStage.Saved ? "本句已保存。" : "当前句未保存，将不计入结果。") + "确定结束本次实验？";
-    public string ResultProgressText => $"{SavedTrials.Count}/{_table.Sentences.Count}";
-    public string ResultCorrectText => $"{SavedTrials.Sum(trial => trial.CorrectCount)}/{SavedTrials.Sum(trial => trial.Characters.Count)}";
-    public string ResultAccuracyText => SavedTrials.Count == 0 ? "—" :
-        $"{(double)SavedTrials.Sum(trial => trial.CorrectCount) / SavedTrials.Sum(trial => trial.Characters.Count):P0}";
-    public string ResultSessionText => $"{RouteData.Configuration.ExperimentId}\n患者 {RouteData.Configuration.SubjectId}\n{_startedAt.ToLocalTime():yyyy-MM-dd HH:mm}\n中断次数 {_interruptedTrials}";
-    public string DetailTitle => SavedTrials.Count == 0 ? "单句评分详情" : $"第 {SavedTrials[_detailIndex].SentenceNumber:00}/{_table.Sentences.Count} 句";
+    private string? _listedCorpus;
+    private string _sentenceList = "";
+    private SpeechTrainingResultsRouteData? _resultRoute;
+    private IReadOnlyList<TimedWaveformPoint> _voice = [],
+        _envelope = [];
 
-    [ObservableProperty] private string _statusMessage = "";
-    [ObservableProperty] private bool _statusMessageIsError;
-    public bool HasStatusMessage => !string.IsNullOrEmpty(StatusMessage);
-    partial void OnStatusMessageChanged(string value) => OnPropertyChanged(nameof(HasStatusMessage));
-    public void SetStatus(string message, bool isError = false)
-    { StatusMessageIsError = isError; StatusMessage = message; }
-    [ObservableProperty] private bool _isEndConfirmationOpen;
-    [ObservableProperty] private bool _isDetailOpen;
-    [ObservableProperty] private double _audioSeconds;
-    [ObservableProperty] private double _stimulationSeconds;
-    partial void OnAudioSecondsChanged(double value) => OnPropertyChanged(nameof(AudioTimeText));
-    public RelayCommand BackCommand { get; }
-    public RelayCommand HomeCommand { get; }
-    public AsyncRelayCommand PlayAndStimulateCommand { get; }
-    public AsyncRelayCommand ReplayAudioCommand { get; }
-    public RelayCommand StopCommand { get; }
-    public AsyncRelayCommand RetryStopCommand { get; }
-    public RelayCommand SetAllCorrectCommand { get; }
-    public RelayCommand SetAllIncorrectCommand { get; }
-    public RelayCommand ResetScoresCommand { get; }
-    public AsyncRelayCommand SaveTrialCommand { get; }
-    public RelayCommand NextSentenceCommand { get; }
-    public RelayCommand RequestEndCommand { get; }
-    public RelayCommand CancelEndCommand { get; }
-    public AsyncRelayCommand ConfirmEndCommand { get; }
-    public RelayCommand<EnvelopeTrainingTrial> ShowDetailCommand { get; }
-    public RelayCommand CloseDetailCommand { get; }
-    public RelayCommand PreviousDetailCommand { get; }
-    public RelayCommand NextDetailCommand { get; }
-
-    private async Task ExecuteAsync(bool stimulate)
+    public EnvelopeStimulationPageViewModel(
+        EnvelopeStimulationRouteData routeData,
+        INavigationRouter router,
+        Func<SpeechTrainingSession> createSession,
+        Func<ExperimentRunRouteData, ISpeechStimulationOutput>? createOutput = null,
+        SpeechOutputLifetime? outputLifetime = null,
+        Func<string, Task>? notifyStopFailure = null,
+        EGGtCSPlatform.Persistence.ISpeechExperimentService? experiments = null,
+        Func<SpeechEndDialogViewModel, Task>? showEndDialog = null,
+        DisplayOptions? displayOptions = null
+    )
+        : base(ApplicationPageNames.EnvelopeStimulation, "单刺激言语训练")
     {
-        if (_execution is null || _audio is null || (stimulate ? !CanStart : !CanReplay)) return;
-        var previousStage = Stage;
-        using var operation = new CancellationTokenSource();
-        _operation = operation;
-        if (stimulate) { _stage = EnvelopeTrainingStage.Running; _completedAt = null; }
-        SetStatus(""); AudioSeconds = 0;
-        if (stimulate) StimulationSeconds = 0;
-        Refresh();
-        try
+        routeData = routeData with
         {
-            var audio = _audio;
-            await _execution.ExecuteAsync(RouteData.Configuration, audio, stimulate,
-                new InlineProgress(progress =>
+            Configuration = SpeechResultRoutes.WithEnvelope(
+                routeData.Configuration,
+                (
+                    routeData.Configuration.StimulusConfiguration.Envelope
+                    ?? new EnvelopeParameters()
+                ) with
                 {
-                    void Update()
-                    {
-                        if (_disposed || !ReferenceEquals(_operation, operation)) return;
-                        AudioSeconds = progress.AudioSeconds;
-                        if (stimulate) StimulationSeconds = progress.StimulationSeconds;
-                    }
-                    if (Dispatcher.UIThread.CheckAccess()) Update(); else Dispatcher.UIThread.Post(Update);
-                }), operation.Token);
-            operation.Token.ThrowIfCancellationRequested();
-            AudioSeconds = audio.Duration.TotalSeconds;
-            if (stimulate)
-            {
-                StimulationSeconds = (double)audio.EnvelopeSamples.Length / audio.EnvelopeSampleRateHz + DelaySeconds;
-                _stage = EnvelopeTrainingStage.Scoring;
-                _completedAt = DateTimeOffset.UtcNow;
-            }
-            else _stage = previousStage;
-        }
-        catch (OperationCanceledException)
+                    DebugFrequencyHz = 500,
+                }
+            ),
+        };
+        _playheadEnabled = (displayOptions ?? new()).EnvelopePlayheadEnabled;
+        EnvelopeWaveformRealtimeEnabled = (displayOptions ?? new()).EnvelopeWaveformRealtimeEnabled;
+        RouteData = routeData;
+        _createSession = createSession;
+        _createOutput = createOutput;
+        _outputLifetime = outputLifetime;
+        _experiments = experiments;
+        _showEndDialog = showEndDialog;
+        _router = router;
+        _notifyStopFailure = notifyStopFailure;
+        var route = routeData.Configuration;
+        if (
+            route.CreationMode != ExperimentCreationMode.StimulusOnly
+            || route.StimulusConfiguration.Kind != StimulusKind.EnvelopeTAcs
+        )
+            throw new ArgumentException("需要单刺激模式的包络-tACS 配置。", nameof(routeData));
+        _headerBadges =
+        [
+            new("患者ID", route.SubjectId),
+            new("实验ID", route.ExperimentId),
+            PageHeaderBadgeViewModel.CreateExperimentMode(route.CreationMode),
+        ];
+        CurrentText = StimulusConfigurationSummaryBuilder.CurrentText(route.StimulusConfiguration);
+        Electrodes = string.Join(
+            "   ",
+            route.StimulusElectrodes.Select(e => $"{e.SiteId} · CH{e.PhysicalChannelId}")
+        );
+        try
         {
-            SetStatus(stimulate ? "音频与刺激已停止，本句未完成。" : "音频重播已停止。");
-            _stage = stimulate ? EnvelopeTrainingStage.Aborted : previousStage;
-            if (stimulate) _interruptedTrials++;
+            _session = NewSession();
+            if (routeData.Preset is { } preset)
+            {
+                _session.SelectCorpus(preset.Corpus);
+                _session.SelectListSize(preset.ListSize);
+                _session.SelectSentenceList(preset.SentenceList);
+                _session.ConfigureAudio(preset.AudioSettings ?? new());
+                _session.SetScoringRule(preset.AdaptiveScoring);
+                if (preset.AudioSettings?.Vocoder is { } vocoder)
+                    _vocoderSettings = vocoder;
+            }
         }
         catch (Exception exception)
         {
-            if (exception is EnvelopeTrainingStopUnconfirmedException) _stopUnconfirmed = true;
-            SetStatus($"执行失败：{exception.Message}", true);
-            _stage = stimulate ? EnvelopeTrainingStage.Aborted : previousStage;
-            if (stimulate) _interruptedTrials++;
+            _loadError =
+                $"{(_session is null ? "语料加载失败" : "训练初始化失败")}：{exception.Message}";
+            _session?.Dispose();
+            _session = null;
         }
-        finally { _operation = null; Refresh(); }
-    }
-    private async Task SaveTrialAsync()
-    {
-        if (!CanSave || _audio is null || _completedAt is null) return;
-        _saving = true; Refresh();
-        var trial = new EnvelopeTrainingTrial(_sentenceIndex + 1, Sentence, CorpusText, (double)_speed,
-            _completedAt.Value, _audio.Duration.TotalSeconds, _audio.Sha256,
-            Characters.Select(character => new EnvelopeTrainingCharacterScore(character.Text, character.IsCorrect!.Value)).ToArray());
-        try
-        {
-            await _store.SaveAsync(CreateSession(SavedTrials.Append(trial).ToArray()));
-            SavedTrials.Add(trial); _stage = EnvelopeTrainingStage.Saved;
-            SetStatus("本句评分已保存。");
-        }
-        catch (Exception exception) { SetStatus($"保存失败：{exception.Message}。请重试。", true); }
-        finally { _saving = false; Refresh(); }
-    }
-    private void NextSentence()
-    {
-        if (!CanAdvance) return;
-        _sentenceIndex++; ResetSentence();
-    }
-    private void ResetSentence()
-    {
-        _stage = EnvelopeTrainingStage.Ready; _completedAt = null; _audio = null;
-        SetStatus(""); AudioSeconds = 0; StimulationSeconds = 0;
-        Characters.Clear();
-        foreach (var character in Sentence.EnumerateRunes())
-            Characters.Add(new(character.ToString(), () => CanScore, Refresh));
-        try
-        {
-            if (_corpus.Directory is null) _audio = EnvelopeTrainingAudio.LoadDemo(_sentenceIndex, (double)_speed, MaximumCurrent);
-            else
+        InitializeRirCommands();
+        InitializeResponseCommands();
+        CorpusOptions = _session?.Corpora.Select(x => x.Id).ToArray() ?? [];
+        StartCommand = new AsyncRelayCommand(
+            StartRoundAsync,
+            () => CanEndExperiment && _session?.CanStart == true
+        );
+        AgainCommand = new AsyncRelayCommand(AgainAsync, () => CanTrainAgain);
+        ReplayCommand = new AsyncRelayCommand(
+            async () =>
             {
-                using var source = File.OpenRead(Path.Combine(_corpus.Directory, _table.Sentences[_sentenceIndex].AudioFile!));
-                _audio = EnvelopeTrainingAudio.Prepare(source, Sentence, (double)_speed, MaximumCurrent);
+                ClearResponseReview();
+                _outputError = null;
+                if (_session is not null)
+                {
+                    if (_session.ResponsePlaybackId is { } playbackId)
+                        _session.ClearResponseSuggestion(playbackId);
+                    await _session.ReplayAsync();
+                }
+                RefreshPlaybackState();
+            },
+            () => !_disposed && _session?.CanReplay == true
+        );
+        SaveNextCommand = new AsyncRelayCommand(
+            async () =>
+            {
+                if (ResponseBusy)
+                    return;
+                try
+                {
+                    _outputError = null;
+                    if (_session is not null)
+                        await _session.SaveNextAsync();
+                }
+                catch (Exception e)
+                {
+                    _outputError = $"保存失败：{e.Message}";
+                }
+                Refresh();
+            },
+            () => !_disposed && !ResponseBusy && _session?.CanSaveNext == true
+        );
+        EndCommand = new AsyncRelayCommand(RequestEndAsync, () => CanEndExperiment);
+        AllCorrectCommand = new RelayCommand(
+            () =>
+            {
+                _session?.RateAll(true);
+                Refresh();
+            },
+            () => CanScore
+        );
+        AllWrongCommand = new RelayCommand(
+            () =>
+            {
+                _session?.RateAll(false);
+                Refresh();
+            },
+            () => CanScore
+        );
+        ResetCommand = new RelayCommand(
+            () =>
+            {
+                ClearResponseReview();
+                _session?.RateAll(null);
+                Refresh();
+            },
+            () => CanScore
+        );
+        ShowResultsCommand = new RelayCommand(
+            () =>
+            {
+                if (_experimentEnded)
+                    _router.Navigate(
+                        new SpeechExperimentResultsRouteData(_experimentId, ExperimentSnapshot())
+                    );
+            },
+            () => _experimentEnded && !_disposed
+        );
+        MuteVolumeCommand = new RelayCommand(() => VolumePercent = 0, () => CanAdjustVolume);
+        RestoreVolumeCommand = new RelayCommand(
+            () =>
+            {
+                if (VolumePercent == 0)
+                    VolumePercent = _lastNonZeroVolume;
+            },
+            () => CanAdjustVolume
+        );
+        if (VolumePercent > 0)
+            _lastNonZeroVolume = VolumePercent;
+        ToggleMuteCommand = new RelayCommand(
+            () =>
+            {
+                if (!CanAdjustVolume)
+                    return;
+                if (IsMuted)
+                    RestoreVolumeCommand.Execute(null);
+                else
+                    MuteVolumeCommand.Execute(null);
+            },
+            () => CanAdjustVolume
+        );
+        BackCommand = new RelayCommand(
+            () =>
+            {
+                if (CanGoBack)
+                    router.GoBack();
+            },
+            () => CanGoBack
+        );
+        HomeCommand = new RelayCommand(router.GoHome);
+        if (_session is not null)
+        {
+            _session.Changed += OnSessionChanged;
+            _session.TimelineChanged += OnTimelineChanged;
+        }
+        Refresh();
+    }
+
+    public EnvelopeStimulationRouteData RouteData { get; private set; }
+    private IReadOnlyList<PageHeaderBadgeViewModel> _headerBadges = [];
+    public override IReadOnlyList<PageHeaderBadgeViewModel> HeaderBadges => _headerBadges;
+
+    public override void UpdateExperimentIdentity(
+        long previousId,
+        long id,
+        string code,
+        EGGtCSPlatform.MainApp.ExperimentConfigurationTemplate? configuration = null
+    )
+    {
+        if (
+            _session?.Started == true
+            || _experimentSource is not null
+            || RouteData.Configuration.ExperimentDatabaseId != previousId
+        )
+            return;
+        RouteData = RouteData with
+        {
+            Configuration = RouteData.Configuration with
+            {
+                ExperimentDatabaseId = id,
+                ExperimentId = code,
+            },
+        };
+        _headerBadges =
+        [
+            new("患者ID", RouteData.Configuration.SubjectId),
+            new("实验ID", code),
+            PageHeaderBadgeViewModel.CreateExperimentMode(RouteData.Configuration.CreationMode),
+        ];
+        OnPropertyChanged(nameof(HeaderBadges));
+        OnPropertyChanged(nameof(RouteData));
+    }
+
+    public IReadOnlyList<string> CorpusOptions { get; }
+    public IReadOnlyList<string> SentenceListOptions { get; private set; } = [];
+    public IReadOnlyList<int> ListSizeOptions { get; } = [10, 20, 30, 50];
+    public int ListSize
+    {
+        get => _session?.ListSize ?? 20;
+        set
+        {
+            if (
+                !_refreshing
+                && CanConfigure
+                && ListSizeOptions.Contains(value)
+                && value != ListSize
+            )
+            {
+                _session?.SelectListSize(value);
+                Refresh();
             }
         }
-        catch (Exception exception) { SetStatus($"音频准备失败：{exception.Message}", true); }
-        Refresh();
     }
-    private void SetAll(bool? value)
+    public string SelectedCorpus
     {
-        if (!CanScore) return;
-        foreach (var character in Characters) character.SetScore(value);
-        Refresh();
+        get => _session?.Corpus.Id ?? "";
+        set
+        {
+            if (
+                !_refreshing
+                && CanConfigure
+                && value != SelectedCorpus
+                && CorpusOptions.Contains(value)
+            )
+            {
+                _session?.SelectCorpus(value);
+                Refresh();
+            }
+        }
     }
-    private async Task RetryStopAsync()
+    public string SentenceList
     {
-        if (!StopUnconfirmed || _execution is null) return;
-        _saving = true; Refresh();
+        get => _sentenceList;
+        set
+        {
+            if (
+                !_refreshing
+                && CanConfigure
+                && value != SentenceList
+                && SentenceListOptions.Contains(value)
+            )
+            {
+                _session?.SelectSentenceList(value);
+                Refresh();
+            }
+        }
+    }
+    public IReadOnlyList<string> ModeOptions { get; } =
+    [
+        "固定语速测试(安静)",
+        "自适应语速测试(安静)",
+        "自适应信噪比测试",
+        "固定信噪比测试",
+        "固定 RIR 测试",
+    ];
+    public IReadOnlyList<string> CarrierOptions { get; } = ["原始语音", "声码器仿真"];
+    public string SelectedMode
+    {
+        get =>
+            ModeOptions[
+                IsRirMode ? 4
+                : IsFixedSnrMode ? 3
+                : IsSnrMode ? 2
+                : IsAdaptiveMode ? 1
+                : 0
+            ];
+        set
+        {
+            if (
+                CanConfigure
+                && (
+                    value == ModeOptions[0]
+                    || value == ModeOptions[1]
+                    || value == ModeOptions[2]
+                    || value == ModeOptions[3]
+                    || value == ModeOptions[4]
+                )
+            )
+                _session?.SelectMode(
+                    value == ModeOptions[1] ? SpeechTrainingMode.AdaptiveRate
+                    : value == ModeOptions[2] ? SpeechTrainingMode.AdaptiveSnr
+                    : value == ModeOptions[3] ? SpeechTrainingMode.FixedSnr
+                    : value == ModeOptions[4] ? SpeechTrainingMode.FixedRir
+                    : SpeechTrainingMode.FixedRate
+                );
+        }
+    }
+    public bool IsAdaptiveMode => _session?.Mode == SpeechTrainingMode.AdaptiveRate;
+    public bool IsFixedMode => !IsAdaptiveMode && !IsSnrMode && !IsRirMode;
+    public bool IsSnrMode => _session?.IsSnrMode == true;
+    public bool IsAdaptiveSnrMode => _session?.Mode == SpeechTrainingMode.AdaptiveSnr;
+    public bool IsFixedSnrMode => _session?.Mode == SpeechTrainingMode.FixedSnr;
+    public bool ShowAdaptiveScoringHint => false;
+    public string SnrInputLabel => IsFixedSnrMode ? "固定 SNR" : "初始 SNR";
+    public decimal FixedSnrMinimum => decimal.MinValue;
+    public decimal FixedSnrMaximum => decimal.MaxValue;
+    public decimal FixedSnrDb
+    {
+        get
+        {
+            var value = _session?.FixedSnrDb ?? 10;
+            // The decimal endpoints round outward when converted to double.
+            return value >= (double)decimal.MaxValue ? decimal.MaxValue
+                : value <= (double)decimal.MinValue ? decimal.MinValue
+                : (decimal)value;
+        }
+        set
+        {
+            if (CanConfigure)
+                _session?.SetFixedSnr((double)value);
+        }
+    }
+    public bool CanUseAdaptiveSnr => _session?.CanUseAdaptiveSnr == true;
+    public string RateLabel =>
+        IsRirMode ? "混响"
+        : IsSnrMode ? "信噪比"
+        : "语速";
+    public IReadOnlyList<string> NoiseOptions { get; } =
+    ["SSN（言语谱噪声）", "Babble（多人言语噪声）"];
+    public string SelectedNoise
+    {
+        get => NoiseOptions[_session?.NoiseKind == SpeechNoiseKind.Babble ? 1 : 0];
+        set
+        {
+            if (CanConfigure && NoiseOptions.Contains(value))
+                _session?.SelectNoise(
+                    value == NoiseOptions[1] ? SpeechNoiseKind.Babble : SpeechNoiseKind.Ssn
+                );
+        }
+    }
+    public decimal InitialSnrDb
+    {
+        get => (decimal)(_session?.InitialSnrDb ?? 10);
+        set
+        {
+            if (CanConfigure)
+                _session?.SetInitialSnr((double)value);
+        }
+    }
+    public string SnrText =>
+        $"{_session?.Waveform?.Preparation?.Noise?.Settings.SnrDb ?? _session?.CurrentSnrDb ?? 10:0.###} dB"
+        + (IsFixedSnrMode ? "" : $" · 反转 {_session?.SnrReversals ?? 0}");
+    public bool CanUseAdaptiveMode => _session?.CanUseAdaptiveMode == true;
+    public string AdaptiveScoringHint =>
+        (IsSnrMode ? _session?.SnrUnavailableReason : _session?.AdaptiveUnavailableReason)
+        ?? _session?.ScoringRule?.Description
+        ?? "自适应评分规则未配置";
+    public string AdaptiveRateText =>
+        $"{_session?.CurrentTiming?.Multiplier ?? 1 + (_session?.AdaptiveR ?? 0.5):0.###} 倍 · "
+        + (
+            _session?.CurrentTiming is { } timing
+                ? $"目标 {timing.TargetSpeechRate:0.###} 字/s"
+                : "目标语速待准备"
+        )
+        + $" · 反转 {_session?.AdaptiveReversals ?? 0}";
+    private VocoderOptions _vocoderSettings = new();
+    public bool CanAdjustCarrier => CanConfigure && _session?.CanAdjustCarrier == true;
+    public bool IsVocoderEnabled => _session?.AudioSettings.Vocoder is not null;
+    public string SelectedCarrier
+    {
+        get => CarrierOptions[IsVocoderEnabled ? 1 : 0];
+        set
+        {
+            if (CanAdjustCarrier && CarrierOptions.Contains(value))
+                _session?.SetVocoder(value == CarrierOptions[1] ? _vocoderSettings : null);
+        }
+    }
+    public IReadOnlyList<string> VocoderAlgorithms { get; } =
+    ["经典 CIS", "ACE", "经典 TLE", "ACE-TLE"];
+    public IReadOnlyList<string> VocoderCarriers { get; } = ["噪声", "纯音"];
+    public string VocoderAlgorithm
+    {
+        get => VocoderAlgorithms[(int)_vocoderSettings.Algorithm];
+        set
+        {
+            var index = VocoderAlgorithms.ToList().IndexOf(value);
+            if (index >= 0)
+                UpdateVocoder(_vocoderSettings with { Algorithm = (VocoderAlgorithm)index });
+        }
+    }
+    public string VocoderCarrier
+    {
+        get => VocoderCarriers[(int)_vocoderSettings.Carrier];
+        set
+        {
+            var index = VocoderCarriers.ToList().IndexOf(value);
+            if (index >= 0)
+                UpdateVocoder(_vocoderSettings with { Carrier = (VocoderCarrier)index });
+        }
+    }
+    public decimal VocoderBands
+    {
+        get => _vocoderSettings.Bands;
+        set
+        {
+            var bands = (int)Math.Round(Math.Clamp(value, 1, 22));
+            UpdateVocoder(
+                _vocoderSettings with
+                {
+                    Bands = bands,
+                    Maxima = Math.Min(bands, _vocoderSettings.Maxima),
+                }
+            );
+        }
+    }
+    public decimal VocoderMaxima
+    {
+        get => _vocoderSettings.Maxima;
+        set =>
+            UpdateVocoder(
+                _vocoderSettings with
+                {
+                    Maxima = (int)Math.Round(Math.Clamp(value, 1, _vocoderSettings.Bands)),
+                }
+            );
+    }
+    public bool ShowVocoderMaxima => _vocoderSettings.UsesMaxima;
+    public string CarrierHint =>
+        _session?.CurrentAudioSettings is { } actual
+        && actual.CarrierSummary != _session.AudioSettings.CarrierSummary
+            ? $"当前音频：{actual.CarrierSummary}；下次播放：{_session.AudioSettings.CarrierSummary}"
+            : "每轮开始前可设置载体，训练中不可修改；声码器默认不改变参考语音包络。";
+
+    private void UpdateVocoder(VocoderOptions settings)
+    {
+        if (!CanAdjustCarrier || settings == _vocoderSettings)
+            return;
+        settings.Validate();
+        _vocoderSettings = settings;
+        if (IsVocoderEnabled)
+            _session?.SetVocoder(settings);
+        else
+            RefreshCarrierProperties();
+    }
+
+    private void RefreshCarrierProperties()
+    {
+        foreach (
+            var property in new[]
+            {
+                nameof(CanAdjustCarrier),
+                nameof(IsVocoderEnabled),
+                nameof(SelectedCarrier),
+                nameof(VocoderAlgorithm),
+                nameof(VocoderCarrier),
+                nameof(VocoderBands),
+                nameof(VocoderMaxima),
+                nameof(ShowVocoderMaxima),
+                nameof(CarrierHint),
+            }
+        )
+            OnPropertyChanged(property);
+    }
+
+    public decimal SpeechRate
+    {
+        get => _session?.SpeechRate ?? 0;
+        set
+        {
+            if (CanAdjustSpeechRate)
+            {
+                _session?.SetSpeechRate(
+                    Math.Round(Math.Clamp(value, 0, 5), MidpointRounding.AwayFromZero)
+                );
+                OnPropertyChanged();
+            }
+        }
+    }
+    public bool CanAdjustSpeechRate => CanConfigure && _session?.CanAdjustSpeechRate == true;
+    public string SpeechRateHint =>
+        IsRirMode ? "原速播放；保持房间与反射条件，按逐字评分统计正确率。"
+        : IsFixedSnrMode
+            ? "原速播放；全句表保持固定 SNR；同句重播保持相同噪声，按逐字评分统计正确率。"
+        : IsSnrMode ? "原速播放；完整评分并保存后调整下一句 SNR；同句重播保持相同噪声。"
+        : IsAdaptiveMode ? "完整评分并保存后调整下一句倍率；重播不改变倍率。"
+        : _session?.CurrentAudioSettings is { } actual && actual.SpeechRate != SpeechRate
+            ? $"当前音频：{FormatRate(actual.SpeechRate)}；下次播放：{FormatRate(SpeechRate)}"
+        : "0＝原速；每轮开始前可设置，训练中不可修改。";
+
+    private static string FormatRate(decimal rate) => rate == 0 ? "原速" : $"{rate:0} 字/s";
+
+    public string CurrentText { get; }
+    public double DelayMilliseconds
+    {
+        get => RouteData.Configuration.StimulusConfiguration.Envelope?.DelayMilliseconds ?? 0;
+        set
+        {
+            if (!CanAdjustStimulation || !double.IsFinite(value))
+                return;
+            var delay = Math.Round(Math.Clamp(value, 0, 300), MidpointRounding.AwayFromZero);
+            if (delay == DelayMilliseconds)
+                return;
+
+            var route = RouteData.Configuration;
+            var configuration = route.StimulusConfiguration with
+            {
+                Envelope = (route.StimulusConfiguration.Envelope ?? new EnvelopeParameters()) with
+                {
+                    DelayMilliseconds = delay,
+                },
+            };
+            // Rebuild the immutable route through its constructor to preserve snapshot freezing.
+            RouteData = RouteData with
+            {
+                Configuration = new ExperimentRunRouteData(
+                    route.ExperimentId,
+                    route.SubjectId,
+                    configuration,
+                    route.StimulusElectrodes,
+                    route.AcquisitionChannels,
+                    route.ReferenceChannel,
+                    route.GroundChannel,
+                    route.SampleRateHz,
+                    route.DeviceId,
+                    route.ExperimentDatabaseId,
+                    route.ScheduledAt,
+                    route.Remarks,
+                    route.ImportedTiming,
+                    route.HistoricalResult,
+                    route.PhysicalChannelNames,
+                    route.PreRunImpedance,
+                    route.CreationMode
+                ),
+            };
+            OnPropertyChanged(nameof(RouteData));
+            OnPropertyChanged(nameof(DelayMilliseconds));
+            OnPropertyChanged(nameof(DelayText));
+            OnPropertyChanged(nameof(Waveform));
+            RebuildStimulusPreview();
+        }
+    }
+    public int DebugFrequencyHz => 500;
+    public bool CanAdjustStimulation => CanConfigure && _session?.CanAdjustStimulation == true;
+
+    private async void RebuildStimulusPreview()
+    {
         try
         {
-            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-            await _execution.ConfirmStoppedAsync(RouteData.Configuration, timeout.Token);
-            _stopUnconfirmed = false; SetStatus("设备已确认停止，请重新执行本句。");
+            if (_session is not null)
+                await _session.ConfigureStimulationAsync(
+                    DeviceEnvelopeOutput.Settings(RouteData.Configuration)
+                );
         }
-        catch (Exception exception) { SetStatus($"停止仍未确认：{exception.Message}", true); }
-        finally { _saving = false; Refresh(); }
-    }
-    private async Task EndAsync()
-    {
-        if (IsExecuting || _saving || StopUnconfirmed) return;
-        _saving = true; Refresh();
-        try
+        catch (Exception e)
         {
-            var endedAt = DateTimeOffset.UtcNow;
-            await _store.SaveAsync(CreateSession(SavedTrials.ToArray()) with { EndedAtUtc = endedAt });
-            _endedAt = endedAt; _stage = EnvelopeTrainingStage.Results; PageTitle = "实验结果";
-            IsEndConfirmationOpen = false; SetStatus("");
+            _outputError = e.Message;
         }
-        catch (Exception exception) { SetStatus($"结束记录保存失败：{exception.Message}", true); }
-        finally { _saving = false; Refresh(); }
+        Refresh();
     }
-    public EnvelopeTrainingSession CreateSession(IReadOnlyList<EnvelopeTrainingTrial>? trials = null) =>
-        new(_sessionId, _startedAt, _endedAt, new(RouteData.Configuration.ExperimentId,
-            RouteData.Configuration.SubjectId, RouteData.Configuration.DeviceId, RouteData.Configuration.ExperimentDatabaseId,
-            RouteData.Configuration.StimulusConfiguration, RouteData.Configuration.StimulusElectrodes,
-            RouteData.Configuration.PreRunImpedance, DetectionStatus), trials ?? SavedTrials.ToArray(), _interruptedTrials);
-    public string CreateSnapshotJson() => JsonSerializer.Serialize(CreateSession(), EnvelopeTrainingResultStore.JsonOptions);
-    private void ShowDetail(EnvelopeTrainingTrial? trial)
+
+    public string DelayText => $"{DelayMilliseconds / 1000:0.###} s";
+    public string Electrodes { get; }
+    public WaveformDescriptor Waveform =>
+        StimulusConfigurationSummaryBuilder.Waveform(RouteData.Configuration.StimulusConfiguration);
+    public ObservableCollection<SpeechWordViewModel> Words { get; } = [];
+    public IReadOnlyList<TimedWaveformPoint> VoiceSamples => _voice;
+    public IReadOnlyList<TimedWaveformPoint> VoiceEnvelope => _envelope;
+    public SpeechStimulusPreview? StimulusPreview =>
+        _session?.IsPreparingStimulus == true
+            ? SpeechStimulusPreview.Empty
+            : _session?.StimulusPlan?.Preview ?? _session?.Waveform?.Stimulus;
+    public double PreviewCurrentScale => _session?.StimulusPlan is null ? Waveform.Current : 1;
+    public double DisplayDurationSeconds =>
+        _session?.StimulusPlan?.DisplayDurationSeconds ?? AudioDurationSeconds;
+    public double AudioDurationSeconds =>
+        _session?.Duration.TotalSeconds is > 0 ? _session.Duration.TotalSeconds : 1;
+    public SpeechTimelineAnimation? TimelineAnimation => _session?.TimelineAnimation;
+    public double PlaybackProgress =>
+        _session is { Duration.Ticks: > 0 } session
+            ? Math.Clamp(session.TimelinePosition.TotalSeconds / DisplayDurationSeconds, 0d, 1d)
+            : 0d;
+    public bool HasWaveform => _displayedAudio is not null;
+    public bool CanConfigure => CanEndExperiment && _session?.CanConfigure == true;
+    public bool CanScore =>
+        !_disposed && !_closing && !_experimentEnded && _session?.CanScore == true;
+    public bool IsPlaying => _session?.IsPlaying == true;
+    public bool IsEnded => _session?.Ended == true;
+    public bool ShowRunActions => _session is { Started: true, Ended: false };
+    public string CorpusLabel =>
+        _session is null
+            ? "语料不可用"
+            : $"{SelectedCorpus} · 每表 {ListSize} 句 · 句表 {SentenceList}";
+    public string SentencePosition =>
+        _session is null
+            ? "无可用句子"
+            : $"第 {_session.SentenceIndex + 1:00} / {_session.SentenceList.Sentences.Count:00} 句";
+    public string PlaybackText =>
+        $"{(_session?.IsLoading == true ? "加载中" : "音频")}   {FormatTime(_session?.Position ?? TimeSpan.Zero)}/{FormatTime(_session?.Duration ?? TimeSpan.Zero)}";
+
+    private static string FormatTime(TimeSpan time) =>
+        $"{(int)time.TotalMinutes:00}:{time.Seconds:00}";
+
+    public string RatedText => $"{Words.Count(w => w.IsCorrect.HasValue)}/{Words.Count}";
+    public int CorrectCount => Words.Count(w => w.IsCorrect == true);
+    public int WrongCount => Words.Count(w => w.IsCorrect == false);
+    public string AccuracyText =>
+        Words.Any(w => w.IsCorrect.HasValue)
+            ? $"{100d * CorrectCount / Words.Count(w => w.IsCorrect.HasValue):0}%"
+            : "待判定";
+    public double VolumePercent
     {
-        if (!IsResults || trial is null) return;
-        var index = SavedTrials.IndexOf(trial);
-        if (index < 0) return;
-        SetDetail(index); IsDetailOpen = true;
-    }
-    private void SetDetail(int index)
-    {
-        if (index < 0 || index >= SavedTrials.Count) return;
-        _detailIndex = index; DetailCharacters.Clear();
-        foreach (var character in SavedTrials[index].Characters)
+        get => (_session?.Volume ?? 1) * 100;
+        set
         {
-            var item = new EnvelopeTrainingCharacterViewModel(character.Character, () => false, () => { });
-            item.SetScore(character.Correct); DetailCharacters.Add(item);
+            if (_session is not null && !_disposed)
+            {
+                _session.Volume = value / 100;
+                if (_session.VolumeError is null && VolumePercent > 0)
+                    _lastNonZeroVolume = VolumePercent;
+            }
         }
-        OnPropertyChanged(nameof(DetailTitle)); OnPropertyChanged(nameof(DetailCharacterColumns));
-        PreviousDetailCommand.NotifyCanExecuteChanged(); NextDetailCommand.NotifyCanExecuteChanged();
     }
+    public string VolumeText => $"{VolumePercent:0}%";
+    public bool IsMuted => VolumePercent == 0;
+    public string MuteActionText => IsMuted ? "恢复音量" : "静音";
+    public bool CanAdjustVolume => _session is not null && !_disposed;
+
+    public string StatusText =>
+        _loadError
+        ?? _outputError
+        ?? _session?.PersistenceError
+        ?? _session?.Error
+        ?? _session?.VolumeError
+        ?? (_session?.IsPreparingStimulus == true ? "正在准备刺激预览" : null)
+        ?? (_session?.IsOutputBusy == true ? _session.OutputStatus : null)
+        ?? (
+            IsRirMode ? _session?.RirUnavailableReason
+            : IsFixedSnrMode ? _session?.FixedSnrUnavailableReason
+            : IsSnrMode ? _session?.SnrUnavailableReason
+            : IsAdaptiveMode ? _session?.AdaptiveUnavailableReason
+            : null
+        )
+        ?? (
+            IsEnded ? RoundCompletionText
+            : _session?.IsLoading == true ? "正在加载题目音频"
+            : _session?.Started != true ? "选择语料库和句表后按当前设置播放音频"
+            : IsPlaying ? "播放中，可同步评分；评完可保存并进入下一句"
+            : !CanScore ? "播放已中断，请重播本句"
+            : "等待回答与评分后，可保存并进入下一句"
+        );
+    public AsyncRelayCommand StartCommand { get; }
+    public AsyncRelayCommand ReplayCommand { get; }
+    public AsyncRelayCommand SaveNextCommand { get; }
+    public RelayCommand MuteVolumeCommand { get; }
+    public RelayCommand RestoreVolumeCommand { get; }
+    public RelayCommand ToggleMuteCommand { get; }
+    public AsyncRelayCommand EndCommand { get; }
+    public RelayCommand AllCorrectCommand { get; }
+    public RelayCommand AllWrongCommand { get; }
+    public RelayCommand ResetCommand { get; }
+    public RelayCommand ShowResultsCommand { get; }
+    public RelayCommand BackCommand { get; }
+    public RelayCommand HomeCommand { get; }
+
+    private void OnSessionChanged(object? sender, EventArgs args)
+    {
+        if (args is SpeechPlaybackStateChangedEventArgs)
+        {
+            QueuePlaybackStateRefresh();
+            return;
+        }
+        if (Dispatcher.UIThread.CheckAccess())
+            Refresh();
+        else
+            Dispatcher.UIThread.Post(Refresh);
+    }
+
+    private int _playbackStateRefreshPending;
+
+    private void QueuePlaybackStateRefresh()
+    {
+        if (System.Threading.Interlocked.Exchange(ref _playbackStateRefreshPending, 1) != 0)
+            return;
+        Dispatcher.UIThread.Post(() =>
+        {
+            System.Threading.Interlocked.Exchange(ref _playbackStateRefreshPending, 0);
+            RefreshPlaybackState();
+        });
+    }
+
+    private void RefreshPlaybackState()
+    {
+        if (_disposed)
+            return;
+        // New waveform/sentence data needs one full publication. Playback updates
+        // only touch state and actions, leaving the expensive plots unchanged.
+        if (!ReferenceEquals(_displayedAudio, _session?.Waveform?.Audio)
+            || _displayedSentence != _session?.CurrentSentence.Id)
+        {
+            Refresh();
+            return;
+        }
+        foreach (var name in new[]
+        {
+            nameof(IsPlaying), nameof(CanScore), nameof(CanConfigure),
+            nameof(CanAdjustStimulation), nameof(CanAdjustSpeechRate), nameof(CanAdjustCarrier),
+            nameof(CanGoBack), nameof(CanEndExperiment), nameof(StatusText),
+            nameof(PlaybackText), nameof(TimelineAnimation),
+        })
+            OnPropertyChanged(name);
+        if (TimelineAnimation is null)
+            OnPropertyChanged(nameof(PlaybackProgress));
+        NotifyResponseState();
+        foreach (IRelayCommand command in new IRelayCommand[]
+        {
+            StartCommand, ReplayCommand, SaveNextCommand, EndCommand, BackCommand,
+            AllCorrectCommand, AllWrongCommand, ResetCommand,
+        })
+            command.NotifyCanExecuteChanged();
+        foreach (var word in Words)
+            word.RefreshCommands();
+    }
+
+    private int _timelineRefreshPending;
+    private SpeechTimelineAnimation? _presentedTimelineAnimation;
+
+    private void OnTimelineChanged(object? sender, EventArgs e)
+    {
+        if (System.Threading.Interlocked.Exchange(ref _timelineRefreshPending, 1) != 0)
+            return;
+        Dispatcher.UIThread.Post(() =>
+        {
+            System.Threading.Interlocked.Exchange(ref _timelineRefreshPending, 0);
+            if (!_disposed)
+            {
+                var animation = TimelineAnimation;
+                if (!ReferenceEquals(animation, _presentedTimelineAnimation))
+                {
+                    _presentedTimelineAnimation = animation;
+                    OnPropertyChanged(nameof(TimelineAnimation));
+                }
+                if (animation is null)
+                    OnPropertyChanged(nameof(PlaybackProgress));
+                OnPropertyChanged(nameof(PlaybackText));
+            }
+        });
+    }
+
     private void Refresh()
     {
-        foreach (var name in new[] { nameof(Stage), nameof(CanGoBack), nameof(ShowEndAction), nameof(StopUnconfirmed), nameof(IsExecuting), nameof(IsResults), nameof(CanEditSettings),
-            nameof(CanScore), nameof(CanStart), nameof(CanReplay), nameof(CanSave), nameof(CanAdvance), nameof(Instruction),
-            nameof(ScoredCountText), nameof(CorrectCountText), nameof(IncorrectCountText), nameof(AccuracyValueText), nameof(CurrentSentenceNumberText), nameof(SentenceTotalText), nameof(ScoredText), nameof(CorrectText), nameof(IncorrectText), nameof(AccuracyText), nameof(SentenceCounter),
-            nameof(CharacterColumns), nameof(HasSavedTrials), nameof(ResultCorpusName), nameof(ResultTableName), nameof(ResultSpeedText), nameof(ResultScoredText), nameof(ResultCorrectCountText), nameof(InterruptionsText), nameof(Audio), nameof(CorpusText), nameof(CanEditCorpus), nameof(AudioTimeText), nameof(EndMessage), nameof(ResultProgressText), nameof(ResultCorrectText),
-            nameof(ResultAccuracyText), nameof(ResultSessionText) }) OnPropertyChanged(name);
-        PlayAndStimulateCommand.NotifyCanExecuteChanged(); ReplayAudioCommand.NotifyCanExecuteChanged();
-        StopCommand.NotifyCanExecuteChanged(); RetryStopCommand.NotifyCanExecuteChanged(); SetAllCorrectCommand.NotifyCanExecuteChanged();
-        SetAllIncorrectCommand.NotifyCanExecuteChanged(); ResetScoresCommand.NotifyCanExecuteChanged();
-        SaveTrialCommand.NotifyCanExecuteChanged(); NextSentenceCommand.NotifyCanExecuteChanged();
-        RequestEndCommand.NotifyCanExecuteChanged(); CancelEndCommand.NotifyCanExecuteChanged();
-        ConfirmEndCommand.NotifyCanExecuteChanged(); HomeCommand.NotifyCanExecuteChanged(); BackCommand.NotifyCanExecuteChanged();
-        foreach (var character in Characters) character.RefreshCommands();
+        if (_disposed || _refreshing)
+            return;
+        _refreshing = true;
+        try
+        {
+            RefreshCore();
+        }
+        finally
+        {
+            _refreshing = false;
+        }
     }
-    private static string FormatTime(double seconds) => TimeSpan.FromSeconds(Math.Max(0, seconds)).ToString(@"mm\:ss\.f");
-    public void Dispose() { _disposed = true; _operation?.Cancel(); }
-    private sealed class InlineProgress(Action<EnvelopeTrainingProgress> report) : IProgress<EnvelopeTrainingProgress>
-    { public void Report(EnvelopeTrainingProgress value) => report(value); }
+
+    private void RefreshCore()
+    {
+        if (_session is not null)
+        {
+            if (_listedCorpus != $"{_session.Corpus.Id}/{_session.ListSize}")
+            {
+                // Clear the old selection before replacing ItemsSource. Avalonia otherwise
+                // may clear the newly selected item while reconciling the previous list.
+                _sentenceList = "";
+                OnPropertyChanged(nameof(SentenceList));
+                _listedCorpus = $"{_session.Corpus.Id}/{_session.ListSize}";
+                SentenceListOptions = _session.Lists.Select(x => x.Id).ToArray();
+                OnPropertyChanged(nameof(SentenceListOptions));
+            }
+            _sentenceList = _session.SentenceList.Id;
+            if (_displayedSentence != _session.CurrentSentence.Id)
+            {
+                ClearResponseReview();
+                _displayedSentence = _session.CurrentSentence.Id;
+                Words.Clear();
+                foreach (
+                    var (text, index) in _session.CurrentSentence.ScoringCharacters.Select(
+                        (text, index) => (text, index)
+                    )
+                )
+                    Words.Add(
+                        new SpeechWordViewModel(
+                            text,
+                            () => CanScore,
+                            correct =>
+                            {
+                                _session.Rate(index, correct);
+                                Refresh();
+                            }
+                        )
+                    );
+            }
+            var answers = _session.Answers;
+            for (var i = 0; i < Words.Count; i++)
+                Words[i].Update(answers[i]);
+            var prepared = _session.Waveform;
+            if (!ReferenceEquals(_displayedAudio, prepared?.Audio))
+            {
+                _displayedAudio = prepared?.Audio;
+                var buckets = prepared?.Voice ?? [];
+                _voice = buckets
+                    .SelectMany(p =>
+                        new[]
+                        {
+                            new TimedWaveformPoint(p.Seconds, p.Minimum, false),
+                            new TimedWaveformPoint(p.Seconds, p.Maximum, false),
+                        }
+                    )
+                    .ToArray();
+                var envelope = prepared?.Envelope ?? [];
+                _envelope = envelope
+                    .Select(p => new TimedWaveformPoint(p.Seconds, p.Amplitude, false))
+                    .Concat(
+                        envelope.Select(
+                            (p, i) => new TimedWaveformPoint(p.Seconds, -p.Amplitude, i == 0)
+                        )
+                    )
+                    .ToArray();
+            }
+        }
+        RefreshCarrierProperties();
+        foreach (
+            var name in new[]
+            {
+                nameof(SelectedCorpus),
+                nameof(SentenceList),
+                nameof(ListSize),
+                nameof(CorpusLabel),
+                nameof(CanConfigure),
+                nameof(CanEndExperiment),
+                nameof(CanGoBack),
+                nameof(CanTrainAgain),
+                nameof(CanAdjustSpeechRate),
+                nameof(SpeechRate),
+                nameof(SpeechRateHint),
+                nameof(SelectedMode),
+                nameof(IsRirMode),
+                nameof(RirConditionText),
+                nameof(RirStatus),
+                nameof(RirPreview),
+                nameof(IsGeneratingRir),
+                nameof(CanCancelRir),
+                nameof(IsAdaptiveMode),
+                nameof(IsFixedMode),
+                nameof(IsSnrMode),
+                nameof(IsAdaptiveSnrMode),
+                nameof(IsFixedSnrMode),
+                nameof(ShowAdaptiveScoringHint),
+                nameof(SnrInputLabel),
+                nameof(FixedSnrDb),
+                nameof(CanUseAdaptiveSnr),
+                nameof(RateLabel),
+                nameof(SelectedNoise),
+                nameof(InitialSnrDb),
+                nameof(SnrText),
+                nameof(CanUseAdaptiveMode),
+                nameof(AdaptiveScoringHint),
+                nameof(AdaptiveRateText),
+                nameof(CanScore),
+                nameof(IsPlaying),
+                nameof(IsEnded),
+                nameof(ShowRunActions),
+                nameof(HasWaveform),
+                nameof(ShowPlaybackPlayhead),
+                nameof(VoiceSamples),
+                nameof(VoiceEnvelope),
+                nameof(StimulusPreview),
+                nameof(PreviewCurrentScale),
+                nameof(DisplayDurationSeconds),
+                nameof(CanAdjustStimulation),
+                nameof(AudioDurationSeconds),
+                nameof(PlaybackProgress),
+                nameof(TimelineAnimation),
+                nameof(SentencePosition),
+                nameof(PlaybackText),
+                nameof(RatedText),
+                nameof(CorrectCount),
+                nameof(WrongCount),
+                nameof(AccuracyText),
+                nameof(StatusText),
+                nameof(VolumePercent),
+                nameof(VolumeText),
+                nameof(IsMuted),
+                nameof(MuteActionText),
+                nameof(CanAdjustVolume),
+            }
+        )
+            OnPropertyChanged(name);
+        foreach (
+            IRelayCommand command in new IRelayCommand[]
+            {
+                GenerateRirCommand,
+                CancelRirCommand,
+                MuteVolumeCommand,
+                RestoreVolumeCommand,
+                ToggleMuteCommand,
+                StartCommand,
+                ReplayCommand,
+                SaveNextCommand,
+                EndCommand,
+                AgainCommand,
+                AllCorrectCommand,
+                AllWrongCommand,
+                ResetCommand,
+                ShowResultsCommand,
+                BackCommand,
+            }
+        )
+            command.NotifyCanExecuteChanged();
+        foreach (var word in Words)
+            word.RefreshCommands();
+        NotifyResponseState();
+        if (_session?.Result is { } result && _resultRoute is null)
+        {
+            _resultRoute = new(
+                RouteData,
+                new(
+                    result.Settings.Corpus,
+                    result.Settings.SentenceList,
+                    result.Settings.Mode,
+                    result.Settings.Carrier,
+                    result.Settings.SpeechRate,
+                    result.Settings.ListSize,
+                    result.Settings.ResourceStart,
+                    result.Settings.ResourceEnd,
+                    result.Settings.AudioSettings,
+                    result.Settings.TrainingMode,
+                    result.Settings.AdaptiveScoring,
+                    result.Settings.InitialSnrDb,
+                    result.Settings.FixedSnrDb,
+                    result.Settings.Rir
+                ),
+                result.StartedAt,
+                result.SentenceCount,
+                result
+                    .Sentences.Select(x => new MainApp.SpeechSentenceResult(
+                        x.Number,
+                        x.Text,
+                        x.Correct,
+                        x.Total,
+                        x.SpeechRate,
+                        x.AudioSnapshot,
+                        Adaptive: x.Adaptive,
+                        PlaybackCompleted: x.PlaybackCompleted,
+                        AdaptiveSnr: x.AdaptiveSnr,
+                        Noise: x.Noise,
+                        Rir: x.Rir
+                    ))
+                    .ToArray(),
+                result.AdaptiveSummary,
+                result.Playbacks,
+                result.SnrSummary
+            );
+            // The experiment remains open between training rounds.
+        }
+    }
+
+    public override void OnNavigatedFrom()
+    {
+        ClearResponseReview();
+        _session?.Stop();
+    }
+
+    public override bool RequiresAsyncNavigation => true;
+
+    public override async Task<bool> PrepareToLeaveAsync()
+    {
+        if (_experimentEnded)
+            return true;
+        var stopped = await FinishAsync(
+            true,
+            EGGtCSPlatform.Persistence.ExperimentRunStatus.InterruptedByExit
+        );
+        if (!stopped && _notifyStopFailure is not null)
+            await _notifyStopFailure(StatusText);
+        return stopped;
+    }
+
+    public void Dispose()
+    {
+        if (_disposed)
+            return;
+        _disposed = true;
+        ClearResponseReview();
+        NotifyResponseState();
+        OnPropertyChanged(nameof(CanGoBack));
+        BackCommand.NotifyCanExecuteChanged();
+        OnPropertyChanged(nameof(CanAdjustCarrier));
+        OnPropertyChanged(nameof(CanAdjustSpeechRate));
+        OnPropertyChanged(nameof(CanAdjustVolume));
+        if (_session is not null)
+        {
+            _session.Changed -= OnSessionChanged;
+            _session.TimelineChanged -= OnTimelineChanged;
+            _session.Dispose();
+        }
+        foreach (
+            IRelayCommand command in new IRelayCommand[]
+            {
+                GenerateRirCommand,
+                CancelRirCommand,
+                MuteVolumeCommand,
+                RestoreVolumeCommand,
+                ToggleMuteCommand,
+                StartCommand,
+                ReplayCommand,
+                SaveNextCommand,
+                EndCommand,
+                AgainCommand,
+                AllCorrectCommand,
+                AllWrongCommand,
+                ResetCommand,
+                ShowResultsCommand,
+            }
+        )
+            command.NotifyCanExecuteChanged();
+        foreach (var word in Words)
+            word.RefreshCommands();
+    }
+}
+
+public sealed class SpeechWordViewModel : ViewModelBase
+{
+    private bool? _isCorrect;
+
+    public SpeechWordViewModel(string text, Func<bool> canRate, Action<bool?> rate)
+    {
+        Text = text;
+        CorrectCommand = new RelayCommand(() => rate(true), canRate);
+        WrongCommand = new RelayCommand(() => rate(false), canRate);
+    }
+
+    public string Text { get; }
+    public bool? IsCorrect => _isCorrect;
+    public bool IsCorrectScore => _isCorrect == true;
+    public bool IsIncorrectScore => _isCorrect == false;
+    public string Accent =>
+        _isCorrect switch
+        {
+            true => "#38A169",
+            false => "#E53E3E",
+            _ => "#A9BAD4",
+        };
+    public string CorrectColor => _isCorrect == true ? "#38A169" : "#6B7D99";
+    public string WrongColor => _isCorrect == false ? "#E53E3E" : "#6B7D99";
+    public RelayCommand CorrectCommand { get; }
+    public RelayCommand WrongCommand { get; }
+
+    internal void Update(bool? value)
+    {
+        if (_isCorrect == value)
+            return;
+        _isCorrect = value;
+        OnPropertyChanged(nameof(IsCorrect));
+        OnPropertyChanged(nameof(IsCorrectScore));
+        OnPropertyChanged(nameof(IsIncorrectScore));
+        OnPropertyChanged(nameof(Accent));
+        OnPropertyChanged(nameof(CorrectColor));
+        OnPropertyChanged(nameof(WrongColor));
+    }
+
+    internal void RefreshCommands()
+    {
+        CorrectCommand.NotifyCanExecuteChanged();
+        WrongCommand.NotifyCanExecuteChanged();
+    }
 }

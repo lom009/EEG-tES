@@ -2,7 +2,6 @@
   xmlns="https://github.com/avaloniaui"
   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
   xmlns:controls="clr-namespace:EGGtCSPlatform.Controls"
-  xmlns:pages="clr-namespace:EGGtCSPlatform.ViewModels.Pages"
   x:CompileBindings="False"
 >
   <ControlTheme
@@ -24,19 +23,8 @@
           ClipToBounds="False"
         >
           <StackPanel Spacing="3">
-            <Canvas Width="131" Height="38"
-                    IsVisible="{Binding IsDirectCurrent, RelativeSource={RelativeSource TemplatedParent}}">
-              <Line StartPoint="1,0" EndPoint="1,37" Stroke="#C99AFF" StrokeThickness="0.5" StrokeDashArray="2,2" />
-              <Line StartPoint="21,1" EndPoint="21,38" Stroke="#C99AFF" StrokeThickness="0.5" StrokeDashArray="2,2" />
-              <Line StartPoint="110,1" EndPoint="110,38" Stroke="#C99AFF" StrokeThickness="0.5" StrokeDashArray="2,2" />
-              <Line StartPoint="130,1" EndPoint="130,38" Stroke="#C99AFF" StrokeThickness="0.5" StrokeDashArray="2,2" />
-              <Image Canvas.Left="0.5625" Canvas.Top="0.5" Width="130" Height="37"
-                     Source="{SvgImage /Assets/Images/stimulation-period-tdcs-wave.svg}" />
-              <Ellipse Canvas.Left="0" Canvas.Top="34" Width="4" Height="4" Fill="White" Stroke="#9536F3" StrokeThickness="0.5" />
-            </Canvas>
             <controls:StimulusWaveformControl
               Height="38"
-              IsVisible="{Binding !IsDirectCurrent, RelativeSource={RelativeSource TemplatedParent}}"
               Descriptor="{TemplateBinding Descriptor}"
               DisplayMode="Compact"
             />

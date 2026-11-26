@@ -17,6 +17,8 @@ internal sealed class VisualTestNavigationRouter : INavigationRouter
 
     public void Navigate(ExperimentRerunRouteData routeData) { }
 
+    public void Navigate(SpeechExperimentResultsRouteData route) { }
+
     public void GoBack() { }
 
     public void GoHome() { }

@@ -224,7 +224,11 @@ public sealed partial class ExperimentRunPageViewModelTests
                 TimeSpan.FromSeconds(30),
                 TimeSpan.Zero,
                 TimeSpan.Zero,
-                TimeSpan.Zero
+                TimeSpan.Zero,
+                Configuration: SingleStimulusConfiguration.Snapshot(
+                    ExperimentRunRouteDataDefaults.Create(),
+                    TimeSpan.FromSeconds(1)
+                )
             ),
             "device"
         );
@@ -287,7 +291,11 @@ public sealed partial class ExperimentRunPageViewModelTests
                 TimeSpan.FromSeconds(30),
                 TimeSpan.Zero,
                 TimeSpan.Zero,
-                TimeSpan.Zero
+                TimeSpan.Zero,
+                Configuration: SingleStimulusConfiguration.Snapshot(
+                    ExperimentRunRouteDataDefaults.Create(),
+                    TimeSpan.FromSeconds(1)
+                )
             ),
             "device"
         );
@@ -351,7 +359,11 @@ public sealed partial class ExperimentRunPageViewModelTests
                 TimeSpan.FromSeconds(30),
                 TimeSpan.Zero,
                 TimeSpan.Zero,
-                TimeSpan.Zero
+                TimeSpan.Zero,
+                Configuration: SingleStimulusConfiguration.Snapshot(
+                    ExperimentRunRouteDataDefaults.Create(),
+                    TimeSpan.FromSeconds(1)
+                )
             ),
             "device"
         );

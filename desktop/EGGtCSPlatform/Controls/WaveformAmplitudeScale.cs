@@ -38,9 +38,9 @@ internal static class WaveformAmplitudeScale
         return rounded == 0d ? "0" : rounded.ToString("0", CultureInfo.CurrentCulture);
     }
 
-    public static double ToY(double value, double maximumAmplitude, double height)
+    public static double ToY(double value, double maximumAmplitude, double height, double minimumAmplitude = 1)
     {
-        var normalized = Math.Clamp(value / Math.Max(1d, maximumAmplitude), -1d, 1d);
+        var normalized = Math.Clamp(value / Math.Max(minimumAmplitude, maximumAmplitude), -1d, 1d);
         return height * (0.5d - normalized * 0.5d);
     }
 

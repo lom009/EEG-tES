@@ -15,6 +15,38 @@ namespace EGGtCSPlatform.Tests;
 
 public sealed class ConfigurationOptionsTests
 {
+    [Theory]
+    [InlineData(null, false)]
+    [InlineData("true", true)]
+    [InlineData("false", false)]
+    public void EnvelopePlayheadConfiguration(string? configured, bool expected)
+    {
+        var values = new Dictionary<string, string?>();
+        if (configured is not null)
+            values["Display:EnvelopePlayheadEnabled"] = configured;
+        var configuration = new ConfigurationBuilder().AddInMemoryCollection(values).Build();
+        var services = new ServiceCollection();
+        Bootstrapper.RegisterCommonServices(services, configuration);
+        using var provider = services.BuildServiceProvider();
+        Assert.Equal(expected, provider.GetRequiredService<IOptions<DisplayOptions>>().Value.EnvelopePlayheadEnabled);
+    }
+
+    [Theory]
+    [InlineData(null, true)]
+    [InlineData("true", true)]
+    [InlineData("false", false)]
+    public void EnvelopeRealtimeRenderingConfiguration(string? configured, bool expected)
+    {
+        var values = new Dictionary<string, string?>();
+        if (configured is not null)
+            values["Display:EnvelopeWaveformRealtimeEnabled"] = configured;
+        var configuration = new ConfigurationBuilder().AddInMemoryCollection(values).Build();
+        var services = new ServiceCollection();
+        Bootstrapper.RegisterCommonServices(services, configuration);
+        using var provider = services.BuildServiceProvider();
+        Assert.Equal(expected, provider.GetRequiredService<IOptions<DisplayOptions>>().Value.EnvelopeWaveformRealtimeEnabled);
+    }
+
     [Fact]
     public void DefaultJsonConfigurationCreatesStimulusCapabilityProfile()
     {
@@ -57,6 +89,8 @@ public sealed class ConfigurationOptionsTests
         Assert.False(application.ShowPreviousCrashOnStartup);
         Assert.Equal(FontSizePreset.Standard, display.FontSizePreset);
         Assert.Equal(2.5d, display.WaveformStrokeThickness);
+        Assert.False(display.EnvelopePlayheadEnabled);
+        Assert.True(display.EnvelopeWaveformRealtimeEnabled);
         Assert.True(options.IsValid());
         Assert.Equal(8, options.AllowedElectrodeSiteIds.Length);
         Assert.Equal(
@@ -171,6 +205,8 @@ public sealed class ConfigurationOptionsTests
         var display = provider.GetRequiredService<IOptions<DisplayOptions>>().Value;
 
         Assert.Equal(2.5d, display.WaveformStrokeThickness);
+        Assert.False(display.EnvelopePlayheadEnabled);
+        Assert.True(display.EnvelopeWaveformRealtimeEnabled);
     }
 
     [Fact]
@@ -919,6 +955,39 @@ public sealed class ConfigurationOptionsTests
             2750,
             protocol.GetTimeout(typeof(ConfigureStimulationImpedanceRequest)).TotalMilliseconds
         );
+    }
+
+    [Fact]
+    public void EnvelopeTimeoutsHaveDefaultsOverridesAndValidation()
+    {
+        var options = new V101RequestTimeoutOptions();
+        var defaults = options.CreateProtocolOptions(_ => null);
+        Assert.Equal(
+            1500,
+            defaults.GetTimeout(typeof(ConfigureEnvelopeStimulationRequest)).TotalMilliseconds
+        );
+        Assert.Equal(
+            1500,
+            defaults.GetTimeout(typeof(ControlEnvelopeStimulationRequest)).TotalMilliseconds
+        );
+        var overridden = options.CreateProtocolOptions(name =>
+            name switch
+            {
+                "EGGTCS_V101_TIMEOUT_ENVELOPE_CONFIG_MS" => "2500",
+                "EGGTCS_V101_TIMEOUT_ENVELOPE_CONTROL_MS" => "3000",
+                _ => null,
+            }
+        );
+        Assert.Equal(
+            2500,
+            overridden.GetTimeout(typeof(ConfigureEnvelopeStimulationRequest)).TotalMilliseconds
+        );
+        Assert.Equal(
+            3000,
+            overridden.GetTimeout(typeof(ControlEnvelopeStimulationRequest)).TotalMilliseconds
+        );
+        options.ConfigureEnvelopeStimulation = TimeSpan.Zero;
+        Assert.False(options.IsValid());
     }
 
     [Fact]

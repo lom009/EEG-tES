@@ -123,6 +123,17 @@ public sealed class ExperimentHistoryDeletionService : IExperimentHistoryDeletio
     private async Task DeleteRunAsync(Guid runId, CancellationToken cancellationToken)
     {
         await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        var speech = await db
+            .SpeechExperiments.Include(x => x.Experiment)
+            .SingleOrDefaultAsync(x => x.Id == runId, cancellationToken);
+        if (speech is not null)
+        {
+            if (speech.Status == ExperimentRunStatus.Running)
+                throw new InvalidOperationException("言语实验尚未结束，不能删除。");
+            db.Experiments.Remove(speech.Experiment);
+            await db.SaveChangesAsync(cancellationToken);
+            return;
+        }
         var run =
             await db
                 .ExperimentRuns.Include(x => x.Files)

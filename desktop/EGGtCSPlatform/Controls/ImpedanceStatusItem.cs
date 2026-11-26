@@ -32,6 +32,9 @@ public class ImpedanceStatusItem : TemplatedControl
         }, RoutingStrategies.Tunnel, handledEventsToo: true);
     }
 
+    private ComboBox? _channelSelector;
+    private bool _isSynchronizingChannelSelector;
+
     public static readonly StyledProperty<string?> LabelProperty = AvaloniaProperty.Register<
         ImpedanceStatusItem,
         string?
@@ -142,9 +145,51 @@ public class ImpedanceStatusItem : TemplatedControl
         set => SetValue(ChannelConflictTextProperty, value);
     }
 
+    protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
+    {
+        if (_channelSelector is not null)
+            _channelSelector.SelectionChanged -= OnChannelSelectionChanged;
+
+        base.OnApplyTemplate(e);
+        _channelSelector = e.NameScope.Find<ComboBox>("StimulationChannelSelector");
+        SynchronizeChannelSelector();
+        if (_channelSelector is not null)
+            _channelSelector.SelectionChanged += OnChannelSelectionChanged;
+    }
+
+    private void SynchronizeChannelSelector()
+    {
+        if (_channelSelector is null || _isSynchronizingChannelSelector)
+            return;
+
+        _isSynchronizingChannelSelector = true;
+        try
+        {
+            // Loading/unloading items can temporarily clear the ComboBox selection.
+            // Restore it only after the candidates are loaded, without writing back.
+            _channelSelector.ItemsSource = StimulationChannels;
+            _channelSelector.SelectedItem = SelectedStimulationChannel;
+        }
+        finally
+        {
+            _isSynchronizingChannelSelector = false;
+        }
+    }
+
+    private void OnChannelSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        // A null selection during teardown is not a request to clear the mapping.
+        if (!_isSynchronizingChannelSelector
+            && _channelSelector?.SelectedItem is StimulationChannelOptionViewModel channel)
+            SetCurrentValue(SelectedStimulationChannelProperty, channel);
+    }
+
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
+        if (change.Property == StimulationChannelsProperty
+            || change.Property == SelectedStimulationChannelProperty)
+            SynchronizeChannelSelector();
         if (
             change.Property == QualityProperty
             || change.Property == ResolvedStimulationRoleProperty
@@ -164,15 +209,11 @@ public class ImpedanceStatusItem : TemplatedControl
         PseudoClasses.Set(":bad", Quality == ImpedanceQuality.Bad);
         PseudoClasses.Set(
             ":blue-stimulus",
-            ResolvedStimulationRole
-                is ResolvedElectrodeRole.Anode
-                    or ResolvedElectrodeRole.FixedActive
+            ResolvedStimulationRole is { } blueRole && ElectrodeRoleDisplay.IsAnode(blueRole)
         );
         PseudoClasses.Set(
             ":red-stimulus",
-            ResolvedStimulationRole
-                is ResolvedElectrodeRole.Cathode
-                    or ResolvedElectrodeRole.Stimulating
+            ResolvedStimulationRole is { } redRole && ElectrodeRoleDisplay.IsCathode(redRole)
         );
         PseudoClasses.Set(":channel-conflict", HasChannelConflict);
     }

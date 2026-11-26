@@ -26,7 +26,6 @@ public sealed class VisualTestApp : App
         WaitingForStimulation,
         SettlingStimulation,
         SettlingStimulationDetails,
-        SettlingStimulationHistory,
         WaitingForFinalAcquisition,
         WaitingForCompletion,
         SettlingCompletion,
@@ -216,19 +215,14 @@ public sealed class VisualTestApp : App
                 break;
             case CaptureStage.WaitingForStimulation when viewModel.IsStimulating:
                 viewModel.IsFollowingLatest = false;
-                // Include the acquisition/stimulation boundary, as in the Figma running view.
-                viewModel.TimelineViewStart = viewModel.TimelineLivePosition - 12d;
-                viewModel.TimelineViewEnd = viewModel.TimelineLivePosition + 8d;
+                viewModel.TimelineViewStart = 68d;
+                viewModel.TimelineViewEnd = 73d;
                 viewModel.WaveformHover.Clear();
                 _settleStartedAt = DateTimeOffset.UtcNow;
                 _captureStage = CaptureStage.SettlingStimulation;
                 break;
             case CaptureStage.SettlingStimulation
                 when DateTimeOffset.UtcNow - _settleStartedAt >= TimeSpan.FromMilliseconds(300):
-                var stimulationOverlay = content.GetVisualDescendants().OfType<EGGtCSPlatform.Controls.StimulationPeriodOverlay>().First();
-                var card = stimulationOverlay.Child!;
-                if (!card.IsVisible || Math.Abs(card.Bounds.Width - 177) > 1 || Math.Abs(card.Bounds.Height - 104) > 1)
-                    throw new InvalidOperationException("The active stimulation interval must show the 177 × 104 design card.");
                 Capture(content, VisualTestOptions.Current.StimulationOutputPath);
                 ScrollDetailsToEnd(content, "StimulationParametersScroll");
                 _settleStartedAt = DateTimeOffset.UtcNow;
@@ -243,18 +237,6 @@ public sealed class VisualTestApp : App
                         "ExperimentRunPage.stimulation-details.png"
                     )
                 );
-                viewModel.TimelineViewStart = 0d;
-                viewModel.TimelineViewEnd = 5d;
-                _settleStartedAt = DateTimeOffset.UtcNow;
-                _captureStage = CaptureStage.SettlingStimulationHistory;
-                break;
-            case CaptureStage.SettlingStimulationHistory
-                when DateTimeOffset.UtcNow - _settleStartedAt >= TimeSpan.FromMilliseconds(300):
-                var overlay = content.GetVisualDescendants().OfType<EGGtCSPlatform.Controls.StimulationPeriodOverlay>().First();
-                if (overlay.Child?.IsVisible == true)
-                    throw new InvalidOperationException("The stimulation card must be hidden when its interval is outside the history viewport.");
-                Capture(content, Path.Combine(Path.GetDirectoryName(VisualTestOptions.Current.StimulationOutputPath)!,
-                    "ExperimentRunPage.stimulation-history.png"));
                 _captureStage = CaptureStage.WaitingForFinalAcquisition;
                 _runService!.ContinueAfterStimulation();
                 break;

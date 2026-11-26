@@ -70,6 +70,8 @@ public sealed class StimulusElectrodeSelectionOptionViewModel(
 
     public string Label { get; } = StimulationElectrodeRoleResolver.GetLabel(direction, role);
 
+    public string UiLabel => ElectrodeRoleDisplay.Label(ResolvedRole);
+
     public ICommand? SelectCommand { get; set; }
 
     public bool IsSelected
@@ -91,7 +93,7 @@ public sealed class StimulusElectrodeSelectionOptionViewModel(
     public string ProgressText => $"{AssignedCount}/{RequiredCount}";
 
     public bool UsesBlueColor =>
-        ResolvedRole is ResolvedElectrodeRole.Anode or ResolvedElectrodeRole.FixedActive;
+        ElectrodeRoleDisplay.IsAnode(ResolvedRole);
 
     public string RoleSymbol => ResolvedRole switch
     {
@@ -132,6 +134,8 @@ public sealed record StimulationChannelOptionViewModel(
         $"CH{PhysicalChannelId} · {StimulationElectrodeRoleResolver.GetLabel(Direction, Role)}";
 
     public string DisplayName => $"CH{PhysicalChannelId}";
+
+    public string UiLabel => $"CH{PhysicalChannelId} · {ElectrodeRoleDisplay.Label(Direction, Role)}";
 }
 
 public sealed class ElectrodeImpedanceItemViewModel : ObservableObject, IDisposable
@@ -165,23 +169,29 @@ public sealed class ElectrodeImpedanceItemViewModel : ObservableObject, IDisposa
 
     public bool IsSelected => Site.IsSelected;
 
-    public string Label => Site.StimulationPositionLabel;
+    public string Label => ShowStimulationChannel ? Site.StimulationPositionLabel : Site.PositionName;
 
-    public string RoleText => Site.RoleText;
+    public string RoleText => ShowStimulationChannel ? Site.RoleText : Site.AcquisitionRoleText;
+
+    public string UiLabel => ShowStimulationChannel ? Site.UiPositionLabel : Site.PositionName;
+
+    public string UiRoleText => ShowStimulationChannel ? Site.UiRoleText : Site.AcquisitionRoleText;
 
     public bool RequiresImpedanceDetection =>
-        Site.IsStimulus
+        ShowStimulationChannel
             ? Site.StimulationChannelRole != StimulationChannelRole.FixedActive
             : Site.Role == ElectrodeRole.Acquisition;
 
-    public string ImpedanceText => RequiresImpedanceDetection ? Site.ImpedanceText : "-";
+    private double? ModeImpedance => ShowStimulationChannel ? Site.StimulationImpedance : Site.AcquisitionImpedance;
 
-    public string QualityText => RequiresImpedanceDetection ? Site.QualityText : "无需检测";
+    public string ImpedanceText => RequiresImpedanceDetection ? ElectrodeSiteViewModel.GetImpedanceRangeText(Quality) : "-";
+
+    public string QualityText => RequiresImpedanceDetection ? ElectrodeSiteViewModel.QualityLabel(Quality) : "无需检测";
 
     public ImpedanceQuality Quality =>
-        RequiresImpedanceDetection ? Site.Quality : ImpedanceQuality.Unknown;
+        RequiresImpedanceDetection ? ElectrodeSiteViewModel.FromImpedance(ModeImpedance) : ImpedanceQuality.Unknown;
 
-    public ResolvedElectrodeRole? ResolvedStimulationRole => Site.ResolvedStimulationRole;
+    public ResolvedElectrodeRole? ResolvedStimulationRole => ShowStimulationChannel ? Site.ResolvedStimulationRole : null;
 
     public IReadOnlyList<StimulationChannelOptionViewModel> StimulationChannels { get; }
 
@@ -224,6 +234,8 @@ public sealed class ElectrodeImpedanceItemViewModel : ObservableObject, IDisposa
                 nameof(SelectedStimulationChannel));
         OnPropertyChanged(nameof(Label));
         OnPropertyChanged(nameof(RoleText));
+        OnPropertyChanged(nameof(UiLabel));
+        OnPropertyChanged(nameof(UiRoleText));
         OnPropertyChanged(nameof(RequiresImpedanceDetection));
         OnPropertyChanged(nameof(ImpedanceText));
         OnPropertyChanged(nameof(QualityText));
@@ -244,7 +256,8 @@ public sealed class ElectrodeSiteViewModel : ObservableObject
     private string? _stimulationRoleText;
     private bool _isSelected;
     private bool _isAvailable;
-    private double? _impedance;
+    private double? _stimulationImpedance;
+    private double? _acquisitionImpedance;
 
     public ElectrodeSiteViewModel(
         string name,
@@ -252,13 +265,17 @@ public sealed class ElectrodeSiteViewModel : ObservableObject
         double y,
         bool canStimulate,
         ElectrodeRole role = ElectrodeRole.None,
-        string? positionName = null
+        string? positionName = null,
+        ElectrodeVector3? position3D = null,
+        ElectrodeVector3? normal3D = null
     )
     {
         Name = name;
         PositionName = string.IsNullOrWhiteSpace(positionName) ? name : positionName;
         X = x;
         Y = y;
+        Position3D = position3D;
+        Normal3D = normal3D;
         CanStimulate = canStimulate;
         _role = role;
     }
@@ -266,6 +283,9 @@ public sealed class ElectrodeSiteViewModel : ObservableObject
     public string Name { get; }
 
     public string PositionName { get; }
+
+    public ElectrodeVector3? Position3D { get; }
+    public ElectrodeVector3? Normal3D { get; }
 
     public double X { get; }
 
@@ -330,21 +350,101 @@ public sealed class ElectrodeSiteViewModel : ObservableObject
     public bool IsAvailable
     {
         get => _isAvailable;
-        set => SetProperty(ref _isAvailable, value);
-    }
-
-    public double? Impedance
-    {
-        get => _impedance;
         set
         {
-            if (!SetProperty(ref _impedance, value))
-                return;
-            OnPropertyChanged(nameof(ImpedanceText));
-            OnPropertyChanged(nameof(Quality));
-            OnPropertyChanged(nameof(QualityText));
-            OnPropertyChanged(nameof(ToolTipText));
+            if (SetProperty(ref _isAvailable, value))
+                OnPropertyChanged(nameof(IsDimmed));
         }
+    }
+
+    public bool IsDimmed => !CanStimulate && !IsAvailable;
+
+    public double? StimulationImpedance
+    {
+        get => _stimulationImpedance;
+        set { if (SetProperty(ref _stimulationImpedance, value)) NotifyImpedanceChanged(); }
+    }
+
+    public double? AcquisitionImpedance
+    {
+        get => _acquisitionImpedance;
+        set { if (SetProperty(ref _acquisitionImpedance, value)) NotifyImpedanceChanged(); }
+    }
+
+    // Compatibility projection for single-role consumers; mode-aware code uses Get/SetImpedance.
+    public double? Impedance
+    {
+        get => IsStimulus ? StimulationImpedance : AcquisitionImpedance;
+        set => SetImpedance(IsStimulus ? ElectrodeConfigurationMode.Stimulus : ElectrodeConfigurationMode.Acquisition, value);
+    }
+
+    public double? GetImpedance(ElectrodeConfigurationMode mode) =>
+        mode == ElectrodeConfigurationMode.Stimulus ? StimulationImpedance : AcquisitionImpedance;
+
+    public void SetImpedance(ElectrodeConfigurationMode mode, double? value)
+    {
+        if (mode == ElectrodeConfigurationMode.Stimulus) StimulationImpedance = value;
+        else AcquisitionImpedance = value;
+    }
+
+    private void NotifyImpedanceChanged()
+    {
+        foreach (var property in new[] { nameof(Impedance), nameof(ImpedanceText), nameof(Quality),
+            nameof(QualityText), nameof(ToolTipText), nameof(UiToolTipText), nameof(ShowSharedDivider),
+            nameof(StimulationDisplayQuality), nameof(AcquisitionDisplayQuality), nameof(DisplayQuality),
+            nameof(StimulationColor), nameof(AcquisitionColor), nameof(StimulationForeground), nameof(AcquisitionForeground) })
+            OnPropertyChanged(property);
+    }
+
+    public bool IsShared => IsStimulus && IsAcquisition;
+    public bool ShowSharedDivider => IsShared && StimulationImpedance is null && AcquisitionImpedance is null;
+    public string AcquisitionLabel => Role switch { ElectrodeRole.Reference => "REF", ElectrodeRole.Ground => "GND", _ => "采" };
+    public string AcquisitionRoleText => Role switch { ElectrodeRole.Reference => "参考电极 REF", ElectrodeRole.Ground => "地电极 GND", ElectrodeRole.Acquisition => "采集电极", _ => "未配置" };
+    private bool _hasStimulationDetectionResult;
+    private bool _hasAcquisitionDetectionResult;
+
+    public void SetDetectionResultAvailable(ElectrodeConfigurationMode mode, bool available)
+    {
+        ref var state = ref (mode == ElectrodeConfigurationMode.Stimulus
+            ? ref _hasStimulationDetectionResult : ref _hasAcquisitionDetectionResult);
+        if (state == available) return;
+        state = available;
+        NotifyImpedanceChanged();
+    }
+
+    // Presentation only: no synthetic readings are added for electrodes that need no test.
+    public ImpedanceQuality StimulationDisplayQuality => _hasStimulationDetectionResult && IsStimulus
+        && StimulationChannelRole == global::EGGtCSPlatform.ViewModels.Pages.StimulationChannelRole.FixedActive
+            ? ImpedanceQuality.Excellent : FromImpedance(StimulationImpedance);
+    public ImpedanceQuality AcquisitionDisplayQuality => _hasAcquisitionDetectionResult
+        && Role is ElectrodeRole.Reference or ElectrodeRole.Ground
+        ? ImpedanceQuality.Excellent : FromImpedance(AcquisitionImpedance);
+    public ImpedanceQuality DisplayQuality => IsStimulus ? StimulationDisplayQuality : AcquisitionDisplayQuality;
+    public string StimulationColor => ColorFor(StimulationDisplayQuality);
+    public string AcquisitionColor => ColorFor(AcquisitionDisplayQuality);
+    public string StimulationForeground => ForegroundFor(StimulationDisplayQuality);
+    public string AcquisitionForeground => ForegroundFor(AcquisitionDisplayQuality);
+
+    public static string ColorFor(ImpedanceQuality quality) => quality switch
+    {
+        ImpedanceQuality.Excellent => "#38A169", ImpedanceQuality.Good => "#2F86FF",
+        ImpedanceQuality.Medium => "#F3A619", ImpedanceQuality.Poor => "#FD5B38",
+        ImpedanceQuality.Bad => "#E91919", _ => "#E9EBFF"
+    };
+
+    // Colored result/no-test regions use white text; pending regions retain the role color.
+    public static string ForegroundFor(ImpedanceQuality quality) => quality switch
+    {
+        ImpedanceQuality.Unknown => "#3941B6", _ => "#FFFFFF"
+    };
+
+    public string DetectionDescription(ElectrodeConfigurationMode mode)
+    {
+        var required = mode == ElectrodeConfigurationMode.Stimulus
+            ? StimulationChannelRole == global::EGGtCSPlatform.ViewModels.Pages.StimulationChannelRole.Selectable
+            : Role == ElectrodeRole.Acquisition;
+        var value = GetImpedance(mode);
+        return !required ? "无需检测" : value is null ? "未检测" : $"{GetImpedanceRangeText(FromImpedance(value))} · {QualityLabel(FromImpedance(value))}";
     }
 
     public bool IsStimulus => StimulusTargetId.HasValue;
@@ -353,8 +453,7 @@ public sealed class ElectrodeSiteViewModel : ObservableObject
         StimulationPhysicalChannelId.HasValue && StimulationChannelRole.HasValue;
 
     public bool IsAcquisition =>
-        !IsStimulus
-        && Role is ElectrodeRole.Acquisition or ElectrodeRole.Reference or ElectrodeRole.Ground;
+        Role is ElectrodeRole.Acquisition or ElectrodeRole.Reference or ElectrodeRole.Ground;
 
     public string StimulationPositionLabel => ResolvedStimulationRole switch
     {
@@ -386,6 +485,19 @@ public sealed class ElectrodeSiteViewModel : ObservableObject
                 _ => "未配置",
             };
 
+    public string UiRoleText => IsStimulus && ResolvedStimulationRole is { } resolved
+        ? ElectrodeRoleDisplay.Label(resolved) : RoleText;
+
+    public string UiPositionLabel => IsStimulus && ResolvedStimulationRole is { } resolved
+        ? $"{PositionName}·{ElectrodeRoleDisplay.Token(resolved)}" : StimulationPositionLabel;
+
+    public string UiDisplayName => IsStimulus && ResolvedStimulationRole is not null
+        ? UiPositionLabel : DisplayName;
+
+    public string UiToolTipText => IsShared
+        ? $"{Name} · {UiRoleText} · {DetectionDescription(ElectrodeConfigurationMode.Stimulus)}\n{AcquisitionRoleText} · {DetectionDescription(ElectrodeConfigurationMode.Acquisition)}"
+        : $"{Name} · {UiRoleText} · {DetectionDescription(IsStimulus ? ElectrodeConfigurationMode.Stimulus : ElectrodeConfigurationMode.Acquisition)}";
+
     public void AssignStimulusPosition(
         Guid targetId,
         int targetDisplayOrder,
@@ -404,7 +516,6 @@ public sealed class ElectrodeSiteViewModel : ObservableObject
                 ? StimulationElectrodeRoleResolver.Resolve(direction).FixedActive
                 : StimulationElectrodeRoleResolver.Resolve(direction).Selectable;
         _stimulationRoleText = StimulationElectrodeRoleResolver.GetLabel(direction, channelRole);
-        Role = ElectrodeRole.None;
         NotifyAssignmentDisplayChanged();
     }
 
@@ -445,8 +556,10 @@ public sealed class ElectrodeSiteViewModel : ObservableObject
 
     public ImpedanceQuality Quality => FromImpedance(Impedance);
 
-    public string QualityText =>
-        Quality switch
+    public string QualityText => QualityLabel(Quality);
+
+    public static string QualityLabel(ImpedanceQuality quality) =>
+        quality switch
         {
             ImpedanceQuality.Excellent => "优",
             ImpedanceQuality.Good => "良",
@@ -473,7 +586,7 @@ public sealed class ElectrodeSiteViewModel : ObservableObject
             _ => ImpedanceQuality.Bad,
         };
 
-    private static string GetImpedanceRangeText(ImpedanceQuality quality) =>
+    public static string GetImpedanceRangeText(ImpedanceQuality quality) =>
         quality switch
         {
             ImpedanceQuality.Excellent => "≤10 kΩ",
@@ -496,6 +609,14 @@ public sealed class ElectrodeSiteViewModel : ObservableObject
 
     private void NotifyAssignmentDisplayChanged()
     {
+        NotifyImpedanceChanged();
+        OnPropertyChanged(nameof(IsShared));
+        OnPropertyChanged(nameof(AcquisitionLabel));
+        OnPropertyChanged(nameof(AcquisitionRoleText));
+        OnPropertyChanged(nameof(UiRoleText));
+        OnPropertyChanged(nameof(UiPositionLabel));
+        OnPropertyChanged(nameof(UiDisplayName));
+        OnPropertyChanged(nameof(UiToolTipText));
         OnPropertyChanged(nameof(DisplayName));
         OnPropertyChanged(nameof(RoleText));
         OnPropertyChanged(nameof(IsStimulus));

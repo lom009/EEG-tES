@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="EGGtCSPlatform.SpeechTraining.Tests" />
+    <Content Include="Resources\**\*" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" TargetPath="SpeechCorpora\%(RecursiveDir)%(Filename)%(Extension)" Pack="true" PackagePath="speechResources/SpeechCorpora/%(RecursiveDir)%(Filename)%(Extension)" />
+    <Content Include="NoiseResources\*.wav" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" TargetPath="SpeechNoises\%(Filename)%(Extension)" Pack="true" PackagePath="speechResources/SpeechNoises/%(Filename)%(Extension)" />
+    <None Include="buildTransitive/EGGtCSPlatform.SpeechTraining.targets" Pack="true" PackagePath="buildTransitive/" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\EGGtCSPlatform.Audio.Core\EGGtCSPlatform.Audio.Core.csproj" />
+    <ProjectReference Include="..\EGGtCSPlatform.Audio.Dsp\EGGtCSPlatform.Audio.Dsp.csproj" />
+  </ItemGroup>
+</Project>

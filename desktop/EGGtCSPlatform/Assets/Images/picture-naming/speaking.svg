@@ -1,0 +1,22 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="120" height="113.684" viewBox="0 0 120 113.684" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="picture-naming-speaking-profile 1">
+<path id="background" d="M55.6579 110.132C84.8709 110.132 108.553 86.45 108.553 57.237C108.553 28.0241 84.8709 4.34229 55.6579 4.34229C26.4449 4.34229 2.76316 28.0241 2.76316 57.237C2.76316 86.45 26.4449 110.132 55.6579 110.132Z" fill="url(#paint0_linear_0_296)"/>
+<g id="Group">
+<path id="profile" d="M55.6579 4.34229C72.2368 6.31597 86.4474 21.7107 84.8684 36.7107C84.0789 43.0265 91.1842 47.3686 95.9211 53.2897C98.6842 56.4476 97.5 58.816 93.1579 60.7897C89.6053 62.7633 90.3947 65.1318 91.9737 68.2897C93.9474 71.0528 90 72.6318 84.8684 71.4476C87.2368 72.237 91.9737 72.6318 92.3684 74.6054C92.7632 76.1844 88.4211 77.3686 89.2105 80.9212C90 84.4739 91.5789 88.816 87.6316 91.1844C84.0789 93.1581 78.1579 92.3686 73.8158 92.7633C64.3421 93.5528 58.8158 98.6844 54.8684 109.737" stroke-width="0.789474" stroke-linecap="round" stroke-linejoin="round" stroke="url(#paint1_linear_0_296)"/>
+<g id="speech">
+<path id="Vector" d="M106.579 68.6845C110.131 67.895 113.684 65.9213 116.053 63.5529" stroke-width="1.57895" stroke-linecap="round" stroke-linejoin="round" stroke="#5149C4"/>
+<path id="Vector_2" d="M106.184 76.1845C109.737 76.5792 113.289 78.9476 115.263 82.1055" stroke-width="1.57895" stroke-linecap="round" stroke-linejoin="round" stroke="#5149C4"/>
+</g>
+</g>
+</g>
+<defs>
+<linearGradient id="paint0_linear_0_296" x1="-27.5" y1="57.237" x2="109" y2="57.237" gradientUnits="userSpaceOnUse">
+<stop stop-color="white"/>
+<stop offset="1" stop-color="#F9FBFF"/>
+</linearGradient>
+<linearGradient id="paint1_linear_0_296" x1="50.1316" y1="69.0791" x2="98.2895" y2="69.0791" gradientUnits="userSpaceOnUse">
+<stop stop-color="#7486A4" stop-opacity="0"/>
+<stop offset="1" stop-color="#12121A"/>
+</linearGradient>
+</defs>
+</svg>

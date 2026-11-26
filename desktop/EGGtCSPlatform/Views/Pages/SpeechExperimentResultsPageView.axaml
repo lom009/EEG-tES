@@ -1,0 +1,154 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ xmlns:pages="clr-namespace:EGGtCSPlatform.ViewModels.Pages" xmlns:models="clr-namespace:EGGtCSPlatform.MainApp"
+ xmlns:controls="clr-namespace:EGGtCSPlatform.Controls" x:Class="EGGtCSPlatform.Views.Pages.SpeechExperimentResultsPageView"
+ x:DataType="pages:SpeechExperimentResultsPageViewModel" x:Name="Root"
+ FontFamily="{DynamicResource AlibabaPuHuiTi}" Foreground="{DynamicResource ProductText}" FontSize="14">
+ <UserControl.Resources>
+  <ResourceDictionary>
+   <ResourceDictionary.MergedDictionaries><MergeResourceInclude Source="/Controls/HistoryControlThemes.axaml"/><MergeResourceInclude Source="/Views/Pages/TrainingResultThemes.axaml"/></ResourceDictionary.MergedDictionaries>
+  </ResourceDictionary>
+ </UserControl.Resources>
+ <UserControl.Styles>
+  <StyleInclude Source="/Views/Pages/SpeechTrainingStyles.axaml"/>
+  <Style Selector="TextBlock.muted"><Setter Property="Foreground" Value="#7C91B1"/></Style>
+  <Style Selector="Border.metric"><Setter Property="Background" Value="#F8FAFC"/><Setter Property="CornerRadius" Value="4"/><Setter Property="Padding" Value="16,12"/><Setter Property="Margin" Value="0,0,12,0"/></Style>
+  <Style Selector="TextBlock.value"><Setter Property="FontSize" Value="18"/><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="Margin" Value="0,8,0,0"/></Style>
+  <Style Selector="TabItem"><Setter Property="Padding" Value="12,10"/><Setter Property="Foreground" Value="#7C91B1"/></Style>
+  <Style Selector="TabItem:selected"><Setter Property="Foreground" Value="#4940C7"/></Style>
+  <Style Selector="Button.link"><Setter Property="Background" Value="Transparent"/><Setter Property="BorderThickness" Value="0"/><Setter Property="Foreground" Value="#5145CD"/><Setter Property="Padding" Value="6"/></Style>
+  <Style Selector="ComboBox"><Setter Property="MinHeight" Value="34"/><Setter Property="CornerRadius" Value="6"/></Style>
+ </UserControl.Styles>
+ <ScrollViewer x:Name="ResultPageScroll" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+  <Grid Margin="24,0,24,24" ColumnDefinitions="*,16,2.24*" x:Name="ContentGrid" MinWidth="1100" MinHeight="700">
+   <Border Classes="card" Padding="16,20">
+    <Grid RowDefinitions="Auto,18,Auto,16,Auto,*,Auto">
+     <StackPanel Orientation="Horizontal" Spacing="8"><Image Source="{SvgImage /Assets/Images/envelope-training/result-heading.svg}" Width="20" Height="20"/><TextBlock Text="实验结果" Classes="heading"/></StackPanel>
+     <Border Grid.Row="2" Classes="soft"><StackPanel Spacing="12">
+      <TextBlock Text="实验概览" FontWeight="SemiBold"/>
+      <Grid ColumnDefinitions="Auto,*"><TextBlock Text="实验ID" Classes="muted"/><TextBlock Grid.Column="1" Text="{Binding ExperimentCode}" HorizontalAlignment="Right"/></Grid>
+      <Grid ColumnDefinitions="Auto,*"><TextBlock Text="实验时间" Classes="muted"/><TextBlock Grid.Column="1" Text="{Binding StartedAtText}" HorizontalAlignment="Right"/></Grid>
+      <Grid ColumnDefinitions="Auto,*"><TextBlock Text="被试ID" Classes="muted"/><TextBlock Grid.Column="1" Text="{Binding SubjectId}" HorizontalAlignment="Right"/></Grid>
+      <Grid ColumnDefinitions="Auto,*"><TextBlock Text="训练总次数" Classes="muted"/><TextBlock Grid.Column="1" Text="{Binding TotalCount}" HorizontalAlignment="Right"/></Grid>
+      <Grid ColumnDefinitions="Auto,*"><TextBlock Text="有效完成" Classes="muted"/><TextBlock Grid.Column="1" Text="{Binding CompletedCount}" HorizontalAlignment="Right"/></Grid>
+      <Grid ColumnDefinitions="Auto,*"><TextBlock Text="中断次数" Classes="muted"/><TextBlock Grid.Column="1" Text="{Binding InterruptedCount}" HorizontalAlignment="Right"/></Grid>
+     </StackPanel></Border>
+     <Border Grid.Row="4" Classes="soft"><StackPanel Spacing="12">
+      <TextBlock Text="包络-tACS 刺激方案" FontWeight="SemiBold"/>
+      <Grid ColumnDefinitions="Auto,*"><TextBlock Text="最大电流" Classes="muted"/><TextBlock Grid.Column="1" Text="{Binding CurrentText}" HorizontalAlignment="Right"/></Grid>
+      <Grid ColumnDefinitions="Auto,*"><TextBlock Text="点位" Classes="muted"/><TextBlock Grid.Column="1" Text="{Binding Electrodes}" HorizontalAlignment="Right"/></Grid>
+      <Grid ColumnDefinitions="Auto,*"><TextBlock Text="训练延时范围" Classes="muted"/><TextBlock Grid.Column="1" Text="{Binding DelayRange}" HorizontalAlignment="Right"/></Grid>
+      <TextBlock Text="延时由每次训练独立设置，详见训练记录" Classes="muted" FontSize="11" TextWrapping="Wrap"/>
+     </StackPanel></Border>
+     <WrapPanel Grid.Row="6" Margin="0,24,0,0">
+      <Button Command="{Binding ExportCommand}" Margin="0,0,12,8"><StackPanel Orientation="Horizontal" Spacing="8"><Image Source="{SvgImage /Assets/Images/envelope-training/result-export.svg}" Width="20" Height="20"/><TextBlock Text="导出实验结果"/></StackPanel></Button>
+      <Button Command="{Binding CopyCommand}" Margin="0,0,0,8"><StackPanel Orientation="Horizontal" Spacing="8"><Image Source="{SvgImage /Assets/Images/envelope-training/result-copy.svg}" Width="20" Height="20"/><TextBlock Text="复制配置"/></StackPanel></Button>
+     </WrapPanel>
+    </Grid>
+   </Border>
+   <Border Grid.Column="2" Classes="card" Padding="16,8">
+    <Grid RowDefinitions="Auto,*">
+     <TextBlock Text="{Binding StatusText}" IsVisible="{Binding HasStatus}" Foreground="#DB493C" TextWrapping="Wrap" Margin="0,0,0,8"/>
+     <TabControl Padding="0" Grid.Row="1" SelectedIndex="{Binding SelectedTab}" Background="Transparent">
+      <TabItem Theme="{StaticResource SpeechResultTab}" Header="实验概览"><ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel Spacing="12" Margin="0,12,0,0">
+       <UniformGrid Columns="4">
+        <Border Classes="metric"><StackPanel><StackPanel Orientation="Horizontal" Spacing="8"><Image Source="{SvgImage /Assets/Images/envelope-training/result-completed.svg}" Width="16" Height="16"/><TextBlock Text="训练次数" Classes="muted"/></StackPanel><TextBlock Classes="value" Text="{Binding TotalCount}"/></StackPanel></Border>
+        <Border Classes="metric"><StackPanel><StackPanel Orientation="Horizontal" Spacing="8"><Image Source="{SvgImage /Assets/Images/envelope-training/result-scored.svg}" Width="16" Height="16"/><TextBlock Text="有效完成" Classes="muted"/></StackPanel><TextBlock Classes="value" Text="{Binding CompletedText}"/></StackPanel></Border>
+        <Border Classes="metric"><StackPanel><StackPanel Orientation="Horizontal" Spacing="8"><Image Source="{SvgImage /Assets/Images/envelope-training/result-correct.svg}" Width="16" Height="16"/><TextBlock Text="覆盖模式" Classes="muted"/></StackPanel><TextBlock Classes="value" Text="{Binding ModesText}"/></StackPanel></Border>
+        <Border Classes="metric"><StackPanel><StackPanel Orientation="Horizontal" Spacing="8"><Image Source="{SvgImage /Assets/Images/envelope-training/result-accuracy.svg}" Width="16" Height="16"/><TextBlock Text="中断记录" Classes="muted"/></StackPanel><TextBlock Classes="value" Text="{Binding InterruptedCount}"/></StackPanel></Border>
+       </UniformGrid>
+       <Grid ColumnDefinitions="*,Auto"><TextBlock Text="全部训练记录" FontWeight="SemiBold"/><TextBlock Grid.Column="1" Text="{Binding TotalText}" Classes="muted"/></Grid>
+       <Border Classes="soft"><Grid ColumnDefinitions="Auto,12,*,Auto,12,Auto">
+        <TextBlock Text="测试模式" Classes="muted" VerticalAlignment="Center"/>
+        <ComboBox Grid.Column="2" Width="210" HorizontalAlignment="Left" ItemsSource="{Binding ModeOptions}" SelectedItem="{Binding ModeFilter}"/>
+        <TextBlock Grid.Column="3" Text="{Binding SelectionText}" Classes="muted" VerticalAlignment="Center"/>
+        <Button Grid.Column="5" Content="对比选中训练" Classes="primary" Command="{Binding CompareSelectedCommand}"/>
+       </Grid></Border>
+       <Border Background="#F4F7FB" Padding="16"><Grid ColumnDefinitions="28,1.1*,1.5*,1.1*,.7*,1*,.8*,.7*,32">
+        <TextBlock Grid.Column="1" Text="训练 / 时间" Classes="muted"/><TextBlock Grid.Column="2" Text="模式 / 测试条件" Classes="muted"/>
+        <TextBlock Grid.Column="3" Text="语料 / 句表" Classes="muted"/><TextBlock Grid.Column="4" Text="延时" Classes="muted"/>
+        <TextBlock Grid.Column="5" Text="主结果" Classes="muted"/><TextBlock Grid.Column="6" Text="完成句数" Classes="muted"/><TextBlock Grid.Column="7" Text="状态" Classes="muted"/>
+       </Grid></Border>
+       <TextBlock Text="尚无训练记录" IsVisible="{Binding IsEmpty}" Classes="muted"/>
+       <ItemsControl ItemsSource="{Binding VisibleRounds}"><ItemsControl.ItemTemplate><DataTemplate x:DataType="pages:SpeechRoundRow">
+        <Border BorderBrush="#DFE7F3" BorderThickness="0,0,0,1" Padding="16,8"><Grid ColumnDefinitions="28,1.1*,1.5*,1.1*,.7*,1*,.8*,.7*,32">
+         <CheckBox Theme="{StaticResource HistoryCheckBoxTheme}" IsChecked="{Binding Selected, Mode=OneWay}" Command="{Binding ToggleCommand}" IsEnabled="{Binding CanToggle}"/>
+         <StackPanel Grid.Column="1" Spacing="4"><TextBlock Text="{Binding Number}"/><TextBlock Text="{Binding Time}" Classes="muted" FontSize="11"/></StackPanel>
+         <StackPanel Grid.Column="2" Spacing="4"><TextBlock Text="{Binding Mode}"/><TextBlock Text="{Binding Condition}" Classes="muted" FontSize="11"/></StackPanel>
+         <TextBlock Grid.Column="3" Text="{Binding CorpusList}" VerticalAlignment="Center"/>
+         <TextBlock Grid.Column="4" Text="{Binding Delay}" VerticalAlignment="Center"/>
+         <TextBlock Grid.Column="5" Text="{Binding MainResult}" VerticalAlignment="Center"/>
+         <TextBlock Grid.Column="6" Text="{Binding Progress}" VerticalAlignment="Center"/>
+         <Border Grid.Column="7" Background="{Binding StatusBackground}" CornerRadius="12" Padding="6,3" HorizontalAlignment="Left" VerticalAlignment="Center"><TextBlock Text="{Binding Status}" Foreground="{Binding StatusColor}"/></Border>
+         <Button Grid.Column="8" Padding="6" ToolTip.Tip="查看训练详情" Command="{Binding #Root.((pages:SpeechExperimentResultsPageViewModel)DataContext).ViewRoundCommand}" CommandParameter="{Binding}"><Image Source="{SvgImage /Assets/Images/envelope-training/result-detail.svg}" Width="20" Height="20"/></Button>
+        </Grid></Border>
+       </DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
+      </StackPanel></ScrollViewer></TabItem>
+      <TabItem Theme="{StaticResource SpeechResultTab}" Header="对比分析"><ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel Spacing="12" Margin="0,12,0,0">
+       <Border Classes="soft"><StackPanel Spacing="10">
+        <WrapPanel><TextBlock Text="测试模式" Classes="muted" VerticalAlignment="Center" Margin="0,0,12,0"/>
+         <ComboBox Width="200" ItemsSource="{Binding ComparisonModeOptions}" SelectedItem="{Binding ComparisonMode}"/>
+         <RadioButton Content="同参数对比" IsChecked="{Binding SameParameters}" GroupName="SpeechCompare" Margin="16,0,8,0"/>
+         <RadioButton Content="不同延时对比" IsChecked="{Binding DifferentDelay}" GroupName="SpeechCompare"/>
+        </WrapPanel>
+        <ItemsControl ItemsSource="{Binding SentenceLists}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+         <ItemsControl.ItemTemplate><DataTemplate x:DataType="pages:SpeechListFilter"><CheckBox Theme="{StaticResource HistoryCheckBoxTheme}" Content="{Binding Label}" IsChecked="{Binding Selected}" Margin="0,0,16,0"/></DataTemplate></ItemsControl.ItemTemplate>
+        </ItemsControl>
+       </StackPanel></Border>
+       <TextBlock Text="趋势图" FontWeight="SemiBold"/>
+       <controls:SpeechComparisonChart Rows="{Binding ChartRows}" Height="190"/>
+       <TextBlock Text="{Binding ComparisonHint}" Classes="muted" TextWrapping="Wrap"/>
+       <TextBlock Text="条件选择" FontWeight="SemiBold"/>
+       <Border Background="#F4F7FB" Padding="16"><Grid ColumnDefinitions="1*,1.3*,1.4*,1.4*,1*,85">
+        <TextBlock Text="训练" Classes="muted"/><TextBlock Grid.Column="1" Text="模式" Classes="muted"/><TextBlock Grid.Column="2" Text="语料 / 句表" Classes="muted"/>
+        <TextBlock Grid.Column="3" Text="测试条件" Classes="muted"/><TextBlock Grid.Column="4" Text="主结果" Classes="muted"/><TextBlock Grid.Column="5" Text="操作" Classes="muted"/>
+       </Grid></Border>
+       <ItemsControl ItemsSource="{Binding ComparisonRows}"><ItemsControl.ItemTemplate><DataTemplate x:DataType="pages:SpeechRoundRow">
+        <Border BorderBrush="#DFE7F3" BorderThickness="0,0,0,1" Padding="16,10"><Grid ColumnDefinitions="1*,1.3*,1.4*,1.4*,1*,85">
+         <TextBlock Text="{Binding Number}" VerticalAlignment="Center"/><TextBlock Grid.Column="1" Text="{Binding Mode}" VerticalAlignment="Center"/>
+         <TextBlock Grid.Column="2" Text="{Binding CorpusList}" VerticalAlignment="Center"/>
+         <StackPanel Grid.Column="3"><TextBlock Text="{Binding Condition}"/><TextBlock Text="{Binding Delay}" Classes="muted" FontSize="11"/></StackPanel>
+         <TextBlock Grid.Column="4" Text="{Binding MainResult}" VerticalAlignment="Center"/>
+         <Button Grid.Column="5" Content="{Binding CompareAction}" Classes="link" Command="{Binding ToggleCommand}"/>
+        </Grid></Border>
+       </DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
+      </StackPanel></ScrollViewer></TabItem>
+      <TabItem Theme="{StaticResource SpeechResultTab}" Header="单次训练详情"><ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel Spacing="12" Margin="0,12,0,0">
+       <Border Classes="soft"><StackPanel Spacing="10">
+        <StackPanel Orientation="Horizontal" Spacing="12"><TextBlock Text="训练次数" Classes="muted" VerticalAlignment="Center"/>
+         <ComboBox Width="235" ItemsSource="{Binding Rounds}" SelectedItem="{Binding SelectedRound}">
+          <ComboBox.ItemTemplate><DataTemplate x:DataType="pages:SpeechRoundRow"><TextBlock Text="{Binding Label}"/></DataTemplate></ComboBox.ItemTemplate>
+         </ComboBox><TextBlock Text="{Binding DetailStatus}" VerticalAlignment="Center"/>
+        </StackPanel><TextBlock Text="{Binding DetailSummary}" Classes="muted" TextWrapping="Wrap"/>
+       </StackPanel></Border>
+       <TextBlock Text="尚无训练记录" IsVisible="{Binding IsEmpty}" Classes="muted"/>
+       <UniformGrid Columns="4" IsVisible="{Binding HasDetail}">
+        <Border Classes="metric"><StackPanel><StackPanel Orientation="Horizontal" Spacing="8"><Image Source="{SvgImage /Assets/Images/envelope-training/result-completed.svg}" Width="16" Height="16"/><TextBlock Text="已完成句数" Classes="muted"/></StackPanel><TextBlock Classes="value" Text="{Binding Detail.CompletedText}"/></StackPanel></Border>
+        <Border Classes="metric"><StackPanel><TextBlock Text="{Binding DetailSecondLabel}" Classes="muted"/><TextBlock Classes="value" Text="{Binding DetailSecondValue}"/></StackPanel></Border>
+        <Border Classes="metric"><StackPanel><TextBlock Text="{Binding DetailThirdLabel}" Classes="muted"/><TextBlock Classes="value" Text="{Binding DetailThirdValue}"/></StackPanel></Border>
+        <Border Classes="metric"><StackPanel>
+         <TextBlock Text="{Binding DetailFourthLabel}" Classes="muted"/><TextBlock Classes="value" Text="{Binding DetailFourthValue}"/>
+         <TextBlock Text="{Binding Detail.AdaptiveStatus}" IsVisible="{Binding !IsFixedDetail}" FontSize="10" Classes="muted" TextWrapping="Wrap"/>
+        </StackPanel></Border>
+       </UniformGrid>
+       <TextBlock Text="逐句结果" FontWeight="SemiBold"/>
+       <Border Background="#F4F7FB" Padding="16"><Grid ColumnDefinitions=".6*,2*,1.5*,1*,1.2*,40">
+        <TextBlock Text="句次" Classes="muted"/><TextBlock Grid.Column="1" Text="题目" Classes="muted"/><TextBlock Grid.Column="2" Text="正确 / 总字数" Classes="muted"/>
+        <TextBlock Grid.Column="3" Text="正确率" Classes="muted"/><TextBlock Grid.Column="4" Text="备注" Classes="muted"/>
+       </Grid></Border>
+       <ItemsControl ItemsSource="{Binding Detail.Results}"><ItemsControl.ItemTemplate><DataTemplate x:DataType="models:SpeechSentenceResult">
+        <Border BorderBrush="#DFE7F3" BorderThickness="0,0,0,1" Padding="16,12"><StackPanel Spacing="10">
+         <Grid ColumnDefinitions=".6*,2*,1.5*,1*,1.2*,40">
+          <TextBlock Text="{Binding NumberText}"/><TextBlock Grid.Column="1" Text="{Binding Text}" TextWrapping="Wrap"/>
+          <TextBlock Grid.Column="2" Text="{Binding ScoreText}"/><TextBlock Grid.Column="3" Text="{Binding AccuracyText}"/>
+          <TextBlock Grid.Column="4" Text="无备注"/>
+          <ToggleButton Theme="{StaticResource SpeechSentenceDetail}" Grid.Column="5" x:Name="SentenceDetails" Padding="6" ToolTip.Tip="逐句结果详情"/>
+         </Grid><Border Classes="soft" IsVisible="{Binding IsChecked, ElementName=SentenceDetails}"><TextBlock Text="{Binding DetailText}" TextWrapping="Wrap"/></Border>
+        </StackPanel></Border>
+       </DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
+      </StackPanel></ScrollViewer></TabItem>
+     </TabControl>
+    </Grid>
+   </Border>
+  </Grid>
+ </ScrollViewer>
+</UserControl>

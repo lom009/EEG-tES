@@ -15,6 +15,10 @@ public sealed class DisplayOptions
     public const double MinimumWaveformStrokeThickness = 0.1d;
     public const double MaximumWaveformStrokeThickness = 10d;
 
+    public bool EnvelopePlayheadEnabled { get; set; } = false;
+
+    public bool EnvelopeWaveformRealtimeEnabled { get; set; } = true;
+
     public FontSizePreset FontSizePreset { get; set; } = FontSizePreset.Standard;
 
     public double WaveformStrokeThickness { get; set; } = DefaultWaveformStrokeThickness;

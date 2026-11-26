@@ -7,6 +7,7 @@
   x:CompileBindings="False"
 >
   <ControlTheme x:Key="StimulusSliderTrackButtonTheme" TargetType="Button">
+    <Setter Property="ClipToBounds" Value="False" />
     <Setter Property="HorizontalContentAlignment" Value="Center" />
     <Setter Property="VerticalContentAlignment" Value="Center" />
     <Setter Property="MinWidth" Value="0" />
@@ -15,12 +16,19 @@
     <Setter Property="BorderThickness" Value="0" />
     <Setter Property="Template">
       <ControlTemplate>
+        <!-- Keep hit testing within the original button while extending only its paint. -->
+        <Grid Background="Transparent">
         <Border
-          Height="10"
+          Name="TrackFill"
+          IsHitTestVisible="False"
+          IsVisible="{Binding Bounds.Width, RelativeSource={RelativeSource TemplatedParent}, Converter={x:Static controls:SliderTrackAppearance.HasTrackLength}}"
+          Margin="{TemplateBinding controls:SliderTrackAppearance.FillMargin}"
+          Height="{TemplateBinding controls:SliderTrackAppearance.Height}"
           VerticalAlignment="Center"
           Background="{TemplateBinding Background}"
-          CornerRadius="2"
+          CornerRadius="{TemplateBinding controls:SliderTrackAppearance.CornerRadius}"
         />
+        </Grid>
       </ControlTemplate>
     </Setter>
   </ControlTheme>

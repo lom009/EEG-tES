@@ -110,3 +110,22 @@ export function placeElectrodeLabel({
 
   return null;
 }
+
+export function renderElectrodeLabel(button, point, fallbackId) {
+ button.replaceChildren();
+ button.classList.toggle('shared', !!point?.shared);
+ button.classList.toggle('shared-divider', !!point?.showSharedDivider);
+ button.title = point?.tooltip ?? '';
+ if (point?.shared) {
+  for (const [label, background, foreground] of [
+   [point.label, point.stimulationColor, point.stimulationForeground],
+   [point.acquisitionLabel, point.acquisitionColor, point.acquisitionForeground],
+  ]) {
+   const half = button.ownerDocument.createElement('span');
+   half.textContent = label;
+   half.style.background = background;
+   half.style.color = foreground;
+   button.append(half);
+  }
+ } else button.textContent = point?.label?.replace('\n',' ') ?? fallbackId;
+}

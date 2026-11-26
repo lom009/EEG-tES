@@ -19,45 +19,8 @@ using Xunit;
 
 namespace EGGtCSPlatform.Tests;
 
-public sealed class StimulationChannelConfigurationTests
+public sealed partial class StimulationChannelConfigurationTests
 {
-    [Fact]
-    public void PointFocusPreservesImpedanceRowsAndChannelSelections()
-    {
-        var capability = CreateCapability([7]);
-        var stimulus = new StimulusModeConfigurationViewModel(StimulusKind.TDcs, capability);
-        using var model = CreateElectrodePage(stimulus.CreateSnapshot(), capability);
-        var point = model.Points.First(p => p.CanStimulate);
-        model.SelectPointCommand.Execute(point);
-        var row = model.CurrentImpedanceItems.Single(r => r.Site == point);
-        model.SelectedPoint = null;
-        model.SelectedPoint = point;
-        Assert.Same(row, model.CurrentImpedanceItems.Single(r => r.Site == point));
-        Assert.Equal(7, row.SelectedStimulationChannel?.PhysicalChannelId);
-        Assert.Contains("CH7", model.SelectedPointRoleText);
-    }
-
-    [Fact]
-    public void PanelChannelEditFocusesItsHeadPointAndUsesTheSameAssignment()
-    {
-        var capability = CreateCapability([1, 8]);
-        var stimulus = new StimulusModeConfigurationViewModel(StimulusKind.TDcs, capability);
-        using var model = CreateElectrodePage(stimulus.CreateSnapshot(), capability);
-        var points = model.Points.Where(p => p.CanStimulate).Take(2).ToArray();
-        model.SelectPointCommand.Execute(points[0]);
-        var selectable = model.StimulusSelectionOptions.Single(o => o.Role == StimulationChannelRole.Selectable);
-        model.SelectStimulusSelectionOptionCommand.Execute(selectable);
-        model.SelectPointCommand.Execute(points[1]);
-        var row = model.CurrentImpedanceItems.Single(r => r.Site == points[0]);
-        row.SelectedStimulationChannel = row.StimulationChannels.First();
-        Assert.Same(points[0], model.SelectedPoint);
-        Assert.True(points[0].IsSelected);
-        Assert.False(points[1].IsSelected);
-        Assert.Equal(row.SelectedStimulationChannel.PhysicalChannelId, points[0].StimulationPhysicalChannelId);
-        Assert.Equal(points[0].StimulationPositionLabel, row.Label);
-        Assert.Equal(points[0].RoleText, row.RoleText);
-    }
-
     [Theory]
     [InlineData(false, 8d, true)]
     [InlineData(false, 24d, false)]
@@ -466,8 +429,8 @@ public sealed class StimulationChannelConfigurationTests
     [InlineData(StimulusDirection.Positive, StimulationChannelRole.Selectable, true)]
     [InlineData(StimulusDirection.Negative, StimulationChannelRole.FixedActive, true)]
     [InlineData(StimulusDirection.Negative, StimulationChannelRole.Selectable, false)]
-    [InlineData(StimulusDirection.Bidirectional, StimulationChannelRole.FixedActive, true)]
-    [InlineData(StimulusDirection.Bidirectional, StimulationChannelRole.Selectable, false)]
+    [InlineData(StimulusDirection.Bidirectional, StimulationChannelRole.FixedActive, false)]
+    [InlineData(StimulusDirection.Bidirectional, StimulationChannelRole.Selectable, true)]
     public void ElectrodeSelectionColorFollowsResolvedRole(
         StimulusDirection direction,
         StimulationChannelRole role,
@@ -484,6 +447,8 @@ public sealed class StimulationChannelConfigurationTests
 
         Assert.Equal(usesBlueColor, option.UsesBlueColor);
         Assert.Equal(!usesBlueColor, option.UsesRedColor);
+        Assert.Equal(usesBlueColor ? "阳极" : "阴极", option.UiLabel);
+        Assert.Equal(usesBlueColor ? "A" : "C", ElectrodeRoleDisplay.Token(option.ResolvedRole));
     }
 
     [Theory]
@@ -503,10 +468,10 @@ public sealed class StimulationChannelConfigurationTests
     )]
     [InlineData(
         StimulusDirection.Bidirectional,
-        StimulationChannelRole.FixedActive,
-        "固定刺激电极",
         StimulationChannelRole.Selectable,
-        "自选刺激电极"
+        "自选刺激电极",
+        StimulationChannelRole.FixedActive,
+        "固定刺激电极"
     )]
     public void ElectrodeRoleSectionsAlwaysPlaceBlueOnLeftAndRedOnRight(
         StimulusDirection direction,
@@ -1996,21 +1961,24 @@ public sealed class StimulationChannelConfigurationTests
         StimulusCapabilityProfile capability,
         IImpedanceDetectionService? impedanceDetectionService = null,
         ImpedanceDetectionOptions? impedanceDetectionOptions = null,
-        ExperimentCreationMode creationMode = ExperimentCreationMode.AcquisitionAndStimulation
+        ExperimentCreationMode creationMode = ExperimentCreationMode.AcquisitionAndStimulation,
+        ElectrodeSelectionOptions? selectionOptions = null,
+        ExperimentConfigurationTemplate? template = null
     ) =>
         new(
             new ElectrodeConfigurationRouteData(
                 "EXP-ROLE",
                 "SUBJECT-ROLE",
                 snapshot,
-                CreationMode: creationMode
+                CreationMode: creationMode, ImportedTemplate: template
             ),
             new NullRouter(),
             new DialogService(() => null),
             new NullDialogProvider(),
             capability,
             impedanceDetectionService ?? new PreviewImpedanceDetectionService(),
-            impedanceDetectionOptions
+            impedanceDetectionOptions,
+            electrodeSelectionOptions: selectionOptions
         );
 
     private static void ConfigureStimulusPointsAndChannels(

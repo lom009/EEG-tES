@@ -1,0 +1,11 @@
+{
+  "name": "eggtcs-head3d",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "esbuild scene-source.js --bundle --format=esm --target=es2022 --outfile=scene.js",
+    "test": "node --test tests/*.test.js"
+  },
+  "dependencies": { "three": "0.180.0" },
+  "devDependencies": { "esbuild": "0.25.10" }
+}

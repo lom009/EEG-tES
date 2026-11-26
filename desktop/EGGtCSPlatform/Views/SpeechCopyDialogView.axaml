@@ -1,0 +1,16 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:vm="clr-namespace:EGGtCSPlatform.ViewModels"
+ xmlns:pages="clr-namespace:EGGtCSPlatform.ViewModels.Pages" x:Class="EGGtCSPlatform.Views.SpeechCopyDialogView" x:DataType="vm:SpeechCopyDialogViewModel">
+ <Border Background="White" Padding="24" CornerRadius="8" Width="440">
+  <StackPanel Spacing="20">
+   <TextBlock Text="复制训练配置到新实验" FontSize="18" FontWeight="SemiBold"/>
+   <ComboBox ItemsSource="{Binding Rounds}" SelectedItem="{Binding Selected}" HorizontalAlignment="Stretch">
+    <ComboBox.ItemTemplate><DataTemplate x:DataType="pages:SpeechRoundRow"><TextBlock Text="{Binding Label}"/></DataTemplate></ComboBox.ItemTemplate>
+   </ComboBox>
+   <TextBlock Text="复制刺激方案和该轮初始参数。新实验需确认配置后手动开始。" TextWrapping="Wrap"/>
+   <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Right">
+    <Button Content="取消" Command="{Binding DismissCommand}"/>
+    <Button Content="复制配置" Command="{Binding ConfirmCommand}" Background="#3941B6" Foreground="White"/>
+   </StackPanel>
+  </StackPanel>
+ </Border>
+</UserControl>

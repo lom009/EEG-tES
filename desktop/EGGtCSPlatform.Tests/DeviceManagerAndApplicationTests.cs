@@ -21,13 +21,9 @@ namespace EGGtCSPlatform.Tests;
 public sealed class DeviceManagerAndApplicationTests
 {
     [Theory]
-    [InlineData(2, ExperimentRunStage.Completed)]
-    [InlineData(0, ExperimentRunStage.Acquisition)]
-    [InlineData(0, ExperimentRunStage.Blanking)]
-    public async Task AcquisitionOnlyAutomaticWorksWithoutStimulationCapability(
-        int cycles,
-        ExperimentRunStage stopAt
-    )
+    [InlineData(0)]
+    [InlineData(2)]
+    public async Task AcquisitionOnlyAutomaticIsRejectedBeforeStartingDevice(int cycles)
     {
         var device = new AcquisitionOnlyDevice();
         await using var manager = new DeviceManager(connectedDevices: [device]);
@@ -36,60 +32,20 @@ public sealed class DeviceManagerAndApplicationTests
             new InMemoryChannelMappingService([new EegPhysicalChannelMapping("F3", 1)])
         );
         var received = new ConcurrentQueue<ExperimentRunTelemetryEventArgs>();
-        var reachedStop = new TaskCompletionSource(
-            TaskCreationOptions.RunContinuationsAsynchronously
-        );
-        service.TelemetryReceived += (_, args) =>
-        {
-            received.Enqueue(args);
-            if (args.Telemetry.CurrentCycle == 2 && args.Telemetry.Stage == stopAt)
-                reachedStop.TrySetResult();
-        };
-        var running = service.StartAutomaticExperimentAsync(
+        service.TelemetryReceived += (_, args) => received.Enqueue(args);
+        await Assert.ThrowsAsync<NotSupportedException>(() => service.StartAutomaticExperimentAsync(
             new AutomaticExperimentRunRequest(
-                TimeSpan.FromMilliseconds(60),
-                TimeSpan.FromMilliseconds(30),
-                TimeSpan.FromSeconds(20),
-                TimeSpan.FromSeconds(20),
-                cycles,
-                2,
-                ["F3"],
-                500,
+                TimeSpan.FromMilliseconds(60), TimeSpan.FromMilliseconds(30),
+                TimeSpan.Zero, TimeSpan.Zero, cycles, 0, ["F3"], 500,
                 DeviceId: DeviceId.Simulator.Value,
-                CreationMode: ExperimentCreationMode.AcquisitionOnly
-            )
-        );
-        if (cycles == 0)
-        {
-            await reachedStop.Task.WaitAsync(TimeSpan.FromSeconds(3));
-            await service.EmergencyStopAsync(DeviceId.Simulator.Value);
-        }
-        await running.WaitAsync(TimeSpan.FromSeconds(3));
-        Assert.DoesNotContain(
-            received,
-            x => x.Telemetry.Stage is ExperimentRunStage.Stimulation or ExperimentRunStage.Recovery
-        );
+                CreationMode: ExperimentCreationMode.AcquisitionOnly)));
+        Assert.Empty(received);
         Assert.Equal(DeviceOperationState.Ready, device.State.Operation);
-        Assert.Contains(received, x => x.Telemetry.CurrentCycle == 2);
-        var secondCycleSamples = received
-            .Where(x => x.Telemetry.CurrentCycle == 2)
-            .SelectMany(x => x.Telemetry.WaveformBatches)
-            .ToArray();
-        if (cycles > 0)
-        {
-            Assert.Equal(
-                new[]
-                {
-                    (1, ExperimentRunStage.Acquisition),
-                    (1, ExperimentRunStage.Blanking),
-                    (2, ExperimentRunStage.Acquisition),
-                    (2, ExperimentRunStage.Blanking),
-                },
-                GetStageTransitions(received.ToList())
-            );
-            Assert.NotEmpty(secondCycleSamples);
-            Assert.Equal(0.09, secondCycleSamples.Min(x => x.StartTimeSeconds), 8);
-        }
+
+        await service.StartAcquisitionAsync(new AcquisitionRunRequest(
+            TimeSpan.FromMilliseconds(60), ["F3"], 500, DeviceId.Simulator.Value));
+        Assert.Contains(received, x => x.Telemetry.Stage == ExperimentRunStage.Acquisition);
+        Assert.DoesNotContain(received, x => x.Telemetry.Stage == ExperimentRunStage.Blanking);
     }
 
     private sealed class AcquisitionOnlyDevice : IEggtCsDevice, IDeviceCapabilitySourceProfile
@@ -1873,7 +1829,7 @@ public sealed class DeviceManagerAndApplicationTests
     {
         var setup = await CreatePhysicalAcquisitionServiceAsync(
             "EEG-ACQUISITION-NO-COMPLETION",
-            TimeSpan.FromMilliseconds(150)
+            TimeSpan.FromMilliseconds(500)
         );
         await using var manager = setup.Manager;
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(3));
@@ -1894,7 +1850,9 @@ public sealed class DeviceManagerAndApplicationTests
             )
         );
 
-        for (var index = 0; index < 11; index++)
+        // Keep producing until the acquisition window actually closes. A fixed 11 x 90 ms
+        // sequence left only 60 ms of scheduling headroom under a full parallel test run.
+        for (var index = 0; !acquisition.IsCompleted; index++)
         {
             setup.Transport.Inject(
                 CreateV101DataFrame(
@@ -1903,7 +1861,7 @@ public sealed class DeviceManagerAndApplicationTests
                     CreateEegPayload(sampleCount: 1, rawValue: index + 1)
                 )
             );
-            await Task.Delay(90, timeout.Token);
+            await Task.Delay(20, timeout.Token);
         }
 
         await acquisition;

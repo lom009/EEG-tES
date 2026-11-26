@@ -51,7 +51,7 @@ public sealed class DeviceCapabilitySourceOptions
 
     public DeviceCapabilitySource StimulationImpedance { get; set; } = DeviceCapabilitySource.Real;
 
-    public DeviceCapabilitySource Tolerance { get; set; } = DeviceCapabilitySource.Simulated;
+    public DeviceCapabilitySource Tolerance { get; set; } = DeviceCapabilitySource.Real;
 }
 
 public sealed class DeviceBackendOptionsValidator : IValidateOptions<DeviceBackendOptions>

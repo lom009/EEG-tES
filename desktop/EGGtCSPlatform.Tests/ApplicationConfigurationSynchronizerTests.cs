@@ -16,6 +16,42 @@ namespace EGGtCSPlatform.Tests;
 
 public sealed class ApplicationConfigurationSynchronizerTests
 {
+    [Theory]
+    [InlineData(null, false)]
+    [InlineData(false, false)]
+    [InlineData(true, true)]
+    public void PlayheadOptionIsAddedWithoutOverwritingUserChoice(bool? existing, bool expected)
+    {
+        using var fixture = new ConfigurationFixture();
+        var defaults = CreateDefault();
+        defaults["Display"] = new JsonObject { ["EnvelopePlayheadEnabled"] = false };
+        var user = CreateDefault();
+        if (existing is { } value)
+            user["Display"] = new JsonObject { ["EnvelopePlayheadEnabled"] = value };
+        fixture.WriteDefault(defaults);
+        fixture.WriteUser(user);
+        fixture.Synchronize();
+        Assert.Equal(expected, fixture.ReadUser()["Display"]!["EnvelopePlayheadEnabled"]!.GetValue<bool>());
+    }
+
+    [Theory]
+    [InlineData(null, true)]
+    [InlineData(false, false)]
+    [InlineData(true, true)]
+    public void WaveformRealtimeOptionIsAddedWithoutOverwritingUserChoice(bool? existing, bool expected)
+    {
+        using var fixture = new ConfigurationFixture();
+        var defaults = CreateDefault();
+        defaults["Display"] = new JsonObject { ["EnvelopeWaveformRealtimeEnabled"] = true };
+        var user = CreateDefault();
+        if (existing is { } value)
+            user["Display"] = new JsonObject { ["EnvelopeWaveformRealtimeEnabled"] = value };
+        fixture.WriteDefault(defaults);
+        fixture.WriteUser(user);
+        fixture.Synchronize();
+        Assert.Equal(expected, fixture.ReadUser()["Display"]!["EnvelopeWaveformRealtimeEnabled"]!.GetValue<bool>());
+    }
+
     [Fact]
     public void MissingUserConfigurationCopiesCurrentDefault()
     {
@@ -478,7 +514,7 @@ public sealed class ApplicationConfigurationSynchronizerTests
         );
         var configuration = Bootstrapper.BuildConfiguration(
             fixture.Paths,
-            fixture.CreateSynchronizer()
+            new ApplicationConfigurationSynchronizer()
         );
         var services = new ServiceCollection();
         Bootstrapper.RegisterCommonServices(services, configuration);
@@ -676,7 +712,7 @@ public sealed class ApplicationConfigurationSynchronizerTests
                 ? new DirectoryInfo(BackupDirectory).GetFiles("appsettings.*.json")
                 : [];
 
-        public ApplicationConfigurationSynchronizer CreateSynchronizer() => new();
+        public ApplicationConfigurationSynchronizer CreateSynchronizer() => new(currentSchemaVersion: 1);
 
         public ApplicationConfigurationSynchronizationResult Synchronize(
             ApplicationConfigurationSynchronizer? synchronizer = null

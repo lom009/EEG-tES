@@ -368,7 +368,7 @@ public sealed class SingleStimulusVisualApp : App
             CancellationToken cancellationToken = default
         ) => throw new NotSupportedException();
 
-        public Task SaveConfigurationAsync(
+        public Task<ExperimentConfigurationSaveResult> SaveConfigurationAsync(
             long experimentId,
             ExperimentConfigurationTemplate template,
             IReadOnlyList<ImpedanceSnapshotValue> impedances,
@@ -379,7 +379,9 @@ public sealed class SingleStimulusVisualApp : App
                 throw new IOException("save failed");
             Saves++;
             Template = template;
-            return Task.CompletedTask;
+            return Task.FromResult(
+                new ExperimentConfigurationSaveResult(experimentId, "EXP-TEST", false)
+            );
         }
 
         public Task<ExperimentConfigurationTemplate> LoadTemplateAsync(

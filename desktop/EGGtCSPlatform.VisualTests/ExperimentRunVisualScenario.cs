@@ -54,9 +54,9 @@ internal static class ExperimentRunVisualScenario
         }
         var config = source.StimulusConfiguration with
         {
-            Kind = scenario.Contains("tdcs", StringComparison.OrdinalIgnoreCase) ? StimulusKind.TDcs : StimulusKind.TAcs,
+            Kind = StimulusKind.TAcs,
             Frequency = 100,
-            Direction = scenario.Contains("tdcs", StringComparison.OrdinalIgnoreCase) ? StimulusDirection.Positive : StimulusDirection.Bidirectional,
+            Direction = StimulusDirection.Bidirectional,
             Targets = targets,
             ArrayMode =
                 multi ? StimulusArrayMode.MultiTarget

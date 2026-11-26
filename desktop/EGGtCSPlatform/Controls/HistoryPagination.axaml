@@ -1,0 +1,34 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:controls="clr-namespace:EGGtCSPlatform.Controls" x:Class="EGGtCSPlatform.Controls.HistoryPagination"
+  x:Name="Root" x:DataType="controls:HistoryPagination">
+  <UserControl.Resources>
+    <ResourceDictionary><ResourceDictionary.MergedDictionaries>
+      <ResourceInclude Source="/Controls/HistoryControlThemes.axaml"/>
+    </ResourceDictionary.MergedDictionaries></ResourceDictionary>
+  </UserControl.Resources>
+  <UserControl.Styles><StyleInclude Source="/Controls/HistoryStyles.axaml"/></UserControl.Styles>
+  <Grid ColumnDefinitions="*,Auto" Classes="history-page">
+    <TextBlock Text="{Binding #Root.PageDisplay}" Classes="history-muted" VerticalAlignment="Center"/>
+    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="5">
+      <TextBlock Text="每页" VerticalAlignment="Center"/>
+      <ComboBox x:Name="PageSizeSelector" Width="56" Theme="{StaticResource HistoryPageSizeTheme}"
+        ItemContainerTheme="{StaticResource HistoryComboBoxItemTheme}"
+        ItemsSource="{Binding #Root.PageSizes}" SelectedItem="{Binding #Root.PageSize, Mode=TwoWay}"
+        IsEnabled="{Binding !#Root.IsBusy}"/>
+      <TextBlock Text="{Binding #Root.Unit}" Margin="0,0,8,0" VerticalAlignment="Center"/>
+      <Button Width="32" Padding="0" CornerRadius="2" Classes="history-action"
+        Command="{Binding #Root.PreviousCommand}" IsEnabled="{Binding #Root.CanPrevious}"
+        Theme="{StaticResource ExperimentButtonTheme}" ToolTip.Tip="上一页" AutomationProperties.Name="上一页">
+        <Image Width="13.9775" Height="14" Source="{SvgImage /Assets/Images/history/page-left.svg}" RenderTransform="rotate(180deg)"/>
+      </Button>
+      <Border Width="32" Height="32" Background="{DynamicResource ProductPrimary}" CornerRadius="2">
+        <TextBlock Text="{Binding #Root.DisplayPageNumber}" Foreground="White" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+      </Border>
+      <Button Width="32" Padding="0" CornerRadius="2" Classes="history-action"
+        Command="{Binding #Root.NextCommand}" IsEnabled="{Binding #Root.CanNext}"
+        Theme="{StaticResource ExperimentButtonTheme}" ToolTip.Tip="下一页" AutomationProperties.Name="下一页">
+        <Image Width="13.9775" Height="14" Source="{SvgImage /Assets/Images/history/page-right.svg}"/>
+      </Button>
+    </StackPanel>
+  </Grid>
+</UserControl>

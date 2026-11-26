@@ -20,6 +20,9 @@ public static class AcquisitionOnlyConfiguration
     public static ExperimentTimingTemplate NormalizeTiming(ExperimentTimingTemplate timing) =>
         timing with
         {
+            Mode = ExperimentRunMode.Manual,
+            CycleCount = 1,
+            BlankingMilliseconds = 0,
             StimulationMilliseconds = 0,
             RecoveryMilliseconds = 0,
         };

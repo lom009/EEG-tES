@@ -12,6 +12,7 @@ public enum StimulusWaveformDisplayMode
 {
     Detailed,
     Compact,
+    SpeechTraining,
 }
 
 internal readonly record struct StimulusWaveformAxisScale(
@@ -44,9 +45,48 @@ public sealed class StimulusWaveformControl : Control
             nameof(DisplayMode)
         );
 
+    public static readonly StyledProperty<bool> ShowEnvelopeWaveformProperty =
+        AvaloniaProperty.Register<StimulusWaveformControl, bool>(
+            nameof(ShowEnvelopeWaveform),
+            true
+        );
+
+    public static readonly StyledProperty<bool> ShowTimeAxisProperty = AvaloniaProperty.Register<
+        StimulusWaveformControl,
+        bool
+    >(nameof(ShowTimeAxis), true);
+
+    public bool ShowTimeAxis
+    {
+        get => GetValue(ShowTimeAxisProperty);
+        set => SetValue(ShowTimeAxisProperty, value);
+    }
+
+    public static readonly StyledProperty<double> TrainingMaximumAmplitudeProperty =
+        AvaloniaProperty.Register<StimulusWaveformControl, double>(nameof(TrainingMaximumAmplitude), 2d,
+            validate: value => double.IsFinite(value) && value > 0);
+
+    public double TrainingMaximumAmplitude
+    {
+        get => GetValue(TrainingMaximumAmplitudeProperty);
+        set => SetValue(TrainingMaximumAmplitudeProperty, value);
+    }
+
+    public bool ShowEnvelopeWaveform
+    {
+        get => GetValue(ShowEnvelopeWaveformProperty);
+        set => SetValue(ShowEnvelopeWaveformProperty, value);
+    }
+
     static StimulusWaveformControl()
     {
-        AffectsRender<StimulusWaveformControl>(DescriptorProperty, DisplayModeProperty);
+        AffectsRender<StimulusWaveformControl>(
+            DescriptorProperty,
+            DisplayModeProperty,
+            ShowEnvelopeWaveformProperty,
+            ShowTimeAxisProperty,
+            TrainingMaximumAmplitudeProperty
+        );
     }
 
     public WaveformDescriptor? Descriptor
@@ -73,7 +113,11 @@ public sealed class StimulusWaveformControl : Control
                 context,
                 Bounds.Size,
                 descriptor,
-                DisplayMode == StimulusWaveformDisplayMode.Compact
+                DisplayMode == StimulusWaveformDisplayMode.Compact,
+                ShowEnvelopeWaveform,
+                DisplayMode == StimulusWaveformDisplayMode.SpeechTraining,
+                ShowTimeAxis,
+                TrainingMaximumAmplitude
             );
             return;
         }
@@ -162,7 +206,10 @@ public sealed class StimulusWaveformControl : Control
             scale.Maximum,
             timeWindowMilliseconds
         );
-        DrawAxisLabels(context, plot, descriptor, timeWindowMilliseconds, scale.TimeTickCount);
+        if (ShowTimeAxis)
+            DrawAxisLabels(context, plot, descriptor, timeWindowMilliseconds, scale.TimeTickCount);
+        else
+            DrawRotatedYAxisTitle(context, plot, descriptor);
     }
 
     private static void DrawGrid(DrawingContext context, Rect plot, StimulusWaveformAxisScale scale)

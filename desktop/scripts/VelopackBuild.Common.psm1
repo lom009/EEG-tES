@@ -1,6 +1,76 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
+function Read-VelopackTagSelection {
+    param([int]$Count)
+
+    if ([Console]::IsInputRedirected -or [Environment]::GetCommandLineArgs() -match '^-NonI(?:nteractive)?$') {
+        throw 'Tag selection requires interactive input.'
+    }
+    return Read-Host "Select a tag number (1-$Count)"
+}
+
+function Resolve-VelopackVersion {
+    [CmdletBinding()]
+    param(
+        [AllowNull()][AllowEmptyString()][string]$Version,
+        [string]$RepoRoot = (Split-Path -Parent $PSScriptRoot)
+    )
+
+    # SemVer 2.0.0: numeric prerelease identifiers cannot contain leading zeroes.
+    $semVerPattern = '\A(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:-((?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*))*))?(?:\+([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?\z'
+    if ($PSBoundParameters.ContainsKey('Version')) {
+        if ([string]::IsNullOrEmpty($Version) -or $Version -cnotmatch $semVerPattern) {
+            throw 'Version must be a SemVer 2.0.0 version without a v/V prefix (for example, 1.2.3-rc.1+build.5).'
+        }
+        Write-Host "Using version $Version from the explicit Version parameter."
+        return $Version
+    }
+
+    if (-not (Get-Command git -CommandType Application -ErrorAction SilentlyContinue)) {
+        throw 'Git is required to resolve HEAD tags. Install Git or supply -Version explicitly.'
+    }
+    $tags = @(& git -C $RepoRoot tag --points-at HEAD)
+    if ($LASTEXITCODE -ne 0) {
+        throw 'Failed to read Git tags at HEAD. Check the repository or supply -Version explicitly.'
+    }
+    [string[]]$candidates = @($tags | Where-Object {
+        $_ -cmatch '^[vV]' -and $_.Substring(1) -cmatch $semVerPattern
+    })
+    [Array]::Sort($candidates, [StringComparer]::Ordinal)
+    if ($candidates.Count -eq 0) {
+        throw 'HEAD has no valid v/V-prefixed SemVer tag. Create a tag on HEAD or supply -Version explicitly.'
+    }
+
+    $selected = $candidates[0]
+    if ($candidates.Count -gt 1) {
+        Write-Host 'Multiple version tags exist at HEAD:'
+        for ($i = 0; $i -lt $candidates.Count; $i++) {
+            Write-Host "  $($i + 1). $($candidates[$i]) -> $($candidates[$i].Substring(1))"
+        }
+        while ($true) {
+            try {
+                $answer = Read-VelopackTagSelection -Count $candidates.Count
+            }
+            catch {
+                throw 'Cannot read a tag selection. Supply -Version explicitly for non-interactive builds.'
+            }
+            if ($null -eq $answer) {
+                throw 'Cannot read a tag selection. Supply -Version explicitly for non-interactive builds.'
+            }
+            $selection = 0
+            if ([int]::TryParse($answer, [ref]$selection) -and $selection -ge 1 -and $selection -le $candidates.Count) {
+                $selected = $candidates[$selection - 1]
+                break
+            }
+            Write-Host 'Invalid selection. Enter one of the displayed numbers.'
+        }
+    }
+    $resolvedVersion = $selected.Substring(1)
+    Write-Host "Using version $resolvedVersion from HEAD tag '$selected'."
+    return $resolvedVersion
+}
+
 function Test-IsWindowsHost {
     return [System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform(
         [System.Runtime.InteropServices.OSPlatform]::Windows)
@@ -203,8 +273,7 @@ function New-WindowsInstallLocationSetup {
 function Invoke-VelopackBuildAndPublish {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory = $true)]
-        [ValidatePattern('^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$')]
+        [AllowNull()][AllowEmptyString()]
         [string]$Version,
 
         [Parameter(Mandatory = $true)]
@@ -217,6 +286,11 @@ function Invoke-VelopackBuildAndPublish {
         [string[]]$RuntimeIdentifiers
     )
 
+    $versionArguments = @{}
+    if ($PSBoundParameters.ContainsKey('Version')) {
+        $versionArguments.Version = $Version
+    }
+    $Version = Resolve-VelopackVersion @versionArguments
     $sourceBase = Assert-SourceBaseAddress -SourceBaseAddress $SourceBaseAddress
     $repoRoot = Split-Path -Parent $PSScriptRoot
     $artifactsRoot = Join-Path (Join-Path $repoRoot 'TestArtifacts') 'Velopack'
@@ -341,4 +415,4 @@ function Invoke-VelopackBuildAndPublish {
     Write-Host "Publish path: $resolvedPublishPath"
 }
 
-Export-ModuleMember -Function Invoke-VelopackBuildAndPublish, Resolve-VelopackRuntimeIdentifiers
+Export-ModuleMember -Function Invoke-VelopackBuildAndPublish, Resolve-VelopackRuntimeIdentifiers, Resolve-VelopackVersion

@@ -28,6 +28,7 @@ public enum SingleStimulusRunState
 public partial class SingleStimulusExperimentDialogViewModel : DialogViewModel, IDisposable
 {
     private readonly IExperimentRunService _runs;
+    private readonly INavigationRouter? _router;
     private readonly IExperimentRunPersistenceCoordinator? _persistence;
     private readonly IExperimentRunClock _clock;
     private readonly IExperimentRunErrorDialogService? _errors;
@@ -68,10 +69,12 @@ public partial class SingleStimulusExperimentDialogViewModel : DialogViewModel, 
         IExperimentRunPersistenceCoordinator? persistence = null,
         IExperimentRunClock? clock = null,
         ExperimentRunTimingOptions? timing = null,
-        IExperimentRunErrorDialogService? errors = null
+        IExperimentRunErrorDialogService? errors = null,
+        INavigationRouter? router = null
     )
     {
         Route = route;
+        _router = router;
         _runs = runs;
         _persistence = persistence;
         _clock = clock ?? new SystemExperimentRunClock();
@@ -119,7 +122,7 @@ public partial class SingleStimulusExperimentDialogViewModel : DialogViewModel, 
         ValidateDuration();
     }
 
-    public ExperimentRunRouteData Route { get; }
+    public ExperimentRunRouteData Route { get; private set; }
     public ExperimentStageViewModel Duration { get; }
     public bool IsReadOnly => Route.HistoricalResult is not null;
     public bool CanClose => !IsRunning && !IsStopping && !StopUnconfirmed;
@@ -143,7 +146,13 @@ public partial class SingleStimulusExperimentDialogViewModel : DialogViewModel, 
         TimeSpan.FromSeconds(Math.Ceiling(Math.Max(0d, (_plannedDuration - Elapsed).TotalSeconds)));
     public string RemainingText => $"{(int)Remaining.TotalMinutes}分{Remaining.Seconds}秒";
     public string ElapsedText => $"运行时长：{Elapsed:hh\\:mm\\:ss}";
-    public string HistorySummary => $"被试：{Route.SubjectId}    实验：{Route.ExperimentId}";
+    public string HistorySummary =>
+        $"被试：{Route.SubjectId}    实验：{Route.ExperimentId}"
+        + (
+            Route.HistoricalResult?.ConfigurationWarning is { } warning
+                ? $"\n{warning}"
+                : string.Empty
+        );
     public bool HasError => !string.IsNullOrWhiteSpace(ErrorText);
 
     [RelayCommand(CanExecute = nameof(CanClose))]
@@ -202,7 +211,7 @@ public partial class SingleStimulusExperimentDialogViewModel : DialogViewModel, 
                 throw new InvalidOperationException(error);
             if (_persistence is not null && Route.ExperimentDatabaseId > 0)
             {
-                await _persistence.PrepareAsync(
+                var prepared = await _persistence.PrepareAsync(
                     new ExperimentRunPreparation(
                         _runId,
                         Route.ExperimentDatabaseId,
@@ -219,6 +228,21 @@ public partial class SingleStimulusExperimentDialogViewModel : DialogViewModel, 
                     token
                 );
                 _prepared = true;
+                var snapshot = SingleStimulusConfiguration.Snapshot(Route, duration);
+                _router?.UpdateExperimentIdentity(
+                    Route.ExperimentDatabaseId,
+                    prepared.ExperimentId,
+                    prepared.ExperimentCode,
+                    snapshot
+                );
+                Route = Route with
+                {
+                    ExperimentDatabaseId = prepared.ExperimentId,
+                    ExperimentId = prepared.ExperimentCode,
+                    ImportedTiming = snapshot.Timing,
+                };
+                OnPropertyChanged(nameof(Route));
+                OnPropertyChanged(nameof(HistorySummary));
             }
             using var linked = CancellationTokenSource.CreateLinkedTokenSource(
                 token,

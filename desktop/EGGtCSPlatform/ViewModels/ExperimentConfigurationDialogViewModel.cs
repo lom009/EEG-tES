@@ -59,5 +59,6 @@ public sealed record EnvelopeConfirmationData(
     string MaximumCurrent,
     string StartupDelay,
     string FixedChannel,
-    string SelectableChannel
+    string SelectableChannel,
+    string DebugFrequency = "500 Hz"
 );

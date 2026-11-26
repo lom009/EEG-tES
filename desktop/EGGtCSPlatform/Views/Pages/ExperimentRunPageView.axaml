@@ -216,7 +216,7 @@
       </Style>
     </ControlTheme>
     <ControlTheme x:Key="RunPageCursorInlineCheckBoxTheme" TargetType="CheckBox">
-      <Setter Property="Foreground" Value="#232B38" />
+      <Setter Property="Foreground" Value="{DynamicResource ProductText}" />
       <Setter Property="FontSize" Value="{DynamicResource FontSize14}" />
       <Setter Property="Cursor" Value="Hand" />
       <Setter Property="Template">
@@ -230,159 +230,170 @@
         </ControlTemplate>
       </Setter>
       <Style Selector="^:checked">
-        <Setter Property="Foreground" Value="#2FA36B" />
+        <Setter Property="Foreground" Value="{DynamicResource ProductExcellent}" />
       </Style>
       <Style Selector="^:pointerover">
-        <Setter Property="Foreground" Value="#2FA36B" />
+        <Setter Property="Foreground" Value="{DynamicResource ProductExcellent}" />
       </Style>
     </ControlTheme>
   </UserControl.Resources>
 
+  <DockPanel>
+    <Border DockPanel.Dock="Top" Margin="24,0,24,8" Padding="10,6" Background="#FFFFE7E3"
+            IsVisible="{Binding HasHistoricalConfigurationWarning}">
+      <TextBlock Text="{Binding HistoricalConfigurationWarning}" TextWrapping="Wrap" />
+    </Border>
   <Grid Margin="24,0,24,24" ColumnDefinitions="*,16,400">
-    <Border Grid.Column="0" Background="White" CornerRadius="8" BoxShadow="0 4 12 0 #336885B3">
-      <Grid RowDefinitions="48,*,86">
-        <ScrollViewer Background="#FAFBFC" HorizontalScrollBarVisibility="Auto">
-          <Grid Margin="16,0" ColumnDefinitions="Auto,Auto,Auto,Auto,Auto,*,Auto" ColumnSpacing="8">
-            <StackPanel VerticalAlignment="Center" Orientation="Horizontal" Spacing="4">
-              <TextBlock
-                VerticalAlignment="Center"
-                FontSize="{DynamicResource FontSize14}"
-                Foreground="#6B7D99"
-                Text="显示范围"
-              />
-              <ComboBox
-                Width="126"
-                ItemsSource="{Binding DisplayRangeOptions}"
-                SelectedItem="{Binding DisplayRangeMicrovolts}"
-                Theme="{StaticResource ExperimentRunInlineComboBoxTheme}"
-              >
-                <ComboBox.ItemTemplate>
-                  <DataTemplate>
-                    <StackPanel Orientation="Horizontal">
-                      <TextBlock Text="±" />
-                      <TextBlock Text="{Binding}" />
-                      <TextBlock Text=" μV" />
-                    </StackPanel>
-                  </DataTemplate>
-                </ComboBox.ItemTemplate>
-              </ComboBox>
-            </StackPanel>
-            <StackPanel
-              Grid.Column="1"
-              VerticalAlignment="Center"
+    <Border x:Name="WaveformCard" Grid.Column="0" Background="{DynamicResource ProductSurface}" CornerRadius="8" BoxShadow="0 4 12 0 #336885B3">
+      <Grid RowDefinitions="Auto,*,86">
+        <!-- Figma 301:4780: 48px toolbar with its own rounded background.
+             Keep each filter together when a smaller window requires a second row. -->
+        <Border x:Name="WaveformToolbar" Background="{DynamicResource ProductStimulusTile}"
+                CornerRadius="8,8,0,0" Padding="16,12">
+          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+            <WrapPanel x:Name="WaveformFilterControls" Orientation="Horizontal" ItemSpacing="8" LineSpacing="8">
+              <Grid ColumnDefinitions="Auto,1" ColumnSpacing="8">
+                <StackPanel VerticalAlignment="Center" Orientation="Horizontal" Spacing="8">
+                  <TextBlock
+                    VerticalAlignment="Center"
+                    FontSize="{DynamicResource FontSize14}"
+                    Foreground="{DynamicResource ProductTextMuted}"
+                    Text="显示范围"
+                  />
+                  <ComboBox
+                    ItemsSource="{Binding DisplayRangeOptions}"
+                    SelectedItem="{Binding DisplayRangeMicrovolts}"
+                    Theme="{StaticResource ExperimentRunWaveformComboBoxTheme}"
+                  >
+                    <ComboBox.ItemTemplate>
+                      <DataTemplate>
+                        <StackPanel Orientation="Horizontal">
+                          <TextBlock Text="±" />
+                          <TextBlock Text="{Binding}" />
+                          <TextBlock Text=" μV" />
+                        </StackPanel>
+                      </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                  </ComboBox>
+                </StackPanel>
+                <Border Grid.Column="1" Width="1" Height="15" VerticalAlignment="Center" Background="{DynamicResource ProductStimulusInputBorder}" IsHitTestVisible="False" />
+              </Grid>
+              <Grid ColumnDefinitions="Auto,1" ColumnSpacing="8">
+                <StackPanel
+                  VerticalAlignment="Center"
+                  Orientation="Horizontal"
+                  Spacing="8"
+                >
+                  <TextBlock
+                    VerticalAlignment="Center"
+                    FontSize="{DynamicResource FontSize14}"
+                    Foreground="{DynamicResource ProductTextMuted}"
+                    Text="时间范围"
+                  />
+                  <ComboBox
+                    ItemsSource="{Binding TimeRangeOptions}"
+                    SelectedItem="{Binding TimeRangeSeconds}"
+                    Theme="{StaticResource ExperimentRunWaveformComboBoxTheme}"
+                  >
+                    <ComboBox.ItemTemplate>
+                      <DataTemplate>
+                        <StackPanel Orientation="Horizontal">
+                          <TextBlock Text="{Binding}" />
+                          <TextBlock Text=" s" />
+                        </StackPanel>
+                      </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                  </ComboBox>
+                </StackPanel>
+                <Border Grid.Column="1" Width="1" Height="15" VerticalAlignment="Center" Background="{DynamicResource ProductStimulusInputBorder}" IsHitTestVisible="False" />
+              </Grid>
+              <Grid ColumnDefinitions="Auto,1" ColumnSpacing="8">
+                <StackPanel
+                  VerticalAlignment="Center"
+                  Orientation="Horizontal"
+                  Spacing="8"
+                >
+                  <TextBlock
+                    VerticalAlignment="Center"
+                    FontSize="{DynamicResource FontSize14}"
+                    Foreground="{DynamicResource ProductTextMuted}"
+                    Text="高通"
+                  />
+                  <ComboBox
+                    ItemsSource="{Binding HighPassOptions}"
+                    SelectedItem="{Binding SelectedHighPassFilter}"
+                    Theme="{StaticResource ExperimentRunWaveformComboBoxTheme}"
+                  />
+                </StackPanel>
+                <Border Grid.Column="1" Width="1" Height="15" VerticalAlignment="Center" Background="{DynamicResource ProductStimulusInputBorder}" IsHitTestVisible="False" />
+              </Grid>
+              <Grid ColumnDefinitions="Auto,1" ColumnSpacing="8">
+                <StackPanel
+                  VerticalAlignment="Center"
+                  Orientation="Horizontal"
+                  Spacing="8"
+                >
+                  <TextBlock
+                    VerticalAlignment="Center"
+                    FontSize="{DynamicResource FontSize14}"
+                    Foreground="{DynamicResource ProductTextMuted}"
+                    Text="低通"
+                  />
+                  <ComboBox
+                    ItemsSource="{Binding LowPassOptions}"
+                    SelectedItem="{Binding SelectedLowPassFilter}"
+                    Theme="{StaticResource ExperimentRunWaveformComboBoxTheme}"
+                  />
+                </StackPanel>
+                <Border Grid.Column="1" Width="1" Height="15" VerticalAlignment="Center" Background="{DynamicResource ProductStimulusInputBorder}" IsHitTestVisible="False" />
+              </Grid>
+                <StackPanel
+                  VerticalAlignment="Center"
+                  Orientation="Horizontal"
+                  Spacing="8"
+                >
+                  <TextBlock
+                    VerticalAlignment="Center"
+                    FontSize="{DynamicResource FontSize14}"
+                    Foreground="{DynamicResource ProductTextMuted}"
+                    Text="陷波"
+                  />
+                  <ComboBox
+                    ItemsSource="{Binding NotchOptions}"
+                    SelectedItem="{Binding SelectedNotchFilter}"
+                    Theme="{StaticResource ExperimentRunWaveformComboBoxTheme}"
+                  />
+                </StackPanel>
+                <StackPanel
+                  HorizontalAlignment="Center"
+                  VerticalAlignment="Center"
+                  IsVisible="{Binding IsHistoricalResult}"
+                  Orientation="Horizontal"
+                  Spacing="8"
+                >
+                  <Button
+                    Command="{Binding TogglePlaybackCommand}"
+                    Content="{Binding PlaybackActionText}"
+                    Theme="{StaticResource RunPagePlaybackButtonTheme}"
+                  />
+                  <ComboBox
+                    Width="60"
+                    ItemsSource="{Binding PlaybackSpeedOptions}"
+                    SelectedItem="{Binding PlaybackSpeed}"
+                    Theme="{StaticResource ExperimentRunWaveformComboBoxTheme}"
+                  >
+                    <ComboBox.ItemTemplate>
+                      <DataTemplate>
+                        <TextBlock Text="{Binding StringFormat={}{0:0.0}×}" />
+                      </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                  </ComboBox>
+                </StackPanel>
+            </WrapPanel>
+            <StackPanel x:Name="WaveformCursorControls" Grid.Column="1"
+              Height="24" VerticalAlignment="Top"
               Orientation="Horizontal"
-              Spacing="4"
-            >
-              <TextBlock
-                VerticalAlignment="Center"
-                FontSize="{DynamicResource FontSize14}"
-                Foreground="#6B7D99"
-                Text="时间范围"
-              />
-              <ComboBox
-                Width="96"
-                ItemsSource="{Binding TimeRangeOptions}"
-                SelectedItem="{Binding TimeRangeSeconds}"
-                Theme="{StaticResource ExperimentRunInlineComboBoxTheme}"
-              >
-                <ComboBox.ItemTemplate>
-                  <DataTemplate>
-                    <StackPanel Orientation="Horizontal">
-                      <TextBlock Text="{Binding}" />
-                      <TextBlock Text=" s" />
-                    </StackPanel>
-                  </DataTemplate>
-                </ComboBox.ItemTemplate>
-              </ComboBox>
-            </StackPanel>
-            <StackPanel
-              Grid.Column="2"
-              VerticalAlignment="Center"
-              Orientation="Horizontal"
-              Spacing="4"
-            >
-              <TextBlock
-                VerticalAlignment="Center"
-                FontSize="{DynamicResource FontSize14}"
-                Foreground="#6B7D99"
-                Text="高通"
-              />
-              <ComboBox
-                Width="90"
-                ItemsSource="{Binding HighPassOptions}"
-                SelectedItem="{Binding SelectedHighPassFilter}"
-                Theme="{StaticResource ExperimentRunInlineComboBoxTheme}"
-              />
-            </StackPanel>
-            <StackPanel
-              Grid.Column="3"
-              VerticalAlignment="Center"
-              Orientation="Horizontal"
-              Spacing="4"
-            >
-              <TextBlock
-                VerticalAlignment="Center"
-                FontSize="{DynamicResource FontSize14}"
-                Foreground="#6B7D99"
-                Text="低通"
-              />
-              <ComboBox
-                Width="90"
-                ItemsSource="{Binding LowPassOptions}"
-                SelectedItem="{Binding SelectedLowPassFilter}"
-                Theme="{StaticResource ExperimentRunInlineComboBoxTheme}"
-              />
-            </StackPanel>
-            <StackPanel
-              Grid.Column="4"
-              VerticalAlignment="Center"
-              Orientation="Horizontal"
-              Spacing="4"
-            >
-              <TextBlock
-                VerticalAlignment="Center"
-                FontSize="{DynamicResource FontSize14}"
-                Foreground="#6B7D99"
-                Text="陷波"
-              />
-              <ComboBox
-                Width="90"
-                ItemsSource="{Binding NotchOptions}"
-                SelectedItem="{Binding SelectedNotchFilter}"
-                Theme="{StaticResource ExperimentRunInlineComboBoxTheme}"
-              />
-            </StackPanel>
-            <StackPanel
-              Grid.Column="5"
-              HorizontalAlignment="Center"
-              VerticalAlignment="Center"
-              IsVisible="{Binding IsHistoricalResult}"
-              Orientation="Horizontal"
-              Spacing="4"
-            >
-              <Button
-                Command="{Binding TogglePlaybackCommand}"
-                Content="{Binding PlaybackActionText}"
-                Theme="{StaticResource RunPagePlaybackButtonTheme}"
-              />
-              <ComboBox
-                Width="60"
-                ItemsSource="{Binding PlaybackSpeedOptions}"
-                SelectedItem="{Binding PlaybackSpeed}"
-                Theme="{StaticResource ExperimentRunInlineComboBoxTheme}"
-              >
-                <ComboBox.ItemTemplate>
-                  <DataTemplate>
-                    <TextBlock Text="{Binding StringFormat={}{0:0.0}×}" />
-                  </DataTemplate>
-                </ComboBox.ItemTemplate>
-              </ComboBox>
-            </StackPanel>
-            <StackPanel
-              Grid.Column="6"
-              VerticalAlignment="Center"
-              Orientation="Horizontal"
-              Spacing="12"
+              Spacing="16"
             >
               <CheckBox
                 VerticalAlignment="Center"
@@ -390,7 +401,7 @@
                 IsChecked="{Binding ShowXCursor}"
                 Theme="{StaticResource RunPageCursorInlineCheckBoxTheme}"
               />
-              <Border Width="1" Height="14" Background="#E0E6EE" />
+              <Border Width="1" Height="15" Background="{DynamicResource ProductStimulusInputBorder}" />
               <CheckBox
                 VerticalAlignment="Center"
                 Content="Y光标"
@@ -399,8 +410,9 @@
               />
             </StackPanel>
           </Grid>
-        </ScrollViewer>
-        <Border Grid.Row="0" Height="1" VerticalAlignment="Bottom" Background="#E2E8F2" IsHitTestVisible="False" />
+        </Border>
+        <Border Grid.Row="0" Height="1" VerticalAlignment="Bottom"
+                Background="{DynamicResource ProductStimulusInputBorder}" IsHitTestVisible="False" />
 
         <Border Grid.Row="1" Margin="16,0,4,1" BorderBrush="#E8EDF4" BorderThickness="0">
           <controls:WaveformHoverScope HoverState="{Binding WaveformHover}">
@@ -1004,14 +1016,24 @@
               PrimaryText="{Binding FooterPrimaryText}"
               IsPrimaryEnabled="{Binding IsFooterPrimaryEnabled}"
             />
-            <controls:ExperimentRunActions
-              IsCompletion="True"
-              ButtonHeight="32"
-              CompletionCommand="{Binding ExecuteFooterPrimaryCommand}"
-              CompletionText="{Binding FooterPrimaryText}"
-              IsCompletionEnabled="{Binding IsFooterPrimaryEnabled}"
-              IsVisible="{Binding IsCompletionActionVisible}"
-            />
+            <Grid ColumnDefinitions="*,16,*" IsVisible="{Binding IsCompletionActionVisible}">
+              <controls:ExperimentRunActions
+                IsCompletion="True"
+                ButtonHeight="32"
+                CompletionCommand="{Binding ExecuteFooterPrimaryCommand}"
+                CompletionText="{Binding FooterPrimaryText}"
+                IsCompletionEnabled="{Binding IsFooterPrimaryEnabled}"
+              />
+              <Button
+                x:Name="CompletedRerunButton"
+                Grid.Column="2"
+                Height="32"
+                Command="{Binding RerunExperimentCommand}"
+                Theme="{StaticResource RunPageSecondaryButtonTheme}"
+              >
+                <TextBlock FontSize="{DynamicResource FontSize12}" Text="再次运行此次实验" />
+              </Button>
+            </Grid>
           </Grid>
         </Grid>
 
@@ -1271,4 +1293,5 @@
       </Grid>
     </Border>
   </Grid>
+  </DockPanel>
 </UserControl>
