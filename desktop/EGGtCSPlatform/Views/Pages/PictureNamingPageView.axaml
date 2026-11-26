@@ -61,7 +61,7 @@
                 <TextBlock Classes="muted" Text="看到图片后，请尽快、准确地说出名称。"/>
               </StackPanel>
             </StackPanel>
-            <StackPanel IsVisible="{Binding ShowPicture}" Spacing="8" VerticalAlignment="Center" HorizontalAlignment="Center">
+            <StackPanel x:Name="PictureStimulus" IsVisible="{Binding ShowPicture}" Spacing="8" VerticalAlignment="Center" HorizontalAlignment="Center">
               <Grid Width="190" Height="190">
                 <Image Source="/Assets/Images/picture-naming/apple.png" IsVisible="{Binding ShowApple}"/>
                 <svg:Svg Name="TrialPicture" Path="{Binding PicturePath}" IsVisible="{Binding !ShowApple}"/>
@@ -124,7 +124,10 @@
                 <Button Content="错误" Classes.wrong="{Binding IsWrong}" Command="{Binding ScoreCommand}" CommandParameter="错误"/>
                 <Button Content="正确" Classes.selected="{Binding IsCorrect}" Command="{Binding ScoreCommand}" CommandParameter="正确"/>
               </StackPanel>
-              <TextBlock Grid.Row="1" Grid.Column="1" Classes="muted" HorizontalAlignment="Right" Text="{Binding Reaction, StringFormat='发声反应时：{0}'}"/>
+              <StackPanel Grid.Row="1" Grid.Column="1" HorizontalAlignment="Right" Spacing="4">
+                <TextBlock x:Name="FirstReactionText" Classes="muted" Text="{Binding FirstReaction, StringFormat='首次回答：{0}'}"/>
+                <TextBlock x:Name="CorrectReactionText" Classes="muted" Text="{Binding CorrectReaction, StringFormat='首次说对：{0}'}"/>
+              </StackPanel>
             </Grid>
           </Border>
         </Border>
@@ -206,7 +209,7 @@
           <Border Grid.Column="2" Classes="soft"><StackPanel><TextBlock Classes="muted" Text="平均命名反应时"/><TextBlock Classes="value" Text="{Binding SelectedRound.MeanReaction}"/></StackPanel></Border>
           <Border Grid.Column="3" Classes="soft"><StackPanel><TextBlock Classes="muted" Text="命名正确率"/><TextBlock Classes="value" Text="{Binding SelectedRound.Accuracy}"/></StackPanel></Border></Grid>
           <TextBlock Grid.Row="2" Classes="heading" Text="逐题结果"/>
-          <Border Grid.Row="3" Background="#F4F7FB" Padding="16,12"><Grid ColumnDefinitions=".7*,*,*,*,*,1.5*,40"><TextBlock Classes="muted" Text="序号"/><TextBlock Grid.Column="1" Classes="muted" Text="目标内容"/><TextBlock Grid.Column="2" Classes="muted" Text="命名结果"/><TextBlock Grid.Column="3" Classes="muted" Text="首次开口"/><TextBlock Grid.Column="4" Classes="muted" Text="说对时间"/><TextBlock Grid.Column="5" Classes="muted" Text="评分来源"/></Grid></Border>
+          <Border Grid.Row="3" Background="#F4F7FB" Padding="16,12"><Grid ColumnDefinitions=".7*,*,*,*,*,1.5*,40"><TextBlock Classes="muted" Text="序号"/><TextBlock Grid.Column="1" Classes="muted" Text="目标内容"/><TextBlock Grid.Column="2" Classes="muted" Text="命名结果"/><TextBlock Grid.Column="3" Classes="muted" Text="首次回答"/><TextBlock Grid.Column="4" Classes="muted" Text="首次说对"/><TextBlock Grid.Column="5" Classes="muted" Text="评分来源"/></Grid></Border>
           <ScrollViewer Grid.Row="4"><ItemsControl ItemsSource="{Binding SelectedRound.Rows}"><ItemsControl.ItemTemplate><DataTemplate x:DataType="pages:NamingTrial">
             <Border BorderBrush="#DFE7F3" BorderThickness="0,0,0,1" Padding="16,6"><StackPanel Spacing="6"><Grid ColumnDefinitions=".7*,*,*,*,*,1.5*,40"><TextBlock Text="{Binding Number, StringFormat='{}{0:00}'}"/><TextBlock Grid.Column="1" Text="{Binding Target}"/><TextBlock Grid.Column="2" Text="{Binding Score}"/><TextBlock Grid.Column="3" Text="{Binding Reaction}"/><TextBlock Grid.Column="4" Text="{Binding CorrectReaction}"/><TextBlock Grid.Column="5" Text="{Binding Source}" TextWrapping="Wrap"/>
             <ToggleButton Grid.Column="6" Theme="{StaticResource SpeechSentenceDetail}" x:Name="TrialDetails" ToolTip.Tip="查看本题评分依据"/></Grid><Border Classes="soft" IsVisible="{Binding IsChecked, ElementName=TrialDetails}"><TextBlock Text="{Binding Note}" TextWrapping="Wrap"/></Border></StackPanel></Border>

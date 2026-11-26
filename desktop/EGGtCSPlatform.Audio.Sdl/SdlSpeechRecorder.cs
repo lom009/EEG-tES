@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using EGGtCSPlatform.Audio.Core.Buffers;
 using SDL3;
 
@@ -11,6 +12,7 @@ public sealed class SdlSpeechRecorder : IDisposable
     private const int MaximumBytes = SampleRate * 2 * MaximumSeconds;
     private nint _stream;
     private bool _initialized;
+    public long CaptureStartedTimestamp { get; }
 
     public SdlSpeechRecorder()
     {
@@ -29,6 +31,7 @@ public sealed class SdlSpeechRecorder : IDisposable
             );
             Check(_stream != 0);
             Check(SDL.ResumeAudioStreamDevice(_stream));
+            CaptureStartedTimestamp = Stopwatch.GetTimestamp();
         }
         catch
         {

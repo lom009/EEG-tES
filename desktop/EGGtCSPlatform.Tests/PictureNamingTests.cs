@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using EGGtCSPlatform.MainApp;
+using EGGtCSPlatform.Services;
 using EGGtCSPlatform.ViewModels.Pages;
 using Xunit;
 
@@ -108,15 +111,18 @@ public sealed class PictureNamingTests
     }
 
     [Fact]
-    public void ReactionEstimateRequiresSustainedSound()
+    public void R01_ReactionIsMeasuredFromPicturePresentation()
     {
-        var pcm = new byte[16000];
-        EGGtCSPlatform.Audio.Core.Buffers.AudioBuffer Audio() => new(16000, 1, pcm);
-        Assert.Null(PictureNamingPageViewModel.EstimateOnset(Audio()));
-        pcm[101] = 32;
-        Assert.Null(PictureNamingPageViewModel.EstimateOnset(Audio()));
-        for (int i = 5120; i < 6400; i++) pcm[i * 2 + 1] = 4;
-        Assert.Equal(320, PictureNamingPageViewModel.EstimateOnset(Audio()));
+        var capture = Stopwatch.Frequency;
+        var picture = capture + Stopwatch.Frequency / 10;
+        var window = TimeSpan.FromMilliseconds(500);
+        int? Convert(int? onset) => PictureNamingPageViewModel.FromPictureOnset(onset, capture, picture, window);
+        Assert.Equal(120, Convert(220));
+        Assert.Equal(0, Convert(100));
+        Assert.Null(Convert(99));
+        Assert.Null(Convert(600));
+        Assert.Null(Convert(null));
+        Assert.Null(PictureNamingPageViewModel.FromPictureOnset(220, capture, null, window));
     }
 
     [Fact]
@@ -156,8 +162,8 @@ public sealed class PictureNamingTests
         ["香"] = ["xiāng"], ["蕉"] = ["jiāo"], ["杯"] = ["bēi"], ["子"] = ["zi"],
     };
 
-    private static EGGtCSPlatform.Services.SpeechNamingSuggestion? Classify(string target, params (int, string)[] segments) =>
-        EGGtCSPlatform.Services.LocalSpeechResponseRecognizer.ClassifyNaming(segments, target, TestReadings, new Dictionary<string, string[][]>());
+    private static SpeechNamingSuggestion? Classify(string target, params (int?, string)[] segments) =>
+        LocalSpeechResponseRecognizer.ClassifyNaming(segments, target, TestReadings, new Dictionary<string, string[][]>());
 
     [Fact]
     public void NamingUsesFirstRealWordAndTimesTheCorrectWord()
@@ -165,7 +171,7 @@ public sealed class PictureNamingTests
         var plain = Classify("苹果", (120, "苹果"))!;
         Assert.Equal(("正确", (int?)120, (int?)120, false), (plain.Outcome, plain.FirstOnsetMs, plain.CorrectOnsetMs, plain.Hesitated));
 
-        var hesitant = Classify("苹果", (0, "问"), (740, "苹果"))!;
+        var hesitant = Classify("苹果", (0, "嗯"), (740, "苹果"))!;
         Assert.Equal(("正确", (int?)740, (int?)740, true), (hesitant.Outcome, hesitant.FirstOnsetMs, hesitant.CorrectOnsetMs, hesitant.Hesitated));
 
         var corrected = Classify("苹果", (20, "香蕉"), (1340, "苹果"))!;
@@ -173,10 +179,10 @@ public sealed class PictureNamingTests
         Assert.Equal("错误", PictureNamingPageViewModel.SuggestedScore(corrected));
 
         var joined = Classify("苹果", (0, "香蕉苹果"))!;
-        Assert.Equal("待确认", joined.Outcome);
+        Assert.Equal("自我纠正", joined.Outcome);
         Assert.Equal(0, joined.FirstOnsetMs);
         Assert.Null(joined.CorrectOnsetMs);
-        Assert.Null(PictureNamingPageViewModel.SuggestedScore(joined));
+        Assert.Equal("错误", PictureNamingPageViewModel.SuggestedScore(joined));
 
         var fillerJoined = Classify("苹果", (60, "嗯苹果"))!;
         Assert.Equal("正确", fillerJoined.Outcome);
@@ -185,8 +191,8 @@ public sealed class PictureNamingTests
         Assert.Equal("正确", Classify("鱼", (0, "于"))!.Outcome);
         Assert.Equal("错误", Classify("鱼", (0, "雨"))!.Outcome);
         var wrong = Classify("苹果", (0, ""), (300, "杯子"))!;
-        Assert.Equal("错误", wrong.Outcome);
-        Assert.Equal(300, wrong.FirstOnsetMs);
+        Assert.Equal("待确认", wrong.Outcome);
+        Assert.Null(wrong.FirstOnsetMs);
 
         var onlyFiller = Classify("苹果", (0, "嗯"), (600, "那个"))!;
         Assert.Null(onlyFiller.Outcome);
@@ -194,7 +200,7 @@ public sealed class PictureNamingTests
         Assert.True(onlyFiller.Hesitated);
 
         var marker = Classify("苹果", (0, "香蕉"), (500, "不对"), (900, "苹果"))!;
-        Assert.Equal("待确认", marker.Outcome);
+        Assert.Equal("自我纠正", marker.Outcome);
         Assert.Equal(EGGtCSPlatform.SpeechTraining.SpeechResponseReviewReason.SelfCorrection, marker.ReviewReason);
         Assert.Null(Classify("苹果", (0, "")));
     }
@@ -217,8 +223,90 @@ public sealed class PictureNamingTests
         Assert.Single(EGGtCSPlatform.Services.LocalSpeechResponseRecognizer.SplitSegments(new(16000, 1, pcm)));
     }
 
+    [Theory]
+    [InlineData("嗯苹果", "正确")]
+    [InlineData("那个呃苹果", "正确")]
+    [InlineData("啊香蕉", "错误")]
+    [InlineData("嗯是苹果", "正确")]
+    public void R02_JoinedHesitationLeavesOnsetsBlank(string transcript, string outcome)
+    {
+        var result = Classify("苹果", (140, transcript))!;
+        Assert.Equal(outcome, result.Outcome);
+        Assert.True(result.Hesitated);
+        Assert.Null(result.FirstOnsetMs);
+        Assert.Null(result.CorrectOnsetMs);
+    }
+
     [Fact]
-    public void MeanReactionCountsOnlyFirstTimeCorrectAnswers()
+    public void R03_WenIsReviewedOnlyWhenAmbiguous()
+    {
+        var ambiguous = Classify("苹果", (100, "问"), (700, "苹果"))!;
+        Assert.Equal("待确认", ambiguous.Outcome);
+        Assert.Null(ambiguous.FirstOnsetMs);
+        Assert.Equal(700, ambiguous.CorrectOnsetMs);
+        Assert.False(ambiguous.Hesitated);
+        Assert.Null(PictureNamingPageViewModel.SuggestedScore(ambiguous));
+        var realWord = Classify("苹果", (140, "问号"))!;
+        Assert.Equal(("错误", (int?)140, false), (realWord.Outcome, realWord.FirstOnsetMs, realWord.Hesitated));
+    }
+
+    [Fact]
+    public void R04_UnknownEarlierAudioDoesNotEstablishWhichWordCameFirst()
+    {
+        Assert.Null(Classify("苹果", (80, ""), (720, "。")));
+        var result = Classify("苹果", (80, ""), (720, "苹果"))!;
+        Assert.Equal("待确认", result.Outcome);
+        Assert.Null(result.FirstOnsetMs);
+        Assert.Null(result.CorrectOnsetMs);
+        Assert.Equal("苹果", result.Transcript);
+        Assert.Null(PictureNamingPageViewModel.SuggestedScore(result));
+    }
+
+    [Fact]
+    public async Task R05_WholeRecordingFallbackDoesNotBorrowTheFirstSegmentOnset()
+    {
+        if (!OperatingSystem.IsMacOS()) return;
+        var fixture = Directory.CreateTempSubdirectory("eggtcs-naming-test-");
+        try
+        {
+            string PathFor(string name) => Path.Combine(fixture.FullName, name);
+            var engine = PathFor("llama-funasr-paraformer");
+            await File.WriteAllTextAsync(engine, "#!/bin/sh\ncase \"$4\" in */response.wav) printf '苹果\\n';; esac\n");
+            File.SetUnixFileMode(engine, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+            await File.WriteAllTextAsync(PathFor("kTGHZ2013.txt"), "");
+            var pcm = new byte[16_000 * 2];
+            for (var i = 3200; i < 6400; i++) pcm[i * 2 + 1] = 4;
+            var recognizer = new LocalSpeechResponseRecognizer(fixture.FullName);
+            var result = await recognizer.RecognizeNamingAsync(new(16_000, 1, pcm), "苹果", default);
+            Assert.NotNull(result);
+            Assert.Equal("正确", result.Outcome);
+            Assert.Null(result.FirstOnsetMs);
+            Assert.Null(result.CorrectOnsetMs);
+            Assert.Contains("人工", result.ReviewNote);
+        }
+        finally
+        {
+            fixture.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
+    public void R06_SelfCorrectionWithOrWithoutMarkersKeepsOnlyLocatableOnsets()
+    {
+        var joined = Classify("苹果", (140, "香蕉苹果"))!;
+        Assert.Equal(("自我纠正", (int?)140, null), (joined.Outcome, joined.FirstOnsetMs, joined.CorrectOnsetMs));
+        Assert.Equal("错误", PictureNamingPageViewModel.SuggestedScore(joined));
+
+        var withMarker = Classify("苹果", (140, "香蕉"), (360, "不对"), (720, "苹果"))!;
+        Assert.Equal(("自我纠正", (int?)140, (int?)720), (withMarker.Outcome, withMarker.FirstOnsetMs, withMarker.CorrectOnsetMs));
+        Assert.Equal("错误", PictureNamingPageViewModel.SuggestedScore(withMarker));
+
+        var joinedWithMarker = Classify("苹果", (140, "香蕉不对苹果"))!;
+        Assert.Equal(("自我纠正", (int?)140, null), (joinedWithMarker.Outcome, joinedWithMarker.FirstOnsetMs, joinedWithMarker.CorrectOnsetMs));
+    }
+
+    [Fact]
+    public void R07_MeanReactionCountsOnlyTimedFirstTimeCorrectAnswers()
     {
         var round = new NamingRound("r", true,
         [
@@ -226,9 +314,11 @@ public sealed class PictureNamingTests
             new(2, "杯子", "正确", 800, "", CorrectOnsetMs: 1500, Outcome: "自我纠正"),
             new(3, "钥匙", "错误", 300, "", Outcome: "错误"),
             new(4, "雨伞", "正确", 1000, ""),
-        ], 4, "", DateTimeOffset.Now, DateTimeOffset.Now);
-        Assert.Equal("800 ms", round.MeanReaction);
-        Assert.Equal(1, round.ExcludedReactions);
+            new(5, "时钟", "正确", null, "", Outcome: "正确", Hesitated: true),
+            new(6, "鱼", "正确", 400, "", Outcome: "正确"),
+        ], 6, "", DateTimeOffset.Now, DateTimeOffset.Now);
+        Assert.Equal("500 ms", round.MeanReaction);
+        Assert.Equal(3, round.ExcludedReactions);
         Assert.Equal("1500 ms", round.Rows[1].CorrectReaction);
     }
 

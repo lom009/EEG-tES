@@ -20,9 +20,17 @@ namespace EGGtCSPlatform.VisualTests;
 
 public sealed class PictureNamingVisualApp : App
 {
+    internal const string ManualScenario = "picture-naming-manual";
+
     public override async void OnFrameworkInitializationCompleted()
     {
         if (ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop) return;
+        if (VisualTestOptions.Current.Scenario.Equals(ManualScenario, StringComparison.OrdinalIgnoreCase))
+        {
+            desktop.ShutdownMode = ShutdownMode.OnLastWindowClose;
+            ShowSimulatorWindow(desktop);
+            return;
+        }
         desktop.ShutdownMode = ShutdownMode.OnExplicitShutdown;
         var directory = Path.GetDirectoryName(VisualTestOptions.Current.ErrorPath)!;
         Directory.CreateDirectory(directory);
@@ -30,7 +38,7 @@ public sealed class PictureNamingVisualApp : App
         {
             await Run(desktop, directory).WaitAsync(VisualTestOptions.Current.Timeout);
             File.WriteAllText(Path.Combine(directory, "passed.txt"),
-                "PASS: single-stimulation setup, tDCS selection, electrode confirmation cancellation and acceptance, S1 ready, S2 fixation, S3 answer, S4 interference, S5 score and correct, S6 finish and restart, S7 review completed and interrupted rounds, return and ordinary single-stimulation route.");
+                "PASS: single-stimulation setup, tDCS selection, confirmation cancellation and acceptance, S1–S7, return, ordinary single-stimulation route, R01 render timestamp, V02 empty times and manual scoring, V03 self-correction preselection and override.");
             Environment.ExitCode = 0;
         }
         catch (Exception error)
@@ -41,7 +49,9 @@ public sealed class PictureNamingVisualApp : App
         desktop.Shutdown(Environment.ExitCode);
     }
 
-    private static async Task Run(IClassicDesktopStyleApplicationLifetime desktop, string directory)
+    private static (Window Window, MainView Root, MainViewModel Main, OrdinaryDialog Ordinary) ShowSimulatorWindow(
+        IClassicDesktopStyleApplicationLifetime desktop
+    )
     {
         var window = new Window { Width = 1440, Height = 900, Title = "图片命名 · 模拟设备验收" };
         var connection = new DeviceSelectionContext();
@@ -57,11 +67,18 @@ public sealed class PictureNamingVisualApp : App
             _ => throw new InvalidOperationException(page.ToString())
         }), connection);
         main.Navigate(new StimulusConfigurationRouteData("QA-TDCS", "S-001", CreationMode: ExperimentCreationMode.StimulusOnly));
-        var shell = (BasicViewModel)main.CurrentView;
         var root = new MainView { DataContext = main };
         window.Content = root;
         desktop.MainWindow = window;
         window.Show();
+        window.Activate();
+        return (window, root, main, ordinary);
+    }
+
+    private static async Task Run(IClassicDesktopStyleApplicationLifetime desktop, string directory)
+    {
+        var (window, root, main, ordinary) = ShowSimulatorWindow(desktop);
+        var shell = (BasicViewModel)main.CurrentView;
         await Task.Delay(450);
         var setup = (StimulusConfigurationPageViewModel)shell.CurrentPage;
         await Click(setup.Modes.Single(x => x.Kind == StimulusKind.TDcs).SelectCommand);
@@ -94,6 +111,8 @@ public sealed class PictureNamingVisualApp : App
         var materials = root.GetVisualDescendants().OfType<ComboBox>().Single(x => x.Name == "MaterialsBox");
         Check(naming.ShowIntro && materials.IsEffectivelyEnabled, "S1 可选择材料");
         Check(naming.RecordSpeech == naming.SpeechAvailable, "S1 检测到模型时默认开启本地语音识别");
+        if (Environment.GetEnvironmentVariable("EGGTCS_SPEECH_ASR_DIR") is not null)
+            Check(naming.SpeechAvailable, "S1 可从指定路径读取本地模型");
         naming.RecordSpeech = false;
         materials.SelectedIndex = 1;
         Check(naming.Target == "剪刀", "切换第二套材料");
@@ -114,10 +133,13 @@ public sealed class PictureNamingVisualApp : App
         await Task.Delay(180);
         var prompt = root.GetVisualDescendants().OfType<TextBlock>().Single(x => x.Text == "请说出图片名称" && x.IsEffectivelyVisible);
         Check(prompt.Bounds.Height > 0 && naming.IsAnswering, "S3 图片提示完成布局");
+        Check(naming.PicturePresentedAt is not null, "R01 图片合成完成并记录时间原点");
         Check(!HasNumberCards(), "回答页仅呈现当前题");
         Capture("S3-answer");
         await naming.AdvanceCommand.ExecutionTask!;
         Check(naming.CanScore && !naming.CanAct, "待核对");
+        naming.ApplyNamingSuggestion(null, naming.PicturePresentedAt!.Value, TimeSpan.FromSeconds(naming.AnswerSeconds));
+        CheckReactionText("首次回答：—", "首次说对：—", "V02 无转写时的两列时间");
         Capture("review-before-score");
         await Click(naming.ScoreCommand, "错误");
         await Click(naming.ScoreCommand, "正确");
@@ -134,7 +156,16 @@ public sealed class PictureNamingVisualApp : App
                 Capture("S2-fifth-fixation");
             }
             await naming.AdvanceCommand.ExecutionTask!;
+            if (trial == 2)
+            {
+                naming.ApplyNamingSuggestion(new("香蕉 · 杯子", "自我纠正", 320, 700, false, null, null),
+                    naming.PicturePresentedAt!.Value, TimeSpan.FromSeconds(naming.AnswerSeconds));
+                Check(naming.IsWrong && naming.IsSuggested, "V03 自我纠正预选错误");
+                CheckReactionText("首次回答：320 ms", "首次说对：700 ms", "V03 两列时间独立呈现");
+                Capture("V03-self-correction");
+            }
             await Click(naming.ScoreCommand, trial == 3 ? "错误" : "正确");
+            if (trial == 2) Check(naming.IsCorrect && !naming.IsSuggested, "V03 可人工改判");
         }
         Check(naming.IsFinished && naming.ShowPicture && naming.Correct == 5 && naming.Wrong == 1, "S6 完成统计");
         await Click(naming.ScoreCommand, "无反应");
@@ -151,6 +182,8 @@ public sealed class PictureNamingVisualApp : App
         rounds.SelectedIndex = 0;
         await Task.Delay(200);
         Check(naming.SelectedRound!.Scored == 6 && naming.SelectedRound.Rows[2].Score == "错误", "S7 切换历史轮次");
+        Check(naming.SelectedRound.Rows[1] is { ReactionMs: 320, CorrectOnsetMs: 700, CountsForMeanReaction: false }
+            && naming.SelectedRound.MeanReaction == "—", "V03 自我纠正改判后仍从均值排除");
         Capture("S7-detail");
         var rowDetail = root.GetVisualDescendants().OfType<ToggleButton>().First(x => x.Name == "TrialDetails" && x.IsEffectivelyVisible);
         Invoke(rowDetail);
@@ -162,6 +195,7 @@ public sealed class PictureNamingVisualApp : App
         await Click(main.DialogStack.OfType<ExperimentConfigurationDialogViewModel>().Single().ConfirmCommand);
         naming = (PictureNamingPageViewModel)shell.CurrentPage;
         await Task.Delay(500);
+        naming.RecordSpeech = false;
         naming.RampSeconds = 0;
         naming.FixationSeconds = 0;
         naming.AnswerSeconds = 2;
@@ -192,6 +226,12 @@ public sealed class PictureNamingVisualApp : App
             Check(root.GetVisualDescendants().OfType<TextBlock>().Any(x => x.IsEffectivelyVisible && x.Text == "请注视屏幕中心点"), "注视提示可见");
             Check(!root.GetVisualDescendants().OfType<Button>().Any(x => x.IsEffectivelyVisible &&
                 (x.Command == naming.ScoreCommand || x.Content is "✓ 正确" or "× 错误" or "↺ 重置")), "注视时无评分按钮");
+        }
+        void CheckReactionText(string first, string correct, string scenario)
+        {
+            var texts = root.GetVisualDescendants().OfType<TextBlock>().Where(x => x.IsEffectivelyVisible).ToArray();
+            Check(texts.Single(x => x.Name == "FirstReactionText").Text == first
+                && texts.Single(x => x.Name == "CorrectReactionText").Text == correct, scenario);
         }
         bool HasNumberCards() => root.GetVisualDescendants().OfType<TextBlock>().Any(x =>
             x.IsEffectivelyVisible && x.Text is "01" or "02" or "03" or "04" or "05" or "06");

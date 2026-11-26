@@ -5,8 +5,6 @@ using System.IO;
 using System.Text.Json;
 using System.Diagnostics;
 using System.Collections.ObjectModel;
-using System.Buffers.Binary;
-using EGGtCSPlatform.Audio.Core.Buffers;
 using System.Threading;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -120,8 +118,10 @@ public sealed partial class PictureNamingPageViewModel : PageViewModel, IDisposa
     [ObservableProperty] private bool _recordSpeech;
     public bool SpeechAvailable => _recognizer.IsAvailable;
     public string Target => Words[_trials[_index]];
-    public string Reaction => _reaction[_index] is not int ms ? "未测得"
-        : _correctOnset[_index] is int correct && correct != ms ? $"开口 {ms} ms · 说对 {correct} ms" : $"{ms} ms";
+    internal Func<CancellationToken, Task<long?>>? WaitForPicturePresentationAsync { get; set; }
+    internal long? PicturePresentedAt { get; private set; }
+    public string FirstReaction => FormatReviewOnset(_reaction[_index]);
+    public string CorrectReaction => FormatReviewOnset(_correctOnset[_index]);
     public string Recognition => (_transcripts[_index] ?? (RecordSpeech ? "等待本地识别" : "本轮采用人工判分"))
         + (IsSuggested ? " · 已预选，可改判" : "");
     public bool IsSuggested => _suggested[_index] && _scores[_index] is not null;
@@ -242,14 +242,25 @@ public sealed partial class PictureNamingPageViewModel : PageViewModel, IDisposa
                 _player.Volume = Volume / 100;
                 await _player.PlayAsync(_noise.Read("Babble-MSP.wav").Audio, _index + 1, token);
             }
-            using var recorder = OpenRecorder();
-            var clock = Stopwatch.StartNew();
+            using var recorder = AnswerSeconds > 0 ? OpenRecorder() : null;
+            var pictureRequestedAt = Stopwatch.GetTimestamp();
+            PicturePresentedAt = null;
             _remaining = (int)Math.Ceiling(AnswerSeconds);
             SetPhase(Phase.Picture);
-            while (AnswerSeconds - clock.Elapsed.TotalSeconds > 0)
+            if (AnswerSeconds > 0 && WaitForPicturePresentationAsync is { } waitForPresentation)
             {
-                await Task.Delay(TimeSpan.FromSeconds(Math.Clamp(AnswerSeconds - clock.Elapsed.TotalSeconds, 0, 0.1)), token);
-                _remaining = (int)Math.Ceiling(Math.Max(0, AnswerSeconds - clock.Elapsed.TotalSeconds));
+                using var presentation = CancellationTokenSource.CreateLinkedTokenSource(token);
+                presentation.CancelAfter(TimeSpan.FromSeconds(AnswerSeconds));
+                try { PicturePresentedAt = await waitForPresentation(presentation.Token); }
+                catch (OperationCanceledException) when (!token.IsCancellationRequested) { }
+            }
+            var answerStartedAt = PicturePresentedAt ?? pictureRequestedAt;
+            var window = TimeSpan.FromSeconds(AnswerSeconds);
+            for (var remaining = window - Stopwatch.GetElapsedTime(answerStartedAt);
+                remaining > TimeSpan.Zero; remaining = window - Stopwatch.GetElapsedTime(answerStartedAt))
+            {
+                await Task.Delay(TimeSpan.FromMilliseconds(Math.Clamp(remaining.TotalMilliseconds, 0, 100)), token);
+                _remaining = (int)Math.Ceiling(Math.Max(0, (window - Stopwatch.GetElapsedTime(answerStartedAt)).TotalSeconds));
                 OnPropertyChanged(nameof(CardTitle));
             }
             _player?.Stop();
@@ -260,18 +271,7 @@ public sealed partial class PictureNamingPageViewModel : PageViewModel, IDisposa
                     var audio = recorder.Complete();
                     var result = await _recognizer.RecognizeNamingAsync(audio, Target, token);
                     token.ThrowIfCancellationRequested();
-                    _reaction[_index] = result is null ? EstimateOnset(audio) : result.FirstOnsetMs;
-                    _correctOnset[_index] = result?.CorrectOnsetMs;
-                    _outcomes[_index] = result?.Outcome;
-                    _hesitated[_index] = result?.Hesitated == true;
-                    var suggestion = SuggestedScore(result);
-                    _transcripts[_index] = result is null ? "未识别到回答，请人工核对" : DescribeNaming(result, suggestion);
-                    if (suggestion is not null)
-                    {
-                        _scores[_index] = suggestion;
-                        _suggested[_index] = true;
-                        _suggestions[_index] = suggestion;
-                    }
+                    ApplyNamingSuggestion(result, recorder.CaptureStartedTimestamp, window);
                 }
                 catch (Exception e) when (!token.IsCancellationRequested) { _transcripts[_index] = $"识别不可用，请人工核对：{e.Message}"; }
             }
@@ -287,6 +287,35 @@ public sealed partial class PictureNamingPageViewModel : PageViewModel, IDisposa
             SetPhase(Phase.Ready);
         }
     }
+
+    internal void ApplyNamingSuggestion(SpeechNamingSuggestion? result, long captureStartedAt, TimeSpan answerWindow)
+    {
+        _reaction[_index] = FromPictureOnset(result?.FirstOnsetMs, captureStartedAt, PicturePresentedAt, answerWindow);
+        _correctOnset[_index] = FromPictureOnset(result?.CorrectOnsetMs, captureStartedAt, PicturePresentedAt, answerWindow);
+        _outcomes[_index] = result?.Outcome;
+        _hesitated[_index] = result?.Hesitated == true;
+        var suggestion = SuggestedScore(result);
+        _transcripts[_index] = result is null ? "未识别到回答，请人工核对" : DescribeNaming(result, suggestion);
+        if ((result?.FirstOnsetMs is not null && _reaction[_index] is null)
+            || (result?.CorrectOnsetMs is not null && _correctOnset[_index] is null))
+            _transcripts[_index] += " · 反应时需人工核对";
+        if (suggestion is not null)
+        {
+            _scores[_index] = suggestion;
+            _suggested[_index] = true;
+            _suggestions[_index] = suggestion;
+        }
+        Refresh();
+    }
+
+    internal static int? FromPictureOnset(int? onsetMs, long captureStartedAt, long? picturePresentedAt, TimeSpan answerWindow)
+    {
+        if (onsetMs is not int onset || picturePresentedAt is not long picture) return null;
+        var relative = TimeSpan.FromMilliseconds(onset) - Stopwatch.GetElapsedTime(captureStartedAt, picture);
+        return relative >= TimeSpan.Zero && relative < answerWindow ? (int)relative.TotalMilliseconds : null;
+    }
+
+    private static string FormatReviewOnset(int? onset) => onset is int ms ? $"{ms} ms" : "—";
 
     [RelayCommand]
     private void Score(string? result)
@@ -333,24 +362,6 @@ public sealed partial class PictureNamingPageViewModel : PageViewModel, IDisposa
         catch (Exception e) { _transcripts[_index] = $"麦克风不可用：{e.Message}"; return null; }
     }
 
-    internal static int? EstimateOnset(AudioBuffer audio)
-    {
-        int active = 0;
-        int window = audio.SampleRate / 50;
-        for (int i = 0; i + window <= audio.Frames; i += window)
-        {
-            double energy = 0;
-            for (int j = i; j < i + window; j++)
-            {
-                double sample = BinaryPrimitives.ReadInt16LittleEndian(audio.Data[(j * 2)..]);
-                energy += sample * sample;
-            }
-            active = energy / window >= 300 * 300 ? active + 1 : 0;
-            if (active == 3) return (i - 2 * window) * 1000 / audio.SampleRate;
-        }
-        return null;
-    }
-
     private void SaveRound()
     {
         var rows = _trials.Take(_index + 1).Select((key,i) =>
@@ -394,9 +405,9 @@ public sealed record NamingTrial(int Number, string Target, string Score, int? R
     int? CorrectOnsetMs = null, string? Outcome = null, bool Hesitated = false)
 {
     public string Reaction => ReactionMs is int ms ? $"{ms} ms" : "—";
-    public string CorrectReaction => CorrectOnsetMs is int ms ? $"{ms} ms" : Outcome is "自我纠正" or "待确认" ? "需人工确认" : "—";
+    public string CorrectReaction => CorrectOnsetMs is int ms ? $"{ms} ms" : "—";
     /// <summary>Only answers that were right the first time count toward the mean reaction time.</summary>
-    public bool CountsForMeanReaction => Score == "正确" && ReactionMs.HasValue && Outcome is null or "正确";
+    public bool CountsForMeanReaction => Score == "正确" && ReactionMs is >= 0 && Outcome == "正确";
 }
 public sealed record NamingRound(string Label, bool Complete, NamingTrial[] Rows, int Planned, string Settings, DateTimeOffset Started, DateTimeOffset Ended)
 {

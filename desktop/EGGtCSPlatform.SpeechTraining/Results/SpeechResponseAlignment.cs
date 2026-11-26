@@ -10,6 +10,20 @@ public static class SpeechResponseAlignment
 {
     private static readonly string[] CorrectionMarkers = ["不对", "说错了", "我重说", "重新说", "再说一遍"];
 
+    /// <summary>Locates the first explicit correction marker outside the expected text.</summary>
+    public static (int Index, int Length)? FindCorrectionMarker(string expected, string heard)
+    {
+        (int Index, int Length)? first = null;
+        foreach (var marker in CorrectionMarkers)
+        {
+            if (expected.Contains(marker, StringComparison.Ordinal)) continue;
+            var index = heard.IndexOf(marker, StringComparison.Ordinal);
+            if (index >= 0 && (first is null || index < first.Value.Index))
+                first = (index, marker.Length);
+        }
+        return first;
+    }
+
     /// <summary>Scores the same positions when a response can be safely compared.</summary>
     public static bool?[] Compare(
         IReadOnlyList<string> reference,
@@ -23,8 +37,7 @@ public static class SpeechResponseAlignment
         var expectedText = string.Concat(reference);
         var heardText = string.Concat(response);
         reviewReason = null;
-        if (CorrectionMarkers.Any(marker => heardText.Contains(marker, StringComparison.Ordinal)
-            && !expectedText.Contains(marker, StringComparison.Ordinal)))
+        if (FindCorrectionMarker(expectedText, heardText) is not null)
             reviewReason = SpeechResponseReviewReason.SelfCorrection;
         else if (reference.Count != response.Count)
             reviewReason = SpeechResponseReviewReason.LengthMismatch;
@@ -65,8 +78,7 @@ public static class SpeechResponseAlignment
         matchStart = -1;
         var expectedText = string.Concat(reference);
         var heardText = string.Concat(response);
-        if (CorrectionMarkers.Any(marker => heardText.Contains(marker, StringComparison.Ordinal)
-            && !expectedText.Contains(marker, StringComparison.Ordinal)))
+        if (FindCorrectionMarker(expectedText, heardText) is not null)
         {
             reviewReason = SpeechResponseReviewReason.SelfCorrection;
             return null;

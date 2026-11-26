@@ -28,7 +28,7 @@ internal readonly record struct SpeechSegment(int StartMs, int EndMs, int StartF
 /// Picture naming result built from pause-separated segments.
 /// Outcome: 正确 (target said first), 自我纠正 (target said after another word), 错误 (target never said),
 /// 待确认 (needs the examiner), or null when only filler sounds were heard.
-/// FirstOnsetMs is the start of the first real word; CorrectOnsetMs is the start of the segment holding the target.
+/// The two onsets are set only when the word begins at a known segment boundary.
 /// </summary>
 internal sealed record SpeechNamingSuggestion(
     string Transcript,
@@ -52,7 +52,8 @@ internal sealed class LocalSpeechResponseRecognizer
 
     internal LocalSpeechResponseRecognizer(string? directory = null)
     {
-        _directory = directory ?? Path.Combine(AppContext.BaseDirectory, "SpeechAsr");
+        _directory = directory ?? Environment.GetEnvironmentVariable("EGGTCS_SPEECH_ASR_DIR")
+            ?? Path.Combine(AppContext.BaseDirectory, "SpeechAsr");
         _readings = new(() => LoadReadings(Readings));
         _phraseReadings = new(() =>
         {
@@ -94,7 +95,7 @@ internal sealed class LocalSpeechResponseRecognizer
         if (segments.Count == 0)
             return null;
 
-        var heard = new List<(int StartMs, string Text)>();
+        var heard = new List<(int? StartMs, string Text)>();
         var temporary = Directory.CreateTempSubdirectory("eggtcs-naming-");
         try
         {
@@ -111,7 +112,7 @@ internal sealed class LocalSpeechResponseRecognizer
                 var whole = Path.Combine(temporary.FullName, "response.wav");
                 WriteWave(whole, recording);
                 var text = await TranscribeAsync(whole, cancellationToken).ConfigureAwait(false);
-                heard = [(segments[0].StartMs, text.Normalize(NormalizationForm.FormKC))];
+                heard = [(null, text.Normalize(NormalizationForm.FormKC))];
             }
         }
         finally
@@ -121,73 +122,125 @@ internal sealed class LocalSpeechResponseRecognizer
         return ClassifyNaming(heard, target, _readings.Value, _phraseReadings.Value);
     }
 
-    private static readonly string[] FillerWords = ["那个", "这个", "就是"];
-    private const string FillerCharacters = "嗯恩问啊呃额是哦噢唔";
+    private static readonly string[] FillerWords = ["那个", "这个", "嗯", "啊", "呃", "哦", "噢", "唔"];
 
-    /// <summary>True when the characters are only hesitation sounds such as 嗯 or 那个 (the ASR often hears 嗯 as 问).</summary>
-    internal static bool IsFiller(IEnumerable<string> characters)
-    {
-        var text = string.Concat(characters);
-        foreach (var word in FillerWords)
-            text = text.Replace(word, "", StringComparison.Ordinal);
-        return text.All(c => FillerCharacters.Contains(c));
-    }
-
-    /// <summary>Decides the naming outcome from recognized segments in time order. Pure, so it can be tested without the model.</summary>
+    /// <summary>Classifies the words separately from the availability of their onset times.</summary>
     internal static SpeechNamingSuggestion? ClassifyNaming(
-        IReadOnlyList<(int StartMs, string Text)> segments,
+        IReadOnlyList<(int? StartMs, string Text)> segments,
         string target,
         IReadOnlyDictionary<string, string[]> readings,
         IReadOnlyDictionary<string, string[][]> phrases
     )
     {
-        var spoken = segments
-            .Select(s => (s.StartMs, s.Text, Characters: SpeechSentence.GetScoringCharacters(s.Text)))
-            .Where(s => s.Characters.Length > 0)
-            .ToArray();
-        if (spoken.Length == 0)
+        var transcript = string.Join(" · ", segments
+            .Where(s => SpeechSentence.GetScoringCharacters(s.Text).Length > 0)
+            .Select(s => s.Text.Trim()));
+        if (transcript.Length == 0)
             return null;
-        var transcript = string.Join(" · ", spoken.Select(s => s.Text.Trim()));
+
         var expected = SpeechSentence.GetScoringCharacters(target);
+        var expectedText = string.Concat(expected);
         var hesitated = false;
+        var firstAnswerFound = false;
+        var firstAnswerUnclear = false;
+        var earlierTargetUnclear = false;
         int? firstOnset = null;
+        SpeechResponseReviewReason? reviewReason = null;
 
-        if (SpeechResponseAlignment.FindWithin(
-                expected, spoken.SelectMany(s => s.Characters).ToArray(), readings, phrases, out var marker) is null
-            && marker is not null)
+        foreach (var (segmentStart, part) in NamingParts(segments, expectedText))
         {
-            var first = spoken.FirstOrDefault(s => !IsFiller(s.Characters));
-            return new(transcript, "待确认", first.Characters is null ? null : first.StartMs, null,
-                spoken[0].StartMs != first.StartMs, marker, "回答中有改口用语，请人工核对");
-        }
-
-        foreach (var (start, _, characters) in spoken)
-        {
-            var match = SpeechResponseAlignment.FindWithin(expected, characters, readings, phrases, out _, out var at);
-            if (match == false)
+            if (part is null)
             {
-                if (IsFiller(characters)) hesitated = true;
-                else firstOnset ??= start;
+                reviewReason = SpeechResponseReviewReason.SelfCorrection;
+                firstAnswerUnclear |= !firstAnswerFound;
                 continue;
             }
-            if (firstOnset is not null)
-                return match == true
-                    ? new(transcript, "自我纠正", firstOnset, start, hesitated, null, "先说了其他词，后面才说对")
-                    : new(transcript, "待确认", firstOnset, null, hesitated, null, "有不确定的字，请人工判断");
+            if (part.Length == 0)
+            {
+                firstAnswerUnclear |= !firstAnswerFound;
+                earlierTargetUnclear = true;
+                continue;
+            }
 
-            firstOnset = start;
-            if (match is null)
-                return new(transcript, "待确认", start, null, hesitated, null, "有不确定的字，请人工判断");
-            var before = characters.Take(at).ToArray();
-            if (!IsFiller(before))
-                return new(transcript, "待确认", start, null, hesitated, null, "同一段里先说了其他词，说对的时间需人工确认");
-            return before.Length == 0
-                ? new(transcript, "正确", start, start, hesitated, null, null)
-                : new(transcript, "正确", start, start, true, null, "语气词和目标词连在一起，反应时可能偏早");
+            var start = segmentStart;
+            var answer = part;
+            while (Array.Find(FillerWords, word => answer.StartsWith(word, StringComparison.Ordinal)) is { } filler)
+            {
+                hesitated = true;
+                start = null;
+                answer = answer[filler.Length..];
+            }
+            if (answer.Length == 0)
+                continue;
+
+            var characters = SpeechSentence.GetScoringCharacters(answer);
+            var match = SpeechResponseAlignment.FindWithin(expected, characters, readings, phrases, out _, out var at);
+            if (match == true)
+            {
+                var prefix = string.Concat(characters.Take(at));
+                if (prefix == "问" || prefix.EndsWith("不是", StringComparison.Ordinal))
+                    return new(transcript, "待确认", firstOnset, null, hesitated, reviewReason, "目标词前的内容有歧义，请人工核对");
+
+                var startsWithTarget = at == 0;
+                var introducesTarget = prefix is "是" or "就是";
+                var earlierWrongWord = firstAnswerFound || (!startsWithTarget && !introducesTarget);
+                var correctOnset = startsWithTarget && !earlierTargetUnclear ? start : null;
+                if (!firstAnswerFound && !firstAnswerUnclear && !introducesTarget)
+                    firstOnset = start;
+
+                var outcome = firstAnswerUnclear ? "待确认" : earlierWrongWord ? "自我纠正" : "正确";
+                return new(transcript, outcome, firstOnset, correctOnset, hesitated, reviewReason,
+                    firstAnswerUnclear ? "首次回答需人工核对"
+                    : firstOnset is null || correctOnset is null ? "无法定位完整的回答时间，请人工核对"
+                    : earlierWrongWord ? "先说了其他词，后面才说对" : null);
+            }
+            if (answer == "问" && match == false)
+            {
+                firstAnswerUnclear |= !firstAnswerFound;
+                continue;
+            }
+
+            if (!firstAnswerFound && !firstAnswerUnclear)
+                firstOnset = start;
+            firstAnswerUnclear |= !firstAnswerFound && match is null;
+            firstAnswerFound = true;
+            earlierTargetUnclear |= match is null;
         }
-        return firstOnset is null
-            ? new(transcript, null, null, null, true, null, "只听到语气词，请人工判断")
-            : new(transcript, "错误", firstOnset, null, hesitated, null, null);
+
+        return firstAnswerUnclear
+            ? new(transcript, "待确认", firstOnset, null, hesitated, reviewReason, "首次回答需人工核对")
+            : firstAnswerFound
+                ? new(transcript, earlierTargetUnclear ? "待确认" : "错误", firstOnset, null, hesitated, reviewReason,
+                    earlierTargetUnclear || firstOnset is null ? "词语或开口时间需人工核对" : null)
+                : new(transcript, null, null, null, hesitated, reviewReason, "只听到语气词，请人工判断");
+    }
+
+    // Marks an explicit correction boundary with null. An empty string represents unrecognized audio.
+    private static IEnumerable<(int? StartMs, string? Text)> NamingParts(
+        IReadOnlyList<(int? StartMs, string Text)> segments,
+        string expected
+    )
+    {
+        foreach (var (segmentStart, transcript) in segments)
+        {
+            var start = segmentStart;
+            var text = string.Concat(SpeechSentence.GetScoringCharacters(transcript));
+            if (text.Length == 0)
+            {
+                yield return (start, text);
+                continue;
+            }
+            while (SpeechResponseAlignment.FindCorrectionMarker(expected, text) is { } marker)
+            {
+                if (marker.Index > 0)
+                    yield return (start, text[..marker.Index]);
+                yield return (null, null);
+                start = null;
+                text = text[(marker.Index + marker.Length)..];
+            }
+            if (text.Length > 0)
+                yield return (start, text);
+        }
     }
 
     /// <summary>Splits PCM16 at pauses of at least <paramref name="pauseMs"/>; a part starts after 3 loud 20 ms windows.</summary>

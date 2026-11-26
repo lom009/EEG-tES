@@ -1,17 +1,43 @@
 using System;
+using System.Diagnostics;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 
 using Avalonia.Controls;
 using Avalonia.Input.Platform;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
+using Avalonia.Rendering.Composition;
 using EGGtCSPlatform.ViewModels.Pages;
 
 namespace EGGtCSPlatform.Views.Pages;
 
 public partial class PictureNamingPageView : UserControl
 {
+    private PictureNamingPageViewModel? _page;
+
     public PictureNamingPageView() => InitializeComponent();
+
+    protected override void OnDataContextChanged(EventArgs e)
+    {
+        if (_page is not null) _page.WaitForPicturePresentationAsync = null;
+        _page = DataContext as PictureNamingPageViewModel;
+        if (_page is not null) _page.WaitForPicturePresentationAsync = WaitForPicturePresentationAsync;
+        base.OnDataContextChanged(e);
+    }
+
+    private async Task<long?> WaitForPicturePresentationAsync(CancellationToken token)
+    {
+        UpdateLayout();
+        if (!PictureStimulus.IsEffectivelyVisible || PictureStimulus.Bounds is not { Width: > 0, Height: > 0 }
+            || TopLevel.GetTopLevel(this) is not Window { IsActive: true, WindowState: not WindowState.Minimized }
+            || ElementComposition.GetElementVisual(PictureStimulus) is not { } visual)
+            return null;
+        var batch = visual.Compositor.RequestCompositionBatchCommitAsync();
+        await batch.Rendered.WaitAsync(token).ConfigureAwait(false);
+        return Stopwatch.GetTimestamp();
+    }
 
     private async void ExportResults(object? sender, RoutedEventArgs e)
     {

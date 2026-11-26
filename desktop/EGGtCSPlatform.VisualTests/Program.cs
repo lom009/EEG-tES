@@ -15,6 +15,7 @@ internal static class Program
             scenario.StartsWith("head3d-dialog", StringComparison.OrdinalIgnoreCase)
                 ? AppBuilder.Configure<Head3DDialogVisualApp>()
             : scenario.Equals("picture-naming", StringComparison.OrdinalIgnoreCase)
+                || scenario.Equals(PictureNamingVisualApp.ManualScenario, StringComparison.OrdinalIgnoreCase)
                 ? AppBuilder.Configure<PictureNamingVisualApp>()
             : scenario.Equals("login", StringComparison.OrdinalIgnoreCase)
                 ? AppBuilder.Configure<LoginVisualApp>()
@@ -81,7 +82,7 @@ internal sealed record VisualTestOptions(
         );
         var outputDirectory = Path.Combine(repositoryRoot, "TestArtifacts");
         string? compatibleOutputPath = null;
-        var scenario = "experiment-run";
+        var scenario = Environment.GetEnvironmentVariable("EGGTCS_VISUAL_SCENARIO") ?? "experiment-run";
         var timeout = TimeSpan.FromSeconds(15);
 
         foreach (var argument in args)
